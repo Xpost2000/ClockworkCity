@@ -27,6 +27,9 @@
 #define zero_buffer_memory(x, l) memset(x, 0, l)
 #define zero_array(x) zero_buffer_memory(x, array_count(x))
 
+/*beh*/
+#define safe_assignment(x) if(x) *x 
+
 /*
   "string" functions working from temporary functions.
   Never expect to keep these, unless you clone

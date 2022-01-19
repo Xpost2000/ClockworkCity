@@ -148,8 +148,14 @@ struct input_state {
 void register_key_down(int keyid);
 void register_key_up(int keyid);
 
+void register_mouse_position(int x, int y);
+void register_mouse_button(int button_id, bool state);
+
 bool is_key_down(int keyid);
 bool is_key_pressed(int keyid);
+
+void get_mouse_location(int* mx, int* my);
+void get_mouse_buttons(bool* left, bool* middle, bool* right);
 
 void begin_input_frame(void);
 void end_input_frame(void);

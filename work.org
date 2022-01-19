@@ -23,10 +23,11 @@
     :LOGBOOK:
     CLOCK: [2022-01-19 Wed 15:31]--[2022-01-19 Wed 15:55] =>  0:24
     :END:
-*** TODO Input from keyboard
+*** DONE Input from keyboard
     :LOGBOOK:
-    CLOCK: [2022-01-19 Wed 16:40]
+    CLOCK: [2022-01-19 Wed 16:40]--[2022-01-19 Wed 16:53] =>  0:13
     :END:
+*** TODO Input from mouse
 *** TODO Basic platforming (collision, and physics),
 *** TODO Wobbly camera (smooth lerp, and juicing shakes),
 *** TODO Input from controller

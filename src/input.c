@@ -15,6 +15,27 @@ void register_key_up(int keyid) {
     global_input.current_state.keys[keyid] = false;
 }
 
+void register_mouse_position(int x, int y) {
+    global_input.current_state.mouse_x = x;
+    global_input.current_state.mouse_y = y;
+}
+
+void register_mouse_button(int button_id, bool state) {
+    assert((button_id >= 0 && button_id < MOUSE_BUTTON_COUNT) && "wtf?");
+    global_input.current_state.mouse_buttons[button_id] = state;
+}
+
+void get_mouse_location(int* mx, int* my) {
+    safe_assignment(mx) = global_input.current_state.mouse_x;
+    safe_assignment(my) = global_input.current_state.mouse_y;
+}
+
+void get_mouse_buttons(bool* left, bool* middle, bool* right) {
+    safe_assignment(left)   = global_input.current_state.mouse_buttons[MOUSE_BUTTON_LEFT];
+    safe_assignment(middle) = global_input.current_state.mouse_buttons[MOUSE_BUTTON_MIDDLE];
+    safe_assignment(right)  = global_input.current_state.mouse_buttons[MOUSE_BUTTON_RIGHT];
+}
+
 bool is_key_down(int keyid) {
     assert(keyid < KEY_COUNT && "invalid key id?");
     return global_input.current_state.keys[keyid];
@@ -34,7 +55,6 @@ bool is_key_pressed(int keyid) {
 
     return false;
 }
-
 
 void begin_input_frame(void) {}
 void end_input_frame(void) {

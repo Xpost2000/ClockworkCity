@@ -13,6 +13,7 @@
 #define WINDOW_NAME "Metroidvania Jam 15"
 
 SDL_Window* global_window;
+local float global_elapsed_time = 0;
 bool running = true;
 
 static void initialize(void) {
@@ -163,6 +164,30 @@ static void handle_sdl_event(SDL_Event event) {
                 register_key_up(translate_sdl_scancode(event.key.keysym.scancode));
             }
         } break;
+        /*TODO(jerry): handle mouse relative mode later*/
+        case SDL_MOUSEMOTION: {
+            register_mouse_position(event.motion.x, event.motion.y);
+        } break;
+        case SDL_MOUSEBUTTONUP:
+        case SDL_MOUSEBUTTONDOWN:
+        {
+            int button_id;
+            switch (event.button.button) {
+                case SDL_BUTTON_LEFT: {
+                    button_id = MOUSE_BUTTON_LEFT;
+                } break;
+                case SDL_BUTTON_MIDDLE: {
+                    button_id = MOUSE_BUTTON_MIDDLE;
+                } break;
+                case SDL_BUTTON_RIGHT: {
+                    button_id = MOUSE_BUTTON_RIGHT; 
+                } break;
+            }
+
+            register_mouse_position(event.button.x, event.button.y);
+            register_mouse_button(button_id, event.button.state == SDL_PRESSED);
+        }
+        break;
     }
 }
 
@@ -189,6 +214,17 @@ void update_render_frame(float dt) {
 
         if (is_key_pressed(KEY_A)) {
             printf("Hi babe\n");
+        }
+
+        {
+            int mouse[2];
+            int textdimens[2];
+            get_mouse_location(mouse, mouse+1);
+            {
+                char* text = "baby eating\nbaby :)\n";
+                get_text_dimensions(test_font, text, textdimens, textdimens+1);
+                draw_text(test_font, mouse[0] - textdimens[0]/2, mouse[1] - textdimens[1]/2, text, COLOR4F_RED);
+            }
         }
     } end_graphics_frame();
 }
@@ -220,6 +256,7 @@ int main(int argc, char** argv) {
         update_render_frame(dt);
         end_input_frame();
         dt = (float) (SDL_GetTicks() - frame_start_tick) / 1000.0f;
+        global_elapsed_time += dt;
     }
 
     deinitialize();

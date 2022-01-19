@@ -161,6 +161,30 @@ void unload_texture(texture_id texture) {
 }
 
 void get_texture_dimensions(texture_id texture, int* width, int* height) {
+    assert((texture.id >= 0 && texture.id < RENDERER_MAX_TEXTURES) && "wtf? bad texture id??");
     SDL_Texture* texture_object = textures[texture.id];
     SDL_QueryTexture(texture_object, 0, 0, width, height);
+}
+
+void get_text_dimensions(font_id font, const char* cstr, int* width, int* height) {
+    assert((font.id >= 0 && font.id < RENDERER_MAX_FONTS) && "wtf? bad font id??");
+    TTF_Font* font_object = fonts[font.id];
+
+    int line_starting_index = 0;
+    char* current_line;
+
+    int max_width = 0;
+    int max_height = 0;
+
+    while (current_line = get_line_starting_from(cstr, &line_starting_index)) {
+        int current_width = TTF_SizeUTF8(font_object, current_line, &max_width, NULL);
+        if (current_width > max_width) {
+            max_width = current_width;
+        }
+
+        max_height += TTF_FontHeight(font_object);
+    }
+
+    safe_assignment(width)  = max_width;
+    safe_assignment(height) = max_height;
 }

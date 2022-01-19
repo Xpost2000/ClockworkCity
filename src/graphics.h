@@ -28,6 +28,7 @@ shared_storage union color4f COLOR4F_WHITE = {{1, 1, 1, 1}};
 union color4f color4f(float r, float g, float b, float a);
 
 void get_texture_dimensions(texture_id texture, int* width, int* height);
+void get_text_dimensions(font_id font, const char* cstr, int* width, int* height);
 
 font_id    load_font(const char* font_path, int size);
 texture_id load_texture(const char* texture_path);
