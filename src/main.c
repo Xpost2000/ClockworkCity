@@ -38,15 +38,28 @@ static void handle_sdl_event(SDL_Event event) {
     }
 }
 
+texture_id knight_twoview;
+void update_render_frame(float dt) {
+    begin_graphics_frame(); {
+        clear_color(COLOR4F_BLACK);
+        draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 1.0, 1.0));
+        draw_texture(knight_twoview, 150, 100, 200, 200, COLOR4F_WHITE);
+    } end_graphics_frame();
+}
+
 int main(int argc, char** argv) {
     unused_expression(argc);
     unused_expression(argv);
 
     initialize();
 
-    texture_id knight_twoview = load_texture("assets/knight_twoview.png");
+    knight_twoview = load_texture("assets/knight_twoview.png");
+
+    uint32_t frame_start_tick = 0;
+    float dt = 0.0f;
 
     while (running) {
+        frame_start_tick = SDL_GetTicks();
         {
             SDL_Event event;
 
@@ -55,11 +68,8 @@ int main(int argc, char** argv) {
             }
         }
 
-        begin_graphics_frame(); {
-            clear_color(COLOR4F_BLACK);
-            draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 1.0, 1.0));
-            draw_texture(knight_twoview, 150, 100, 200, 200, COLOR4F_WHITE);
-        } end_graphics_frame();
+        update_render_frame(dt);
+        dt = (float) (SDL_GetTicks() - frame_start_tick) / 1000.0f;
     }
 
     deinitialize();
