@@ -53,14 +53,16 @@ local char* get_line_starting_from(char* text, int* starting_from) {
         return NULL;
     }
 
-    for (int index = *starting_from; index < string_length; ++index) {
+    int index;
+    for (index = *starting_from; index < string_length; ++index) {
         if (text[index] == '\n') {
-            memcpy(temporary_line_buffer, text + *starting_from,
-                   index - *starting_from);
-            *starting_from = (index+1);
             break;
         }
     }
+
+    memcpy(temporary_line_buffer, text + *starting_from,
+           index - *starting_from);
+    *starting_from = (index+1);
 
     return temporary_line_buffer;
 }

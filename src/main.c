@@ -39,7 +39,7 @@ static void deinitialize(void) {
 }
 
 static int translate_sdl_scancode(int scancode) {
-    static uint8_t _sdl_scancode_to_input_keycode_table[255] = {
+    static int _sdl_scancode_to_input_keycode_table[255] = {
         // top row
         [SDL_SCANCODE_ESCAPE]    = KEY_ESCAPE,
         [SDL_SCANCODE_1]         = KEY_1,
@@ -184,7 +184,11 @@ void update_render_frame(float dt) {
         draw_text(test_font, 0, 0, format_temp("%f ms elapsed %f fps\n", dt, (float)1/dt), COLOR4F_RED);
 
         if (is_key_down(KEY_W)) {
-            draw_text(test_font, 0, 500, "key down", COLOR4F_RED);
+            draw_text(test_font, 200, 500, "key down", COLOR4F_RED);
+        }
+
+        if (is_key_pressed(KEY_A)) {
+            printf("Hi babe\n");
         }
     } end_graphics_frame();
 }

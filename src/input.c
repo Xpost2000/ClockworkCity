@@ -16,6 +16,7 @@ void register_key_up(int keyid) {
 }
 
 bool is_key_down(int keyid) {
+    assert(keyid < KEY_COUNT && "invalid key id?");
     return global_input.current_state.keys[keyid];
 }
 
