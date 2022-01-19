@@ -79,18 +79,8 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 /* 
    TODO(jerry): allow scaled fonts later 
    not really a big deal though.
-   
-   TODO(jerry): probably doesn't handle new lines right now.
-   Not a big deal for day one anyways. Got more important shit to worry about
 */
-void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
-    TTF_Font* font_object = fonts[font.id];
-    assert(font_object && "weird... bad font?");
-
-    /*
-      sorry performance gods.
-      this is the easiest thing right now
-     */
+float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr, union color4f color) {
     SDL_Texture* rendered_text;
     SDL_Surface* text_surface = TTF_RenderUTF8_Blended(font_object, cstr,
                                                        (SDL_Color) {color.r * 255, color.g * 255,
@@ -99,8 +89,8 @@ void draw_text(font_id font, float x, float y, const char* cstr, union color4f c
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);
 
+    int dimensions[2] = {};
     {
-        int dimensions[2] = {};
         SDL_QueryTexture(rendered_text, 0, 0, dimensions, dimensions+1);
 
         SDL_RenderCopy(global_renderer, rendered_text,
@@ -108,6 +98,24 @@ void draw_text(font_id font, float x, float y, const char* cstr, union color4f c
     }
 
     SDL_DestroyTexture(rendered_text);
+    return dimensions[1];
+}
+void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
+    TTF_Font* font_object = fonts[font.id];
+    assert(font_object && "weird... bad font?");
+
+    /*
+      sorry performance gods.
+      this is the easiest thing right now
+     */
+    int line_starting_index = 0;
+    char* current_line;
+
+    float y_cursor = 0;
+    while (current_line = get_line_starting_from(cstr, &line_starting_index)) {
+        float line_offset = _draw_text_line(font_object, x, y + y_cursor, current_line, color);
+        y_cursor += line_offset;
+    }
 }
 
 texture_id load_texture(const char* texture_path) {

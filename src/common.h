@@ -21,9 +21,47 @@
 #define TEMPORARY_STORAGE_BUFFER_COUNT (4)
 
 
-#define array_count(x) (x / sizeof(*x))
+#define array_count(x) (sizeof(x) / sizeof(*x))
 #define zero_buffer_memory(x, l) memset(x, 0, l)
 #define zero_array(x) zero_buffer_memory(x, array_count(x))
+
+/*
+  "string" functions working from temporary functions.
+  Never expect to keep these, unless you clone
+*/
+local char* clone_cstring(char* cstr) {
+    size_t length = strlen(cstr);
+    char* buffer = malloc(length+1);
+
+    buffer[length] = 0;
+    memcpy(buffer, cstr, length);
+
+    return buffer;
+}
+
+/* starting from receives next line index.
+   only unix line endings. fuck windows
+ */
+local char* get_line_starting_from(char* text, int* starting_from) {
+    shared_storage char temporary_line_buffer[TEMPORARY_STORAGE_BUFFER_SIZE];
+    zero_array(temporary_line_buffer);
+
+    size_t string_length = strlen(text);
+    if (*starting_from >= string_length) {
+        return NULL;
+    }
+
+    for (int index = *starting_from; index < string_length; ++index) {
+        if (text[index] == '\n') {
+            memcpy(temporary_line_buffer, text + *starting_from,
+                   index - *starting_from);
+            *starting_from = (index+1);
+            break;
+        }
+    }
+
+    return temporary_line_buffer;
+}
 
 local char* format_temp(char* fmt, ...) {
     shared_storage int current_buffer = 0;
