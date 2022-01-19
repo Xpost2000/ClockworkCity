@@ -3,6 +3,7 @@ SRCFILES=src/main.c \
 	 src/graphics.h \
 	 src/input.c \
 	 src/input.h \
+	 src/game.c \
 	 src/common.h
 
 CFLAGS=-Wall -Wextra -std=c11 -ggdb3

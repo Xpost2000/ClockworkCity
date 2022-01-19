@@ -16,10 +16,15 @@ SDL_Window* global_window;
 local float global_elapsed_time = 0;
 bool running = true;
 
+void load_static_resources(void);
+void update_render_frame(float dt);
+
 static void initialize(void) {
     SDL_Init(SDL_INIT_EVERYTHING);
     IMG_Init(IMG_INIT_PNG);
     TTF_Init();
+
+    load_static_resources();
 
     global_window = SDL_CreateWindow(
         WINDOW_NAME,
@@ -191,52 +196,13 @@ static void handle_sdl_event(SDL_Event event) {
     }
 }
 
-texture_id knight_twoview;
-font_id    test_font;
-
-void update_render_frame(float dt) {
-    begin_graphics_frame(); {
-        clear_color(COLOR4F_BLACK);
-
-        draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 1.0, 1.0));
-
-        {
-            int dimens[2];
-            get_texture_dimensions(knight_twoview, dimens, dimens+1);
-            draw_texture(knight_twoview, 150, 100, dimens[0], dimens[1], COLOR4F_WHITE);
-        }
-
-        draw_text(test_font, 0, 0, format_temp("%f ms elapsed %f fps\n", dt, (float)1/dt), COLOR4F_RED);
-
-        if (is_key_down(KEY_W)) {
-            draw_text(test_font, 200, 500, "key down", COLOR4F_RED);
-        }
-
-        if (is_key_pressed(KEY_A)) {
-            printf("Hi babe\n");
-        }
-
-        {
-            int mouse[2];
-            int textdimens[2];
-            get_mouse_location(mouse, mouse+1);
-            {
-                char* text = "baby eating\nbaby :)\n";
-                get_text_dimensions(test_font, text, textdimens, textdimens+1);
-                draw_text(test_font, mouse[0] - textdimens[0]/2, mouse[1] - textdimens[1]/2, text, COLOR4F_RED);
-            }
-        }
-    } end_graphics_frame();
-}
+#include "game.c"
 
 int main(int argc, char** argv) {
     unused_expression(argc);
     unused_expression(argv);
 
     initialize();
-
-    knight_twoview = load_texture("assets/knight_twoview.png");
-    test_font      = load_font("assets/pxplusvga8.ttf", 16);
 
     uint32_t frame_start_tick = 0;
     float dt = 0.0f;
