@@ -27,8 +27,7 @@ struct entity {
     /* only acceleration is gravity for now. Don't care about other forces atm */
     float vx;
     float vy;
-
-    bool onground;
+    float jump_leniancy_timer;
 };
 
 struct world_block {
@@ -85,12 +84,17 @@ void do_player_input(float dt) {
         player.vx = VPIXELS_PER_METER * -5;
     }
 
+    if (roundf(player.vy) == 0) {
+        player.jump_leniancy_timer = 0.3;
+    }
+
     if (is_key_pressed(KEY_SPACE)) {
-        if (player.onground) {
+        if (player.jump_leniancy_timer > 0.0) {
             player.vy = VPIXELS_PER_METER * -8;
-            player.onground = false;
         }
     }
+
+    player.jump_leniancy_timer -= dt;
 }
 
 void do_physics(float dt) {
@@ -115,18 +119,20 @@ void do_physics(float dt) {
         }
     }
 
+    /*
+      NOTE(jerry):
+      little broken.
+     */
     {
         int old_player_y = player.y;
         player.y += player.vy * dt;
 
-        player.onground = false;
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
 
             if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
                 if (old_player_y + player.h <= block.y) {
                     player.y = block.y - player.h;
-                    player.onground = true;
                 } else if (old_player_y >= block.y + block.h) {
                     player.y = block.y + block.h;
                 }
@@ -152,7 +158,9 @@ void update_render_frame(float dt) {
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_text(test_font, 0, 0,
-                  format_temp("onground: %d\npx: %f\npy:%f\npvx: %f\npvy: %f\n", player.onground, player.x, player.y, player.vx, player.vy),
+                  format_temp("onground: %d\npx: %f\npy:%f\npvx: %f\npvy: %f\n",
+                              player.jump_leniancy_timer > 0,
+                              player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
 
     } end_graphics_frame();
