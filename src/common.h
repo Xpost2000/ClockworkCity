@@ -28,14 +28,15 @@
 local char* format_temp(char* fmt, ...) {
     shared_storage int current_buffer = 0;
     shared_storage char temporary_text_buffer[TEMPORARY_STORAGE_BUFFER_COUNT][TEMPORARY_STORAGE_BUFFER_SIZE] = {};
+
     char* target_buffer = temporary_text_buffer[current_buffer++];
-    zero_buffer_memory(target_buffer, TEMPORARY_STORAGE_BUFFER_SIZE);
-
-    va_list args;
-
-    va_start(args, fmt);
-    snprintf(target_buffer, TEMPORARY_STORAGE_BUFFER_SIZE, fmt, args);
-    va_end(args);
+    zero_buffer_memory(target_buffer, TEMPORARY_STORAGE_BUFFER_SIZE+1);
+    {
+        va_list args;
+        va_start(args, fmt);
+        int written = vsnprintf(target_buffer, TEMPORARY_STORAGE_BUFFER_SIZE-1, fmt, args);
+        va_end(args);
+    }
 
     if (current_buffer >= TEMPORARY_STORAGE_BUFFER_COUNT) {
         current_buffer = 0;
