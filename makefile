@@ -1,4 +1,7 @@
-SRCFILES=src/main.c
+SRCFILES=src/main.c \
+	 src/graphics.c \
+	 src/graphics.h
+
 CFLAGS=-Wall -Wextra -std=c11
 CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer`
 
@@ -11,7 +14,7 @@ run: game.exe
 	./game.exe
 
 game.exe: $(SRCFILES)
-	gcc src/main.c $(CFLAGS) $(CLIBS) -o $@
+	gcc src/main.c src/graphics.c $(CFLAGS) $(CLIBS) -o $@
 
 
 clean: 

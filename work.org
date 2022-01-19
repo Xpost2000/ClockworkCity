@@ -16,6 +16,9 @@
   
 ** <2022-01-19 Wed>
 *** TODO Sprite rendering,
+    :LOGBOOK:
+    CLOCK: [2022-01-19 Wed 15:05]
+    :END:
 *** TODO Text rendering (preferably sizing!),
 *** TODO Input from controller and keyboard
 *** TODO Basic platforming (collision, and physics),
