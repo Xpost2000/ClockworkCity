@@ -1,6 +1,6 @@
 SRCFILES=src/main.c
 CFLAGS=-Wall -Wextra -std=c11
-CLIBS=`pkg-config --libs --cflags sdl2`
+CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer`
 
 .phony: all clean build run
 
