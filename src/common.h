@@ -14,6 +14,8 @@
 #define unused_expression(x) (void)(x)
 #define unimplemented() assert(!"not implemented yet")
 
+#define not_really_important_assert(x) assert(x)
+
 #define local static
 #define shared_storage static
 
