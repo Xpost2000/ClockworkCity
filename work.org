@@ -1,0 +1,28 @@
+* Prejam / Engine Creation
+  The rules state
+  #+begin_quote
+  General purpose code, designing, bases and models,
+  placeholders, and story can be made before the start of the
+  jam. Here's clarification
+  #+end_quote
+
+  This is general purpose enough since I just need it for any open-world metroidvania. Design
+  will be done outside repo maybe?
+
+  I'm not expecting to target the web unlike with other gamejams since most metroidvanias ought to
+  be long enough that I shouldn't be able to play through them in an average browser session ya know?
+
+  I mean I'm using SDL2 so I guess I have that choice if I want
+  
+** <2022-01-19 Wed>
+*** TODO Sprite rendering,
+*** TODO Text rendering (preferably sizing!),
+*** TODO Input from controller and keyboard
+*** TODO Basic platforming (collision, and physics),
+*** TODO Wobbly camera (smooth lerp, and juicing shakes),
+*** TODO Looks like I need an opengl 2/3 renderer cause fuck me. I'll probably
+*** TODO Come up with tomorrow's tasklist for generic engine ness
+* Jam Time
+  When the jam starts put tasks here. This is game-specific stuff,
+  hopefully by this time I have a plan for the game plot and obviously
+  the engine should be ready by this time (or good enough...)
