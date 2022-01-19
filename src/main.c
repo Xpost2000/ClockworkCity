@@ -49,7 +49,12 @@ void update_render_frame(float dt) {
         clear_color(COLOR4F_BLACK);
 
         draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 1.0, 1.0));
-        draw_texture(knight_twoview, 150, 100, 200, 200, COLOR4F_WHITE);
+
+        {
+            int dimens[2];
+            get_texture_dimensions(knight_twoview, dimens, dimens+1);
+            draw_texture(knight_twoview, 150, 100, dimens[0], dimens[1], COLOR4F_WHITE);
+        }
 
         draw_text(test_font, 0, 0, format_temp("%f ms elapsed %f fps\n", dt, (float)1/dt), COLOR4F_RED);
     } end_graphics_frame();

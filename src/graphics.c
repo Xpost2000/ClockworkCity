@@ -159,3 +159,8 @@ void unload_font(font_id font) {
 void unload_texture(texture_id texture) {
     unimplemented();
 }
+
+void get_texture_dimensions(texture_id texture, int* width, int* height) {
+    SDL_Texture* texture_object = textures[texture.id];
+    SDL_QueryTexture(texture_object, 0, 0, width, height);
+}
