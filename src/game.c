@@ -108,19 +108,16 @@ void do_player_input(float dt) {
 
     if (is_key_pressed(KEY_SPACE)) {
         if (player.onground) {
-            player.vy = VPIXELS_PER_METER * -30;
+            player.vy = VPIXELS_PER_METER * -10;
             player.onground = false;
         }
-        /* if (player.jump_leniancy_timer > 0.0) { */
-        /*     player.vy = VPIXELS_PER_METER * -8; */
-        /* } */
     }
 
     player.jump_leniancy_timer -= dt;
 }
 
 void do_physics(float dt) {
-    player.vy += VPIXELS_PER_METER*80 * dt;
+    player.vy += VPIXELS_PER_METER*13 * dt;
 
     {
         float old_player_x = player.x;
@@ -184,6 +181,8 @@ void update_render_frame(float dt) {
     begin_graphics_frame(); {
         clear_color(COLOR4F_BLACK);
 
+        /* camera_set_focus_position(player.x - player.w/2, player.y - player.h/2); */
+
         do_player_input(dt);
         do_physics(dt);
 
@@ -194,11 +193,13 @@ void update_render_frame(float dt) {
         }
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+
+        /* camera_reset_transform(); */
+
         draw_text(test_font, 0, 0,
                   format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n",
                               player.onground,
                               player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
-
     } end_graphics_frame();
 }
