@@ -5,6 +5,10 @@ typedef struct {
     uint16_t id;
 } texture_id;
 
+typedef struct {
+    uint16_t id;
+} font_id;
+
 union color4f {
     struct {
         float r;
@@ -23,7 +27,9 @@ shared_storage union color4f COLOR4F_WHITE = {{1, 1, 1, 1}};
 
 union color4f color4f(float r, float g, float b, float a);
 
+font_id    load_font(const char* font_path, int size);
 texture_id load_texture(const char* texture_path);
+void       unload_font(font_id font);
 void       unload_texture(texture_id texture);
 
 void graphics_initialize(void* window_handle);
@@ -37,5 +43,6 @@ void clear_color(union color4f color);
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color);
+void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
 
 #endif

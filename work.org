@@ -20,10 +20,14 @@
     CLOCK: [2022-01-19 Wed 15:05]--[2022-01-19 Wed 15:26] =>  0:21
     :END:
 *** TODO Text rendering (preferably sizing!),
+    :LOGBOOK:
+    CLOCK: [2022-01-19 Wed 15:31]--[2022-01-19 Wed 15:55] =>  0:24
+    :END:
 *** TODO Input from controller and keyboard
 *** TODO Basic platforming (collision, and physics),
 *** TODO Wobbly camera (smooth lerp, and juicing shakes),
-*** TODO Looks like I need an opengl 2/3 renderer cause fuck me. I'll probably
+*** TODO Looks like I need an opengl 2/3 renderer cause fuck me. (not today?)
+*** TODO Cleanup work (will figure out later)
 *** TODO Come up with tomorrow's tasklist for generic engine ness
 * Jam Time
   When the jam starts put tasks here. This is game-specific stuff,

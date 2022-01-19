@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "common.h"
 #include "graphics.h"
@@ -12,6 +13,7 @@ bool running = true;
 static void initialize(void) {
     SDL_Init(SDL_INIT_EVERYTHING);
     IMG_Init(IMG_INIT_PNG);
+    TTF_Init();
 
     global_window = SDL_CreateWindow(
         WINDOW_NAME,
@@ -26,6 +28,7 @@ static void initialize(void) {
 static void deinitialize(void) {
     graphics_deinitialize();
     SDL_DestroyWindow(global_window);
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -39,11 +42,20 @@ static void handle_sdl_event(SDL_Event event) {
 }
 
 texture_id knight_twoview;
+font_id    test_font;
+
+float x = 0;
 void update_render_frame(float dt) {
     begin_graphics_frame(); {
         clear_color(COLOR4F_BLACK);
+
         draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 1.0, 1.0));
         draw_texture(knight_twoview, 150, 100, 200, 200, COLOR4F_WHITE);
+
+        draw_text(test_font, x, 0, format_temp("c = %d\n", 8), COLOR4F_RED);
+        x += dt * 100;
+        if (x >= 1280) x = 0;
+        /* draw_text(test_font, 0, 0, format_temp("%f ms elapsed\n", dt), COLOR4F_RED); */
     } end_graphics_frame();
 }
 
@@ -54,6 +66,7 @@ int main(int argc, char** argv) {
     initialize();
 
     knight_twoview = load_texture("assets/knight_twoview.png");
+    test_font      = load_font("assets/pxplusvga8.ttf", 24);
 
     uint32_t frame_start_tick = 0;
     float dt = 0.0f;

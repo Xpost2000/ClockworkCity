@@ -1,6 +1,7 @@
 SRCFILES=src/main.c \
 	 src/graphics.c \
-	 src/graphics.h
+	 src/graphics.h \
+	 src/common.h
 
 CFLAGS=-Wall -Wextra -std=c11
 CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer sdl2_image`
