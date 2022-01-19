@@ -82,10 +82,14 @@ void do_player_input(float dt) {
     } else if (is_key_down(KEY_A)) {
         player.vx = VPIXELS_PER_METER * -5;
     }
+
+    if (is_key_pressed(KEY_SPACE)) {
+        player.vy = VPIXELS_PER_METER * -8;
+    }
 }
 
 void do_physics(float dt) {
-    player.vy += VPIXELS_PER_METER*9.8 * dt;
+    player.vy += VPIXELS_PER_METER*12 * dt;
 
     {
         int old_player_x = player.x;
@@ -101,6 +105,7 @@ void do_physics(float dt) {
                     player.x = block.x + block.w;
                 }
                 player.vx = 0;
+                break;
             }
         }
     }
@@ -115,10 +120,11 @@ void do_physics(float dt) {
             if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
                 if (old_player_y + player.h <= block.y) {
                     player.y = block.y - player.h;
-                } else if (old_player_y > block.y + block.h) {
+                } else if (old_player_y >= block.y + block.h) {
                     player.y = block.y + block.h;
                 }
                 player.vy = 0;
+                break;
             }
         }
     }
@@ -138,6 +144,9 @@ void update_render_frame(float dt) {
         }
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+        draw_text(test_font, 0, 0,
+                  format_temp("px: %f\npy:%f\npvx: %f\npvy: %f\n", player.x, player.y, player.vx, player.vy),
+        COLOR4F_WHITE);
 
     } end_graphics_frame();
 }
