@@ -15,17 +15,18 @@
   I mean I'm using SDL2 so I guess I have that choice if I want
   
 ** <2022-01-19 Wed>
-*** TODO Sprite rendering,
+*** DONE Sprite rendering,
     :LOGBOOK:
     CLOCK: [2022-01-19 Wed 15:05]--[2022-01-19 Wed 15:26] =>  0:21
     :END:
-*** TODO Text rendering (preferably sizing!),
+*** DONE Text rendering (preferably sizing!),
     :LOGBOOK:
     CLOCK: [2022-01-19 Wed 15:31]--[2022-01-19 Wed 15:55] =>  0:24
     :END:
-*** TODO Input from controller and keyboard
+*** TODO Input from keyboard
 *** TODO Basic platforming (collision, and physics),
 *** TODO Wobbly camera (smooth lerp, and juicing shakes),
+*** TODO Input from controller
 *** TODO Looks like I need an opengl 2/3 renderer cause fuck me. (not today?)
 *** TODO Cleanup work (will figure out later)
 *** TODO Come up with tomorrow's tasklist for generic engine ness
