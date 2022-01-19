@@ -27,6 +27,7 @@ struct entity {
     /* only acceleration is gravity for now. Don't care about other forces atm */
     float vx;
     float vy;
+    bool onground;
     float jump_leniancy_timer;
 };
 
@@ -71,6 +72,22 @@ bool rectangle_intersects(float x1, float y1, float w1, float h1, float x2, floa
     return (x1min < x2max && x1max > x2min) && (y1min < y2max && y1max > y2min);
 }
 
+bool rectangle_intersects1(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
+    float x1min = x1;
+    float x1max = x1 + w1;
+
+    float y1min = y1;
+    float y1max = y1 + h1;
+
+    float x2min = x2;
+    float x2max = x2 + w2;
+
+    float y2min = y2;
+    float y2max = y2 + h2;
+
+    return (x1min < x2max && x1max > x2min) && (y1min <= y2max && y1max >= y2min);
+}
+
 void load_static_resources(void) {
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
@@ -89,9 +106,13 @@ void do_player_input(float dt) {
     }
 
     if (is_key_pressed(KEY_SPACE)) {
-        if (player.jump_leniancy_timer > 0.0) {
+        if (player.onground) {
             player.vy = VPIXELS_PER_METER * -8;
+            player.onground = false;
         }
+        /* if (player.jump_leniancy_timer > 0.0) { */
+        /*     player.vy = VPIXELS_PER_METER * -8; */
+        /* } */
     }
 
     player.jump_leniancy_timer -= dt;
@@ -122,17 +143,22 @@ void do_physics(float dt) {
     /*
       NOTE(jerry):
       little broken.
+      
+      This requires more finegrained checks for "onground". I need to actually check if I'm touching
+      the tops of the rectangles which is a <= >= check.
      */
     {
         int old_player_y = player.y;
         player.y += player.vy * dt;
 
+        player.onground = false;
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
 
-            if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
+            if (rectangle_intersects1(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
                 if (old_player_y + player.h <= block.y) {
-                    player.y = block.y - player.h;
+                    player.y = block.y - (player.h);
+                    player.onground = true;
                 } else if (old_player_y >= block.y + block.h) {
                     player.y = block.y + block.h;
                 }
@@ -159,7 +185,7 @@ void update_render_frame(float dt) {
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_text(test_font, 0, 0,
                   format_temp("onground: %d\npx: %f\npy:%f\npvx: %f\npvy: %f\n",
-                              player.jump_leniancy_timer > 0,
+                              player.onground,
                               player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
 
