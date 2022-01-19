@@ -27,6 +27,8 @@ struct entity {
     /* only acceleration is gravity for now. Don't care about other forces atm */
     float vx;
     float vy;
+
+    bool onground;
 };
 
 struct world_block {
@@ -84,7 +86,10 @@ void do_player_input(float dt) {
     }
 
     if (is_key_pressed(KEY_SPACE)) {
-        player.vy = VPIXELS_PER_METER * -8;
+        if (player.onground) {
+            player.vy = VPIXELS_PER_METER * -8;
+            player.onground = false;
+        }
     }
 }
 
@@ -114,12 +119,14 @@ void do_physics(float dt) {
         int old_player_y = player.y;
         player.y += player.vy * dt;
 
+        player.onground = false;
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
 
             if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
                 if (old_player_y + player.h <= block.y) {
                     player.y = block.y - player.h;
+                    player.onground = true;
                 } else if (old_player_y >= block.y + block.h) {
                     player.y = block.y + block.h;
                 }
@@ -145,7 +152,7 @@ void update_render_frame(float dt) {
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_text(test_font, 0, 0,
-                  format_temp("px: %f\npy:%f\npvx: %f\npvy: %f\n", player.x, player.y, player.vx, player.vy),
+                  format_temp("onground: %d\npx: %f\npy:%f\npvx: %f\npvy: %f\n", player.onground, player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
 
     } end_graphics_frame();
