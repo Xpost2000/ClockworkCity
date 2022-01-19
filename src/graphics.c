@@ -1,10 +1,15 @@
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
 #include "common.h"
 #include "graphics.h"
 
-#include <SDL2/SDL.h>
+#define RENDERER_MAX_TEXTURES (2048)
+local uint16_t texture_count                         = 0;
+local SDL_Texture*   textures[RENDERER_MAX_TEXTURES] = {};
 
-static SDL_Renderer* global_renderer;
-static SDL_Window*   global_window;
+local SDL_Renderer* global_renderer;
+local SDL_Window*   global_window;
 
 inline union color4f color4f(float r, float g, float b, float a) {
     return (union color4f) {
@@ -29,7 +34,7 @@ void end_graphics_frame(void) {
     SDL_RenderPresent(global_renderer); 
 }
 
-static void _set_draw_color(union color4f color) {
+local void _set_draw_color(union color4f color) {
     SDL_SetRenderDrawColor(global_renderer, color.r * 255, color.g * 255,
                            color.b * 255, color.a * 255);
 }
@@ -47,4 +52,37 @@ void draw_filled_rectangle(float x, float y, float w, float h, union color4f col
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
     SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
+}
+
+void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color) {
+    SDL_Texture* texture_object = textures[texture.id];
+    assert(texture_object && "weird... bad texture?");
+
+    SDL_SetTextureColorMod(texture_object, color.r * 255, color.g * 255, color.b * 255);
+    SDL_SetTextureAlphaMod(texture_object, color.a * 255);
+
+    SDL_RenderCopy(global_renderer, texture_object,
+                   NULL, &(SDL_Rect){x, y, w, h});
+}
+
+texture_id load_texture(const char* texture_path) {
+    uint16_t free_id = texture_count++;
+    texture_id result = {
+        .id = free_id
+    };
+
+    SDL_Surface* image_surface = IMG_Load(texture_path);
+
+    assert(texture_count < RENDERER_MAX_TEXTURES && "too many textures");
+    assert(image_surface && "bad image");
+
+    textures[free_id] =
+        SDL_CreateTextureFromSurface(global_renderer, image_surface);
+
+    SDL_FreeSurface(image_surface);
+    return result;
+}
+
+void unload_texture(texture_id texture) {
+    // TODO(jerry);
 }

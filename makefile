@@ -3,7 +3,7 @@ SRCFILES=src/main.c \
 	 src/graphics.h
 
 CFLAGS=-Wall -Wextra -std=c11
-CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer`
+CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer sdl2_image`
 
 .phony: all clean build run
 

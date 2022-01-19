@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
 #include "common.h"
 #include "graphics.h"
 
@@ -9,6 +11,7 @@ bool running = true;
 
 static void initialize(void) {
     SDL_Init(SDL_INIT_EVERYTHING);
+    IMG_Init(IMG_INIT_PNG);
 
     global_window = SDL_CreateWindow(
         WINDOW_NAME,
@@ -23,6 +26,7 @@ static void initialize(void) {
 static void deinitialize(void) {
     graphics_deinitialize();
     SDL_DestroyWindow(global_window);
+    IMG_Quit();
     SDL_Quit();
 }
 
@@ -40,6 +44,8 @@ int main(int argc, char** argv) {
 
     initialize();
 
+    texture_id knight_twoview = load_texture("assets/knight_twoview.png");
+
     while (running) {
         {
             SDL_Event event;
@@ -51,7 +57,8 @@ int main(int argc, char** argv) {
 
         begin_graphics_frame(); {
             clear_color(COLOR4F_BLACK);
-            draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 0.0, 1.0));
+            draw_filled_rectangle(100, 100, 250, 300, color4f(1.0, 0.0, 1.0, 1.0));
+            draw_texture(knight_twoview, 150, 100, 200, 200, COLOR4F_WHITE);
         } end_graphics_frame();
     }
 
