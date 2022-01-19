@@ -30,7 +30,7 @@
 *** DONE Input from mouse
 *** TODO Basic platforming (collision, and physics),
     :LOGBOOK:
-    CLOCK: [2022-01-19 Wed 17:25]
+    CLOCK: [2022-01-19 Wed 17:25]--[2022-01-19 Wed 18:25] =>  1:00
     :END:
 *** TODO Wobbly camera (smooth lerp, and juicing shakes),
 *** TODO Input from controller

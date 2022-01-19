@@ -72,7 +72,8 @@ bool rectangle_intersects(float x1, float y1, float w1, float h1, float x2, floa
     return (x1min < x2max && x1max > x2min) && (y1min < y2max && y1max > y2min);
 }
 
-bool rectangle_intersects1(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
+/*yes there's a difference*/
+bool rectangle_touching(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
     float x1min = x1;
     float x1max = x1 + w1;
 
@@ -85,7 +86,7 @@ bool rectangle_intersects1(float x1, float y1, float w1, float h1, float x2, flo
     float y2min = y2;
     float y2max = y2 + h2;
 
-    return (x1min < x2max && x1max > x2min) && (y1min <= y2max && y1max >= y2min);
+    return (x1min <= x2max && x1max >= x2min) && (y1min <= y2max && y1max >= y2min);
 }
 
 void load_static_resources(void) {
@@ -107,7 +108,7 @@ void do_player_input(float dt) {
 
     if (is_key_pressed(KEY_SPACE)) {
         if (player.onground) {
-            player.vy = VPIXELS_PER_METER * -8;
+            player.vy = VPIXELS_PER_METER * -30;
             player.onground = false;
         }
         /* if (player.jump_leniancy_timer > 0.0) { */
@@ -119,10 +120,10 @@ void do_player_input(float dt) {
 }
 
 void do_physics(float dt) {
-    player.vy += VPIXELS_PER_METER*12 * dt;
+    player.vy += VPIXELS_PER_METER*80 * dt;
 
     {
-        int old_player_x = player.x;
+        float old_player_x = player.x;
         player.x += player.vx * dt;
 
         for (int index = 0; index < block_count; ++index) {
@@ -140,31 +141,41 @@ void do_physics(float dt) {
         }
     }
 
-    /*
-      NOTE(jerry):
-      little broken.
-      
-      This requires more finegrained checks for "onground". I need to actually check if I'm touching
-      the tops of the rectangles which is a <= >= check.
-     */
+    /* 
+       vertical axis check is a bit more complicated because onground is a bit iffy to deal with like this.
+       Due to the way collisions are resolved to avoid the way I usually resolve them with plain AABBs (which looks
+       really inaccurate on my old platformy things). The touching vs. intersection check needs to happen separately
+       
+       That's fine though... Not many game entities that need an onground check any how I'm sure. The rest of the physics
+       is pretty standard though.
+    */
     {
-        int old_player_y = player.y;
+        float old_player_y = player.y;
         player.y += player.vy * dt;
 
+        int first_top_intersection = 0;
         player.onground = false;
+
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
 
-            if (rectangle_intersects1(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
+            if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
                 if (old_player_y + player.h <= block.y) {
                     player.y = block.y - (player.h);
-                    player.onground = true;
+                    first_top_intersection = index;
                 } else if (old_player_y >= block.y + block.h) {
                     player.y = block.y + block.h;
                 }
                 player.vy = 0;
                 break;
             }
+        }
+
+        for (int index = first_top_intersection; index < block_count && !player.onground; ++index) {
+            struct world_block block = blocks[index];
+            player.onground =
+                rectangle_touching(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)
+                && (old_player_y + player.h <= block.y);
         }
     }
 }
@@ -184,7 +195,7 @@ void update_render_frame(float dt) {
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_text(test_font, 0, 0,
-                  format_temp("onground: %d\npx: %f\npy:%f\npvx: %f\npvy: %f\n",
+                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n",
                               player.onground,
                               player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
