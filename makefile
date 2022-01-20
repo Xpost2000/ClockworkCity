@@ -1,6 +1,7 @@
 SRCFILES=src/main.c \
 	 src/graphics.c \
 	 src/graphics.h \
+	 src/camera.h \
 	 src/input.c \
 	 src/input.h \
 	 src/game.c \

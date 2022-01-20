@@ -92,6 +92,8 @@ bool rectangle_touching(float x1, float y1, float w1, float h1, float x2, float 
 void load_static_resources(void) {
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
+
+    /* camera_set_position(player.x - player.w/2, player.y - player.h/2); */
 }
 
 void do_player_input(float dt) {
@@ -181,7 +183,9 @@ void update_render_frame(float dt) {
     begin_graphics_frame(); {
         clear_color(COLOR4F_BLACK);
 
-        /* camera_set_focus_position(player.x - player.w/2, player.y - player.h/2); */
+        camera_set_focus_speed_x(9);
+        camera_set_focus_speed_y(3);
+        camera_set_focus_position(player.x + player.w/2, player.y + player.h/2);
 
         do_player_input(dt);
         do_physics(dt);
@@ -194,8 +198,8 @@ void update_render_frame(float dt) {
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
 
+        /*whoops*/
         /* camera_reset_transform(); */
-
         draw_text(test_font, 0, 0,
                   format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n",
                               player.onground,

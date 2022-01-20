@@ -28,7 +28,7 @@
     CLOCK: [2022-01-19 Wed 16:40]--[2022-01-19 Wed 16:53] =>  0:13
     :END:
 *** DONE Input from mouse
-*** TODO Basic platforming (collision, and physics),
+*** DONE Basic platforming (collision, and physics),
     :LOGBOOK:
     CLOCK: [2022-01-19 Wed 17:25]--[2022-01-19 Wed 18:25] =>  1:00
     :END:

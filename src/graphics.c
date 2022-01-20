@@ -8,6 +8,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "common.h"
+#include "camera.h"
 #include "graphics.h"
 
 #define RENDERER_MAX_TEXTURES (2048)
@@ -22,6 +23,75 @@ local TTF_Font* fonts[RENDERER_MAX_FONTS] = {};
 local SDL_Renderer* global_renderer;
 local SDL_Window*   global_window;
 
+int screen_dimensions[2] = {};
+
+/*camera code*/
+local struct camera global_camera = {};
+
+local float _camera_lerp(float a, float b, float t) {
+    return (1.0 - t) * a + (b * t);
+}
+
+local void _camera_transform_v2(float* x, float* y) {
+    assert(x && y);
+    assert(screen_dimensions[0] > 0 && screen_dimensions[1] > 0);
+
+    *x += screen_dimensions[0] / 2;
+    *x -= global_camera.visual_position_x;
+    *y += screen_dimensions[1] / 2;
+    *y -= global_camera.visual_position_y;
+}
+
+void camera_set_position(float x, float y) {
+    global_camera.visual_position_x = global_camera.target_position_x = global_camera.last_position_x = x;
+    global_camera.visual_position_y = global_camera.target_position_y = global_camera.last_position_y = y;
+}
+
+void camera_set_focus_position(float x, float y) {
+    global_camera.last_position_x = global_camera.visual_position_x;
+    global_camera.last_position_y = global_camera.visual_position_y;
+
+    global_camera.target_position_x = x;
+    global_camera.target_position_y = y;
+
+    global_camera.interpolation_time[0] = global_camera.interpolation_time[1] = 0.0;
+}
+
+void camera_set_focus_speed_x(float speed) {
+    global_camera.interpolation_speed[0] = speed;
+}
+
+void camera_set_focus_speed_y(float speed) {
+    global_camera.interpolation_speed[1] = speed;
+}
+
+void camera_set_focus_speed(float speed) {
+    global_camera.interpolation_speed[0] = global_camera.interpolation_speed[1] = speed;
+}
+
+void camera_update(float dt) {
+    for (int index = 0; index < 2; ++index) {
+        if (global_camera.interpolation_time[index] < 1.0) {
+            global_camera.interpolation_time[index] += dt * global_camera.interpolation_speed[index];
+        }
+    }
+
+    /*
+      Because of the frequency of set_focus_position... This is actually not linear but
+      quadratic. So this is technically the *wrong* way to use lerp.
+
+      But whatever.
+     */
+    global_camera.visual_position_x = _camera_lerp(global_camera.last_position_x, global_camera.target_position_x, global_camera.interpolation_time[0]);
+    global_camera.visual_position_y = _camera_lerp(global_camera.last_position_y, global_camera.target_position_y, global_camera.interpolation_time[1]);
+}
+
+void camera_reset_transform(void) {
+    global_camera = (struct camera) {
+        .interpolation_speed[0] = 1.0, .interpolation_speed[1] = 1.0
+    };
+}
+
 inline union color4f color4f(float r, float g, float b, float a) {
     return (union color4f) {
         .r = r, .g = g, .b = b, .a = a,
@@ -35,6 +105,11 @@ void graphics_initialize(void* window_handle) {
 
 void graphics_deinitialize(void) {
     SDL_DestroyRenderer(global_renderer);
+}
+
+void report_screen_dimensions(int* dimensions) {
+    screen_dimensions[0] = dimensions[0];
+    screen_dimensions[1] = dimensions[1];
 }
 
 void begin_graphics_frame(void) {
@@ -57,11 +132,13 @@ void clear_color(union color4f color) {
 
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
+    _camera_transform_v2(&x, &y);
     SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
 }
 
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
+    _camera_transform_v2(&x, &y);
     SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
 }
 
@@ -72,6 +149,7 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
     SDL_SetTextureColorMod(texture_object, color.r * 255, color.g * 255, color.b * 255);
     SDL_SetTextureAlphaMod(texture_object, color.a * 255);
 
+    _camera_transform_v2(&x, &y);
     SDL_RenderCopy(global_renderer, texture_object,
                    NULL, &(SDL_Rect){x, y, w, h});
 }
@@ -86,6 +164,7 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
                                                        (SDL_Color) {color.r * 255, color.g * 255,
                                                            color.b * 255, color.a * 255});
 
+    _camera_transform_v2(&x, &y);
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);
 

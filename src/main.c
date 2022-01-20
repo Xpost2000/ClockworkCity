@@ -8,6 +8,7 @@
 #include "common.h"
 
 #include "input.h"
+#include "camera.h"
 #include "graphics.h"
 
 #define WINDOW_NAME "Metroidvania Jam 15"
@@ -32,6 +33,7 @@ static void initialize(void) {
         1280, 720,
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
     );
+    report_screen_dimensions((int[]){1280, 720});
 
     graphics_initialize(global_window);
 }
@@ -151,6 +153,12 @@ static int translate_sdl_scancode(int scancode) {
 
 static void handle_sdl_event(SDL_Event event) {
     switch (event.type) {
+        case SDL_WINDOWEVENT_SIZE_CHANGED:
+        case SDL_WINDOWEVENT_RESIZED: {
+            int screen_dimensions[2];
+            SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
+            report_screen_dimensions(screen_dimensions);
+        } break;
         case SDL_QUIT: {
             running = false;
         } break;
@@ -219,7 +227,11 @@ int main(int argc, char** argv) {
         }
 
 
+        /*NOTE(jerry): camera should operate on "game"/"graphics" time
+         not IRL time ticks*/
+        camera_update(dt);
         update_render_frame(dt);
+
         end_input_frame();
         dt = (float) (SDL_GetTicks() - frame_start_tick) / 1000.0f;
         global_elapsed_time += dt;
