@@ -180,15 +180,21 @@ void do_physics(float dt) {
 }
 
 void update_render_frame(float dt) {
+    clear_color(COLOR4F_BLACK);
+
+
+    do_player_input(dt);
+    do_physics(dt);
+
     begin_graphics_frame(); {
-        clear_color(COLOR4F_BLACK);
+        /* might need to rethink camera interface. 
+           I still want it to operate under one global camera, but
+           obviously you don't always want the camera. */
+        set_active_camera(get_global_camera());
 
         camera_set_focus_speed_x(12);
         camera_set_focus_speed_y(5);
         camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
-
-        do_player_input(dt);
-        do_physics(dt);
 
         for (int index = 0; index < block_count; ++index) {
             struct world_block* block = blocks + index;
@@ -196,10 +202,11 @@ void update_render_frame(float dt) {
             draw_filled_rectangle(block->x, block->y, block->w, block->h, colors[index%array_count(colors)]);
         }
 
-        draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
 
-        /*whoops*/
-        /* camera_reset_transform(); */
+        draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+    } end_graphics_frame();
+
+    begin_graphics_frame(); {
         draw_text(test_font, 0, 0,
                   format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n",
                               player.onground,

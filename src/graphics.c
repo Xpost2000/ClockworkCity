@@ -27,12 +27,29 @@ local int screen_dimensions[2] = {};
 
 /*camera code*/
 local struct camera global_camera = {};
+local struct camera* active_camera = NULL;
+local struct camera dummy_camera = {};
+
+struct camera* get_global_camera(void) {
+    return &global_camera;
+}
+
+void set_active_camera(struct camera* camera) {
+    if (camera == NULL) {
+        active_camera = &dummy_camera;
+    } else {
+        active_camera = camera;
+    }
+}
 
 local float _camera_lerp(float a, float b, float t) {
     return (1.0 - t) * a + (b * t);
 }
 
 local void _camera_transform_v2(float* x, float* y) {
+    if (active_camera == &dummy_camera)
+        return;
+
     assert(x && y);
     assert(screen_dimensions[0] > 0 && screen_dimensions[1] > 0);
 
@@ -46,33 +63,38 @@ local void _camera_transform_v2(float* x, float* y) {
 }
 
 void camera_set_position(float x, float y) {
-    global_camera.visual_position_x = global_camera.target_position_x = global_camera.last_position_x = x;
-    global_camera.visual_position_y = global_camera.target_position_y = global_camera.last_position_y = y;
+    active_camera->visual_position_x = active_camera->target_position_x = active_camera->last_position_x = x;
+    active_camera->visual_position_y = active_camera->target_position_y = active_camera->last_position_y = y;
 }
 
 void camera_set_focus_position(float x, float y) {
-    global_camera.last_position_x = global_camera.visual_position_x;
-    global_camera.last_position_y = global_camera.visual_position_y;
+    active_camera->last_position_x = active_camera->visual_position_x;
+    active_camera->last_position_y = active_camera->visual_position_y;
 
-    global_camera.target_position_x = x;
-    global_camera.target_position_y = y;
+    active_camera->target_position_x = x;
+    active_camera->target_position_y = y;
 
-    global_camera.interpolation_time[0] = global_camera.interpolation_time[1] = 0.0;
+    active_camera->interpolation_time[0] = active_camera->interpolation_time[1] = 0.0;
 }
 
 void camera_set_focus_speed_x(float speed) {
-    global_camera.interpolation_speed[0] = speed;
+    active_camera->interpolation_speed[0] = speed;
 }
 
 void camera_set_focus_speed_y(float speed) {
-    global_camera.interpolation_speed[1] = speed;
+    active_camera->interpolation_speed[1] = speed;
 }
 
 void camera_set_focus_speed(float speed) {
-    global_camera.interpolation_speed[0] = global_camera.interpolation_speed[1] = speed;
+    active_camera->interpolation_speed[0] = active_camera->interpolation_speed[1] = speed;
 }
 
 void camera_update(float dt) {
+    /*
+      this doesn't touch active camera. All cameras should be free to update
+      on their own. It really shouldn't matter, and it probably looks more consistent
+      this way.
+     */
     for (int index = 0; index < 2; ++index) {
         if (global_camera.interpolation_time[index] < 1.0) {
             global_camera.interpolation_time[index] += dt * global_camera.interpolation_speed[index];
@@ -104,6 +126,7 @@ inline union color4f color4f(float r, float g, float b, float a) {
 void graphics_initialize(void* window_handle) {
     global_window = window_handle;
     global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1, SDL_RENDERER_ACCELERATED);
+    active_camera = &global_camera;
 }
 
 void graphics_deinitialize(void) {
@@ -120,14 +143,19 @@ local void _set_draw_color(union color4f color) {
                            color.b * 255, color.a * 255);
 }
 
+/*rename?*/
 void begin_graphics_frame(void) {
-    
+    /* TBD or semantic */
+    set_active_camera(NULL);
 }
 
 void end_graphics_frame(void) {
-    SDL_RenderPresent(global_renderer); 
+    /* TBD */
 }
 
+void present_graphics_frame(void) {
+    SDL_RenderPresent(global_renderer);
+}
 
 void clear_color(union color4f color) {
     _set_draw_color(color);

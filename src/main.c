@@ -230,12 +230,12 @@ int main(int argc, char** argv) {
             }
         }
 
-
         /*NOTE(jerry): camera should operate on "game"/"graphics" time
          not IRL time ticks*/
         camera_update(dt);
         update_render_frame(dt);
 
+        present_graphics_frame();
         end_input_frame();
         dt = (float) (SDL_GetTicks() - frame_start_tick) / 1000.0f;
         global_elapsed_time += dt;
