@@ -41,29 +41,37 @@
 
    NOTE(jerry): appointment at 3:10 and I have to stick around until 4:20 for the
    second one? What was that I said about getting anything done?? hahaha
-   
-*** TODO Input from controller
-*** TODO Basic sound effects
+
+   Actually ya know what. I'm not doin this today.
+** <2022-01-21 Fri>
+*** TODO (this)Input from controller
+*** TODO (this)Basic sound effects
     sdl mixer is passable enough. not good at audio
+*** TODO (this)Subrectangle sprite rendering
+*** TODO (this)Tile world universe
+    no editor yet.
+    If I'm genuinely lazy, I could just used tiled but lets not.
+*** TODO (this)One sided tiles
+*** TODO (this)Tile slopes
+*** TODO (this)Tile stairs
+*** TODO (??) Tile world editor
+    This will eventually be expanded to a world link editor.
+    I'll have to code in specific functionality per game, but this is generally
+    pretty generic stuff, so should be fair game since there's no assets. I could use
+    this to prototype world layout I guess...
+*** TODO (reallybasicthis)particle systems that can collide and bounce
+    Looks kind of cool I guess, not necessarily interactive.
 *** TODO Try to build on ubuntu or something
     someone teach me how to distribute on linux, I'll provide source anyways but
     senpai pls.
-*** TODO Subrectangle sprite rendering
-*** TODO Tile world universe
-    no editor yet.
-    If I'm genuinely lazy, I could just used tiled but lets not.
-*** TODO One sided tiles
-*** TODO Tile slopes
-*** TODO Tile stairs
 *** TODO Rope like objects (this is definitely not possible without custom rendering lol)
     Oh no bad pixel art engage... Is this really worth it considering what I have to draw?
     uh...... Well, if I need it... I'll have it I guess.
-*** TODO particle systems that can collide and bounce
-    Looks kind of cool I guess, not necessarily interactive.
 *** TODO Basic debug gui stuff
-*** TODO Consider thinking of the entity system
+*** TODO (maybe think, but no code?)Consider thinking of the entity system
 *** TODO maybe refactor stuff?
-*** TODO Start OpenGL renderer as the last thing I guess.
+*** TODO (tomorrow, (finish over weekend))Start OpenGL renderer as the last thing I guess.
+
 * Jam Time
   When the jam starts put tasks here. This is game-specific stuff,
   hopefully by this time I have a plan for the game plot and obviously
