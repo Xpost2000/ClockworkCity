@@ -38,6 +38,9 @@
 ** <2022-01-20 Thu>
    Dental appointment so I'll be late, day 2, more basic stuff, just do
    most of the stuff on the list. 25 or so days?
+
+   NOTE(jerry): appointment at 3:10 and I have to stick around until 4:20 for the
+   second one? What was that I said about getting anything done?? hahaha
    
 *** TODO Input from controller
 *** TODO Basic sound effects
