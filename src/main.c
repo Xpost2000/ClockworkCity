@@ -30,10 +30,14 @@ static void initialize(void) {
     global_window = SDL_CreateWindow(
         WINDOW_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        1280, 720,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
+        640, 480,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP
     );
-    report_screen_dimensions((int[]){1280, 720});
+    {
+        int screen_dimensions[2];
+        SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
+        report_screen_dimensions(screen_dimensions);
+    }
 
     graphics_initialize(global_window);
 }

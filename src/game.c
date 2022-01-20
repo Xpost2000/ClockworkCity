@@ -183,9 +183,9 @@ void update_render_frame(float dt) {
     begin_graphics_frame(); {
         clear_color(COLOR4F_BLACK);
 
-        camera_set_focus_speed_x(9);
-        camera_set_focus_speed_y(3);
-        camera_set_focus_position(player.x + player.w/2, player.y + player.h/2);
+        camera_set_focus_speed_x(12);
+        camera_set_focus_speed_y(5);
+        camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
 
         do_player_input(dt);
         do_physics(dt);

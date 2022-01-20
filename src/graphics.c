@@ -23,7 +23,7 @@ local TTF_Font* fonts[RENDERER_MAX_FONTS] = {};
 local SDL_Renderer* global_renderer;
 local SDL_Window*   global_window;
 
-int screen_dimensions[2] = {};
+local int screen_dimensions[2] = {};
 
 /*camera code*/
 local struct camera global_camera = {};
@@ -36,10 +36,13 @@ local void _camera_transform_v2(float* x, float* y) {
     assert(x && y);
     assert(screen_dimensions[0] > 0 && screen_dimensions[1] > 0);
 
-    *x += screen_dimensions[0] / 2;
     *x -= global_camera.visual_position_x;
-    *y += screen_dimensions[1] / 2;
+    *x += screen_dimensions[0] / 2.0f;
     *y -= global_camera.visual_position_y;
+    *y += screen_dimensions[1] / 2.0f;
+
+    *x = floorf(*x);
+    *y = floorf(*y);
 }
 
 void camera_set_position(float x, float y) {
@@ -112,6 +115,11 @@ void report_screen_dimensions(int* dimensions) {
     screen_dimensions[1] = dimensions[1];
 }
 
+local void _set_draw_color(union color4f color) {
+    SDL_SetRenderDrawColor(global_renderer, color.r * 255, color.g * 255,
+                           color.b * 255, color.a * 255);
+}
+
 void begin_graphics_frame(void) {
     
 }
@@ -120,10 +128,6 @@ void end_graphics_frame(void) {
     SDL_RenderPresent(global_renderer); 
 }
 
-local void _set_draw_color(union color4f color) {
-    SDL_SetRenderDrawColor(global_renderer, color.r * 255, color.g * 255,
-                           color.b * 255, color.a * 255);
-}
 
 void clear_color(union color4f color) {
     _set_draw_color(color);
@@ -179,6 +183,7 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
     SDL_DestroyTexture(rendered_text);
     return dimensions[1];
 }
+
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
     TTF_Font* font_object = fonts[font.id];
     assert(font_object && "weird... bad font?");
