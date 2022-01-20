@@ -32,7 +32,7 @@
     :LOGBOOK:
     CLOCK: [2022-01-19 Wed 17:25]--[2022-01-19 Wed 18:25] =>  1:00
     :END:
-*** TODO Wobbly camera (smooth lerp, and juicing shakes),
+*** DONE Wobbly camera (smooth lerp, and juicing shakes),
 *** TODO Input from controller
 *** TODO Looks like I need an opengl 2/3 renderer cause fuck me. (not today?)
 *** TODO Cleanup work (will figure out later)
