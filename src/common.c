@@ -72,7 +72,7 @@ size_t file_length(char* path) {
 
     if (f) {
         fseek(f, 0, SEEK_END);
-        result = ftell();
+        result = ftell(f);
         fclose(f);
     }
 
@@ -97,5 +97,3 @@ char* load_entire_file(char* path) {
 
     return new_buffer;
 }
-
-#endif
