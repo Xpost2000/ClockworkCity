@@ -29,7 +29,7 @@
 
 /*beh*/
 #define safe_assignment(x) if (x) *x 
-
+#define random_element(fixed_size_array) fixed_size_array[random_ranged_integer(0, array_count(fixed_size_array))]
 /*
   "string" functions working from temporary functions.
   Never expect to keep these, unless you clone
@@ -42,6 +42,14 @@ local char* clone_cstring(char* cstr) {
     memcpy(buffer, cstr, length);
 
     return buffer;
+}
+
+local float random_float(void) {
+    return ((float)rand() / (float)(RAND_MAX));
+}
+
+local int random_ranged_integer(int min, int max) {
+    return (rand() % (max - min)) + min;
 }
 
 /* starting from receives next line index.
