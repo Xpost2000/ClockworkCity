@@ -37,8 +37,13 @@ int random_ranged_integer(int min, int max);
 char* get_line_starting_from(char* text, int* starting_from);
 char* format_temp(char* fmt, ...);
 
-
 void read_file_into_buffer(char* path, char* dest, size_t length);
 char* load_entire_file(char* path);
+
+int count_lines_of_cstring(char* string);
+
+void* system_allocate_memory(size_t amount);
+void  system_deallocate_memory(void* ptr);
+void* system_allocate_zeroed_memory(size_t amount);
 
 #endif

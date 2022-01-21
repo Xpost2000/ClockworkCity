@@ -16,10 +16,128 @@ sound_id   test_sound2;
 */
 
 /*
+  world_tilemap temporary experimental work
+  
+  using a "fat format", as I try to figure out what works okay, and I clean up everything after I have
+  something that's a little more acceptable since I have so little code to help write anything right now lololo.
+*/
+
+enum tile_id {
+    TILE_NONE, /*shouldn't happen but okay*/
+    TILE_SOLID,
+    TILE_SLOPE_BL,
+    TILE_SLOPE_BR,
+    TILE_SLOPE_R,
+    TILE_SLOPE_L,
+    TILE_ID_COUNT,
+};
+char* tile_id_filestrings[] = {
+    0,
+    "assets/testtiles/block.png",
+    "assets/testtiles/slope45degbl.png",
+    "assets/testtiles/slope45degbr.png",
+    "assets/testtiles/slope45degr.png",
+    "assets/testtiles/slope45degl.png",
+};
+texture_id tile_textures[TILE_ID_COUNT] = {};
+void DEBUG_load_all_tile_assets(void) {
+    for (unsigned i = 0; i < TILE_ID_COUNT; ++i) {
+        char* fstring = tile_id_filestrings[i];
+        if (fstring) {
+            tile_textures[i] = load_texture(fstring);
+        }
+    }
+}
+
+struct tile {
+    uint32_t id;
+};
+/* should be "streamed" */
+struct tilemap {
+    uint16_t width;
+    uint16_t height;
+    struct tile* tiles;
+};
+
+/* partially stupid but whatever, just something to try out tonight */
+/*
+  really bad ascii format for debugging reasons, could use getline or something
+  or split into line buffers?
+
+  ehh....
+*/
+struct tilemap DEBUG_tilemap_from_file(char* file) {
+    struct tilemap result = {};
+    char* filestring = load_entire_file(file);
+
+    {
+        result.height = count_lines_of_cstring(filestring);
+        result.width = 0;
+
+        int index = 0;
+        char* current_line;
+
+        while (current_line = get_line_starting_from(filestring, &index)){
+            int current_length = strlen(current_line);
+            if (result.width < current_length) {
+                result.width = current_length;
+            }
+        }
+    }
+
+    result.tiles = system_allocate_zeroed_memory(result.width * result.height * sizeof(*result.tiles));
+    printf("%d x %d\n", result.width, result.height);
+
+    {
+
+        int index = 0;
+        char* current_line;
+
+        for(unsigned y = 0; y < result.height; ++y) {
+            current_line = get_line_starting_from(filestring, &index);
+
+            for(unsigned x = 0; x < result.width; ++x) {
+                struct tile* t = &result.tiles[y * result.width + x];
+
+                switch (current_line[x]) {
+                    case '.': {
+                    } break;
+                    case '#': {
+                        t->id = TILE_SOLID;
+                    } break;
+                    case '/': {
+                        t->id = TILE_SLOPE_L;
+                    } break;
+                    case '\\': {
+                        t->id = TILE_SLOPE_R;
+                    } break;
+                }
+            }
+        }
+    }
+
+    system_deallocate_memory(filestring);
+    return result;
+}
+
+void DEBUG_draw_tilemap(struct tilemap* tilemap) {
+    const int TILE_TEX_SIZE = 16;
+    for(unsigned y = 0; y < tilemap->height; ++y) {
+        for(unsigned x = 0; x < tilemap->width; ++x) {
+            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+            draw_texture(tile_textures[t->id], x * TILE_TEX_SIZE, y * TILE_TEX_SIZE, TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_WHITE);
+        }
+    }
+}
+
+struct tilemap global_test_tilemap = {};
+
+/*
   physics "constants"
 */
 
 #define VPIXELS_PER_METER (40)
+
 struct entity {
     float x;
     float y;
@@ -98,6 +216,8 @@ void load_static_resources(void) {
     test_sound2    = load_sound("assets/explosion_b.wav");
 
     /* camera_set_position(player.x - player.w/2, player.y - player.h/2); */
+    DEBUG_load_all_tile_assets();
+    global_test_tilemap = DEBUG_tilemap_from_file("assets/testmap.txt");
 }
 
 void do_player_input(float dt) {
@@ -220,7 +340,6 @@ void update_render_frame(float dt) {
             draw_filled_rectangle(block->x, block->y, block->w, block->h, colors[index%array_count(colors)]);
         }
 
-
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
     } end_graphics_frame();
 
@@ -231,5 +350,7 @@ void update_render_frame(float dt) {
                               player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
         draw_texture_subregion(knight_twoview, 200, 200, 300, 300, 0, 0, 64, 100, COLOR4F_WHITE);
+
+        DEBUG_draw_tilemap(&global_test_tilemap);
     } end_graphics_frame();
 }

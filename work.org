@@ -58,6 +58,9 @@
     CLOCK: [2022-01-21 Fri 17:37]--[2022-01-21 Fri 17:41] =>  0:04
     :END:
 *** TODO (this)Tile world universe
+    :LOGBOOK:
+    CLOCK: [2022-01-21 Fri 18:23]
+    :END:
     no editor yet.
     If I'm genuinely lazy, I could just used tiled but lets not.
 *** TODO (this)One sided tiles
