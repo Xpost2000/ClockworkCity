@@ -30,72 +30,15 @@
 /*beh*/
 #define safe_assignment(x) if (x) *x 
 #define random_element(fixed_size_array) fixed_size_array[random_ranged_integer(0, array_count(fixed_size_array))]
-/*
-  "string" functions working from temporary functions.
-  Never expect to keep these, unless you clone
-*/
-local char* clone_cstring(char* cstr) {
-    size_t length = strlen(cstr);
-    char* buffer = malloc(length+1);
+char* clone_cstring(char* cstr);
+float random_float(void);
+int random_ranged_integer(int min, int max);
 
-    buffer[length] = 0;
-    memcpy(buffer, cstr, length);
+char* get_line_starting_from(char* text, int* starting_from);
+char* format_temp(char* fmt, ...);
 
-    return buffer;
-}
 
-local float random_float(void) {
-    return ((float)rand() / (float)(RAND_MAX));
-}
-
-local int random_ranged_integer(int min, int max) {
-    return (rand() % (max - min)) + min;
-}
-
-/* starting from receives next line index.
-   only unix line endings. fuck windows
- */
-local char* get_line_starting_from(char* text, int* starting_from) {
-    shared_storage char temporary_line_buffer[TEMPORARY_STORAGE_BUFFER_SIZE];
-    zero_array(temporary_line_buffer);
-
-    size_t string_length = strlen(text);
-    if (*starting_from >= string_length) {
-        return NULL;
-    }
-
-    int index;
-    for (index = *starting_from; index < string_length; ++index) {
-        if (text[index] == '\n') {
-            break;
-        }
-    }
-
-    memcpy(temporary_line_buffer, text + *starting_from,
-           index - *starting_from);
-    *starting_from = (index+1);
-
-    return temporary_line_buffer;
-}
-
-local char* format_temp(char* fmt, ...) {
-    shared_storage int current_buffer = 0;
-    shared_storage char temporary_text_buffer[TEMPORARY_STORAGE_BUFFER_COUNT][TEMPORARY_STORAGE_BUFFER_SIZE] = {};
-
-    char* target_buffer = temporary_text_buffer[current_buffer++];
-    zero_buffer_memory(target_buffer, TEMPORARY_STORAGE_BUFFER_SIZE+1);
-    {
-        va_list args;
-        va_start(args, fmt);
-        int written = vsnprintf(target_buffer, TEMPORARY_STORAGE_BUFFER_SIZE-1, fmt, args);
-        va_end(args);
-    }
-
-    if (current_buffer >= TEMPORARY_STORAGE_BUFFER_COUNT) {
-        current_buffer = 0;
-    }
-
-    return target_buffer;
-}
+void read_file_into_buffer(char* path, char* dest, size_t length);
+char* load_entire_file(char* path);
 
 #endif
