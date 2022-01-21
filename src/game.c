@@ -101,10 +101,17 @@ void load_static_resources(void) {
 }
 
 void do_player_input(float dt) {
+    struct game_controller* gamepad = get_gamepad(0);
+
     player.vx = 0;
-    if (is_key_down(KEY_D)) {
+    const float MOVEMENT_THRESHOLD = 0.5;
+
+    bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT] || gamepad->left_stick.axes[0] >= MOVEMENT_THRESHOLD;
+    bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT] || gamepad->left_stick.axes[0] <= -MOVEMENT_THRESHOLD;
+
+    if (move_right) {
         player.vx = VPIXELS_PER_METER * 5;
-    } else if (is_key_down(KEY_A)) {
+    } else if (move_left) {
         player.vx = VPIXELS_PER_METER * -5;
     }
 
@@ -112,7 +119,7 @@ void do_player_input(float dt) {
         player.jump_leniancy_timer = 0.3;
     }
 
-    if (is_key_pressed(KEY_SPACE)) {
+    if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (player.onground) {
             player.vy = VPIXELS_PER_METER * -10;
             player.onground = false;
@@ -193,7 +200,6 @@ void do_physics(float dt) {
 
 void update_render_frame(float dt) {
     clear_color(COLOR4F_BLACK);
-
 
     do_player_input(dt);
     do_physics(dt);

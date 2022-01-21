@@ -17,47 +17,14 @@
 
 SDL_Window* global_window;
 local float global_elapsed_time = 0;
+local SDL_GameController* global_controller_devices[4] = {};
 bool running = true;
 
 void load_static_resources(void);
 void update_render_frame(float dt);
 
-static void initialize(void) {
-    SDL_Init(SDL_INIT_EVERYTHING);
-    Mix_Init(MIX_INIT_OGG);
-    IMG_Init(IMG_INIT_PNG);
-    TTF_Init();
-
-    global_window = SDL_CreateWindow(
-        WINDOW_NAME,
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        640, 480,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP
-    );
-    {
-        int screen_dimensions[2];
-        SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
-        report_screen_dimensions(screen_dimensions);
-    }
-
-    graphics_initialize(global_window);
-    audio_initialize();
-
-    load_static_resources();
-}
-
-static void deinitialize(void) {
-    audio_deinitialize();
-    graphics_deinitialize();
-    SDL_DestroyWindow(global_window);
-    Mix_Quit();
-    TTF_Quit();
-    IMG_Quit();
-    SDL_Quit();
-}
-
-static int translate_sdl_scancode(int scancode) {
-    static int _sdl_scancode_to_input_keycode_table[255] = {
+local int translate_sdl_scancode(int scancode) {
+    local int _sdl_scancode_to_input_keycode_table[255] = {
         // top row
         [SDL_SCANCODE_ESCAPE]    = KEY_ESCAPE,
         [SDL_SCANCODE_1]         = KEY_1,
@@ -161,7 +128,79 @@ static int translate_sdl_scancode(int scancode) {
     return mapping;
 }
 
-static void handle_sdl_event(SDL_Event event) {
+local void close_all_controllers(void) {
+    for (unsigned controller_index = 0; controller_index < array_count(global_controller_devices); ++controller_index) {
+        if (global_controller_devices[controller_index]) {
+            SDL_GameControllerClose(global_controller_devices[controller_index]);
+        }
+    }
+}
+
+local void poll_and_register_controllers(void) {
+    for (unsigned controller_index = 0; controller_index < array_count(global_controller_devices); ++controller_index) {
+        SDL_GameController* controller = global_controller_devices[controller_index];
+
+        if (controller) {
+            if (!SDL_GameControllerGetAttached(controller)) {
+                SDL_GameControllerClose(controller);
+                global_controller_devices[controller_index] = NULL;
+            }
+        } else {
+            global_controller_devices[controller_index] = SDL_GameControllerOpen(controller_index);
+        }
+    }
+}
+
+local void update_all_controller_inputs(void) {
+    for (unsigned controller_index = 0; controller_index < array_count(global_controller_devices); ++controller_index) {
+        SDL_GameController* controller = global_controller_devices[controller_index];
+
+        if (!controller) {
+            continue;
+        }
+
+        struct game_controller* gamepad = get_gamepad(controller_index);
+
+        {
+            gamepad->triggers.left  = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / (32767.0f);
+            gamepad->triggers.right = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / (32767.0f);
+        }
+
+        {
+            gamepad->buttons[BUTTON_A] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A);
+            gamepad->buttons[BUTTON_B] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_B);
+            gamepad->buttons[BUTTON_X] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_X);
+            gamepad->buttons[BUTTON_Y] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_Y);
+        }
+
+        {
+            gamepad->buttons[DPAD_UP]    = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP);
+            gamepad->buttons[DPAD_DOWN]  = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+            gamepad->buttons[DPAD_LEFT]  = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT); 
+            gamepad->buttons[DPAD_RIGHT] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT); 
+        }
+
+        {
+            gamepad->buttons[BUTTON_RS] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSTICK);
+            gamepad->buttons[BUTTON_LS]  = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSTICK);
+        }
+
+        {
+            gamepad->buttons[BUTTON_START] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START);
+            gamepad->buttons[BUTTON_BACK]  = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_BACK);
+        }
+
+        {
+            gamepad->left_stick.axes[0] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX) / (32767.0f);
+            gamepad->left_stick.axes[1] = (float)-SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY) / (32767.0f);
+
+            gamepad->right_stick.axes[0] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX) / (32767.0f);
+            gamepad->right_stick.axes[1] = (float)-SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) / (32767.0f);
+        }
+    }
+}
+
+local void handle_sdl_event(SDL_Event event) {
     switch (event.type) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
         case SDL_WINDOWEVENT_RESIZED: {
@@ -211,7 +250,46 @@ static void handle_sdl_event(SDL_Event event) {
             register_mouse_button(button_id, event.button.state == SDL_PRESSED);
         }
         break;
+        case SDL_CONTROLLERDEVICEREMOVED:
+        case SDL_CONTROLLERDEVICEADDED: {
+            poll_and_register_controllers();
+        } break;
     }
+}
+
+local void initialize(void) {
+    SDL_Init(SDL_INIT_EVERYTHING);
+    Mix_Init(MIX_INIT_OGG);
+    IMG_Init(IMG_INIT_PNG);
+    TTF_Init();
+
+    global_window = SDL_CreateWindow(
+        WINDOW_NAME,
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        640, 480,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP
+    );
+    {
+        int screen_dimensions[2];
+        SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
+        report_screen_dimensions(screen_dimensions);
+    }
+
+    graphics_initialize(global_window);
+    audio_initialize();
+
+    load_static_resources();
+}
+
+local void deinitialize(void) {
+    close_all_controllers();
+    audio_deinitialize();
+    graphics_deinitialize();
+    SDL_DestroyWindow(global_window);
+    Mix_Quit();
+    TTF_Quit();
+    IMG_Quit();
+    SDL_Quit();
 }
 
 #include "game.c"
@@ -234,6 +312,8 @@ int main(int argc, char** argv) {
             while (SDL_PollEvent(&event)) {
                 handle_sdl_event(event);
             }
+
+            update_all_controller_inputs();
         }
 
         /*NOTE(jerry): camera should operate on "game"/"graphics" time

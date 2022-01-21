@@ -6,6 +6,7 @@ struct {
     struct input_state current_state;
     struct input_state last_state;
 } global_input = {};
+local struct game_controller global_controllers[4];
 
 void register_key_down(int keyid) {
     global_input.current_state.keys[keyid] = true;
@@ -54,6 +55,11 @@ bool is_key_pressed(int keyid) {
     }
 
     return false;
+}
+
+struct game_controller* get_gamepad(int index) {
+    assert(index >= 0 && index < array_count(global_controllers) && "Bad controller index");
+    return global_controllers + index;
 }
 
 void begin_input_frame(void) {}

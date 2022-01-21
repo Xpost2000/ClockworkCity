@@ -44,7 +44,10 @@
 
    Actually ya know what. I'm not doin this today.
 ** <2022-01-21 Fri>
-*** TODO (this)Input from controller
+*** DONE (this)Input from controller
+    :LOGBOOK:
+    CLOCK: [2022-01-21 Fri 17:49]--[2022-01-21 Fri 18:12] =>  0:23
+    :END:
 *** DONE (this)Basic sound effects
     :LOGBOOK:
     CLOCK: [2022-01-21 Fri 17:05]--[2022-01-21 Fri 17:33] =>  0:28
@@ -60,13 +63,13 @@
 *** TODO (this)One sided tiles
 *** TODO (this)Tile slopes
 *** TODO (this)Tile stairs
+*** TODO (reallybasicthis)particle systems that can collide and bounce
+    Looks kind of cool I guess, not necessarily interactive.
 *** TODO (??) Tile world editor
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
     pretty generic stuff, so should be fair game since there's no assets. I could use
     this to prototype world layout I guess...
-*** TODO (reallybasicthis)particle systems that can collide and bounce
-    Looks kind of cool I guess, not necessarily interactive.
 *** TODO Try to build on ubuntu or something
     someone teach me how to distribute on linux, I'll provide source anyways but
     senpai pls.

@@ -55,6 +55,28 @@ enum keyboard_button {
     KEY_COUNT
 };
 
+enum controller_button {
+    BUTTON_A, BUTTON_B, BUTTON_X, BUTTON_Y,
+    BUTTON_RS, BUTTON_LS,
+    BUTTON_START, BUTTON_BACK,
+    DPAD_UP,DPAD_DOWN,DPAD_LEFT,DPAD_RIGHT,
+    BUTTON_COUNT,
+};
+
+struct game_controller_triggers {
+    float left;
+    float right;
+};
+struct game_controller_joystick {
+    float axes[2];
+};
+struct game_controller {
+    struct game_controller_triggers triggers;
+    uint8_t buttons[BUTTON_COUNT];
+    struct game_controller_joystick left_stick;
+    struct game_controller_joystick right_stick;
+};
+
 /* KEYPAD keys are left out because I have not mapped them yet. */
 shared_storage char* keyboard_key_strings[] = {
     [KEY_UNKNOWN] = "Unknown Key?",
@@ -144,6 +166,8 @@ struct input_state {
     int mouse_y;
     bool mouse_buttons[MOUSE_BUTTON_COUNT];
 };
+
+struct game_controller* get_gamepad(int index);
 
 void register_key_down(int keyid);
 void register_key_up(int keyid);
