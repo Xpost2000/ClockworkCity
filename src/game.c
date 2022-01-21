@@ -224,5 +224,6 @@ void update_render_frame(float dt) {
                               player.onground,
                               player.x, player.y, player.vx, player.vy),
         COLOR4F_WHITE);
+        draw_texture_subregion(knight_twoview, 200, 200, 300, 300, 0, 0, 64, 100, COLOR4F_WHITE);
     } end_graphics_frame();
 }

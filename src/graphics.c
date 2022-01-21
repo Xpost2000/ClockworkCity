@@ -175,6 +175,13 @@ void draw_rectangle(float x, float y, float w, float h, union color4f color) {
 }
 
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color) {
+    int dimens[2];
+    get_texture_dimensions(texture, dimens, dimens+1);
+    draw_texture_subregion(texture, x, y, w, h, 0, 0, dimens[0], dimens[1], color);
+}
+
+void draw_texture_subregion(texture_id texture, float x, float y, float w, float h,
+                            int srx, int sry, int srw, int srh, union color4f color) {
     SDL_Texture* texture_object = textures[texture.id];
     assert(texture_object && "weird... bad texture?");
 
@@ -183,7 +190,8 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 
     _camera_transform_v2(&x, &y);
     SDL_RenderCopy(global_renderer, texture_object,
-                   NULL, &(SDL_Rect){x, y, w, h});
+                   &(SDL_Rect){srx, sry, srw, srh},
+                   &(SDL_Rect){x, y, w, h});
 }
 
 /* 
