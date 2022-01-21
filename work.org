@@ -45,7 +45,10 @@
    Actually ya know what. I'm not doin this today.
 ** <2022-01-21 Fri>
 *** TODO (this)Input from controller
-*** TODO (this)Basic sound effects
+*** DONE (this)Basic sound effects
+    :LOGBOOK:
+    CLOCK: [2022-01-21 Fri 17:05]--[2022-01-21 Fri 17:33] =>  0:28
+    :END:
     sdl mixer is passable enough. not good at audio
 *** TODO (this)Subrectangle sprite rendering
 *** TODO (this)Tile world universe

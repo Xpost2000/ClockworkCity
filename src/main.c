@@ -4,12 +4,14 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>
 
 #include "common.h"
 
 #include "input.h"
 #include "camera.h"
 #include "graphics.h"
+#include "audio.h"
 
 #define WINDOW_NAME "Metroidvania Jam 15"
 
@@ -22,10 +24,9 @@ void update_render_frame(float dt);
 
 static void initialize(void) {
     SDL_Init(SDL_INIT_EVERYTHING);
+    Mix_Init(MIX_INIT_OGG);
     IMG_Init(IMG_INIT_PNG);
     TTF_Init();
-
-    load_static_resources();
 
     global_window = SDL_CreateWindow(
         WINDOW_NAME,
@@ -40,11 +41,16 @@ static void initialize(void) {
     }
 
     graphics_initialize(global_window);
+    audio_initialize();
+
+    load_static_resources();
 }
 
 static void deinitialize(void) {
+    audio_deinitialize();
     graphics_deinitialize();
     SDL_DestroyWindow(global_window);
+    Mix_Quit();
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
@@ -151,7 +157,7 @@ static int translate_sdl_scancode(int scancode) {
     };
 
     int mapping = _sdl_scancode_to_input_keycode_table[scancode];
-    not_really_important_assert(mapping != KEY_UNKNOWN && "Unbound key?");
+    /* not_really_important_assert(mapping != KEY_UNKNOWN && "Unbound key?"); */
     return mapping;
 }
 

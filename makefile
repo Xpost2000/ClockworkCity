@@ -1,6 +1,8 @@
 SRCFILES=src/main.c \
 	 src/graphics.c \
 	 src/graphics.h \
+	 src/audio.c \
+	 src/audio.h \
 	 src/camera.h \
 	 src/input.c \
 	 src/input.h \
@@ -19,7 +21,7 @@ run: game.exe
 	./game.exe
 
 game.exe: $(SRCFILES)
-	gcc src/main.c src/graphics.c src/input.c $(CFLAGS) $(CLIBS) -o $@
+	gcc src/main.c src/graphics.c src/input.c src/audio.c $(CFLAGS) $(CLIBS) -o $@
 
 
 clean: 

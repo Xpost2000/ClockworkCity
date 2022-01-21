@@ -1,5 +1,7 @@
 texture_id knight_twoview;
 font_id    test_font;
+sound_id   test_sound;
+sound_id   test_sound2;
 
 /* 
    all of this is temporary until I come up with a more easily
@@ -92,6 +94,8 @@ bool rectangle_touching(float x1, float y1, float w1, float h1, float x2, float 
 void load_static_resources(void) {
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
+    test_sound     = load_sound("assets/emp.wav");
+    test_sound2    = load_sound("assets/explosion_b.wav");
 
     /* camera_set_position(player.x - player.w/2, player.y - player.h/2); */
 }
@@ -112,6 +116,7 @@ void do_player_input(float dt) {
         if (player.onground) {
             player.vy = VPIXELS_PER_METER * -10;
             player.onground = false;
+            play_sound(test_sound);
         }
     }
 
@@ -153,7 +158,6 @@ void do_physics(float dt) {
         player.y += player.vy * dt;
 
         int first_top_intersection = 0;
-        player.onground = false;
 
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
@@ -170,11 +174,19 @@ void do_physics(float dt) {
             }
         }
 
+        bool was_on_ground = player.onground;
+
+        player.onground = false;
         for (int index = first_top_intersection; index < block_count && !player.onground; ++index) {
             struct world_block block = blocks[index];
             player.onground =
                 rectangle_touching(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)
                 && (old_player_y + player.h <= block.y);
+        }
+
+        /*can use event system but whatever for now*/
+        if (!was_on_ground && player.onground) {
+            play_sound(test_sound2);
         }
     }
 }
