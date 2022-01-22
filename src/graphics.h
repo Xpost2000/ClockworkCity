@@ -40,6 +40,8 @@ void graphics_deinitialize(void);
 
 void begin_graphics_frame(void);
 void end_graphics_frame(void);
+
+void present_graphics_frame(void);
 void report_screen_dimensions(int* dimensions);
 
 void clear_color(union color4f color);

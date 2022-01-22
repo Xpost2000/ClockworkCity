@@ -10,7 +10,7 @@ SRCFILES=src/main.c \
 	 src/common.h\
 	 src/common.c
 
-CFLAGS=-Wall -Wextra -std=c11 -ggdb3
+CFLAGS=-std=c11 -ggdb3
 CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer sdl2_image`
 
 .phony: all clean build run

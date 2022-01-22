@@ -59,7 +59,8 @@
     :END:
 *** TODO (this)Tile world universe
     :LOGBOOK:
-    CLOCK: [2022-01-21 Fri 18:23]
+    CLOCK: [2022-01-21 Fri 20:04]
+    CLOCK: [2022-01-21 Fri 18:23]--[2022-01-21 Fri 19:05] =>  0:42
     :END:
     no editor yet.
     If I'm genuinely lazy, I could just used tiled but lets not.

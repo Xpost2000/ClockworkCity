@@ -22,6 +22,7 @@ sound_id   test_sound2;
   something that's a little more acceptable since I have so little code to help write anything right now lololo.
 */
 
+const int TILE_TEX_SIZE = 16;
 enum tile_id {
     TILE_NONE, /*shouldn't happen but okay*/
     TILE_SOLID,
@@ -127,7 +128,6 @@ struct tilemap DEBUG_tilemap_from_file(char* file) {
 }
 
 void DEBUG_draw_tilemap(struct tilemap* tilemap) {
-    const int TILE_TEX_SIZE = 32;
     for(unsigned y = 0; y < tilemap->height; ++y) {
         for(unsigned x = 0; x < tilemap->width; ++x) {
             struct tile* t = &tilemap->tiles[y * tilemap->width + x];
@@ -142,7 +142,7 @@ struct tilemap global_test_tilemap = {};
   physics "constants"
 */
 
-#define VPIXELS_PER_METER (40)
+#define VPIXELS_PER_METER (16)
 
 struct entity {
     float x;
@@ -157,29 +157,12 @@ struct entity {
     float jump_leniancy_timer;
 };
 
-struct world_block {
-    float x;
-    float y;
-    float w;
-    float h;
-};
-
 struct entity player = {
     // no units, prolly pixels
     .x = 0,
     .y = 0,
-    .w = 20,
+    .w = VPIXELS_PER_METER/2,
     .h = VPIXELS_PER_METER,
-};
-
-int block_count = 3;
-struct world_block blocks[999] = {
-    /*floor*/
-    {250-250, 500, 900, 40},
-    /*wall*/
-    {500-250, 450, 40, 50},
-    /*ceiling */
-    {600-250, 400, 80, 10},
 };
 
 bool rectangle_intersects(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
@@ -259,28 +242,12 @@ void do_player_input(float dt) {
 void do_physics(float dt) {
     player.vy += VPIXELS_PER_METER*13 * dt;
 
-    const int TILE_TEX_SIZE = 32;
     struct tilemap* tilemap = &global_test_tilemap;
 
     {
         float old_player_x = player.x;
         player.x += player.vx * dt;
         
-#if 0
-        for (int index = 0; index < block_count; ++index) {
-            struct world_block block = blocks[index];
-
-            if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
-                if (old_player_x + player.w <= block.x) {
-                    player.x = block.x - player.w;
-                } else if (old_player_x >= block.x + block.w) {
-                    player.x = block.x + block.w;
-                }
-                player.vx = 0;
-                break;
-            }
-        }
-#else
     for(unsigned y = 0; y < tilemap->height; ++y) {
         for(unsigned x = 0; x < tilemap->width; ++x) {
             struct tile* t = &tilemap->tiles[y * tilemap->width + x];
@@ -290,18 +257,39 @@ void do_physics(float dt) {
             float tile_w = TILE_TEX_SIZE;
             float tile_h = TILE_TEX_SIZE;
 
-            if (t->id != TILE_NONE && rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
-                if (old_player_x + player.w <= tile_x) {
-                    player.x = tile_x - player.w;
-                } else if (old_player_x >= tile_x + tile_w) {
-                    player.x = tile_x + tile_w;
+            if(t->id == TILE_NONE) continue;
+
+            if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                switch (t->id) {
+                    case TILE_SOLID: {
+                        if (old_player_x + player.w <= tile_x) {
+                            player.x = tile_x - player.w;
+                        } else if (old_player_x >= tile_x + tile_w) {
+                            player.x = tile_x + tile_w;
+                        }
+                    } break;
+                    case TILE_SLOPE_L: {
+                        if (old_player_x >= tile_x + tile_w) {
+                            player.x = tile_x + tile_w;
+                        } else {
+                            player.y = (tile_y - (player.x - tile_x)) - player.h;
+                        }
+                    } break;
+                    case TILE_SLOPE_R: {
+                        if (old_player_x + player.w <= tile_x) {
+                            player.x = tile_x - player.w;
+                        } else {
+                            player.y = (tile_y - (tile_x - player.x)) - player.h;
+                        }
+                    } break;
                 }
+
                 player.vx = 0;
-                break;
+                goto finished_horizontal_tile_collision;
             }
         }
     }
-#endif
+    finished_horizontal_tile_collision:
     }
 
     /* 
@@ -316,34 +304,6 @@ void do_physics(float dt) {
         float old_player_y = player.y;
         player.y += player.vy * dt;
 
-        int first_top_intersection = 0;
-#if 0
-
-        for (int index = 0; index < block_count; ++index) {
-            struct world_block block = blocks[index];
-
-            if (rectangle_intersects(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)) {
-                if (old_player_y + player.h <= block.y) {
-                    player.y = block.y - (player.h);
-                    first_top_intersection = index;
-                } else if (old_player_y >= block.y + block.h) {
-                    player.y = block.y + block.h;
-                }
-                player.vy = 0;
-                break;
-            }
-        }
-
-        bool was_on_ground = player.onground;
-
-        player.onground = false;
-        for (int index = first_top_intersection; index < block_count && !player.onground; ++index) {
-            struct world_block block = blocks[index];
-            player.onground =
-                rectangle_touching(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)
-                && (old_player_y + player.h <= block.y);
-        }
-#else
         for(unsigned y = 0; y < tilemap->height; ++y) {
             for(unsigned x = 0; x < tilemap->width; ++x) {
                 struct tile* t = &tilemap->tiles[y * tilemap->width + x];
@@ -353,20 +313,22 @@ void do_physics(float dt) {
                 float tile_w = TILE_TEX_SIZE;
                 float tile_h = TILE_TEX_SIZE;
 
-                if (t->id != TILE_NONE && rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                if(t->id == TILE_NONE) continue;
+
+                if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
                     if (old_player_y + player.h <= tile_y) {
                         player.y = tile_y - (player.h);
                     } else if (old_player_y >= tile_y + tile_h) {
                         player.y = tile_y + tile_h;
                     }
                     player.vy = 0;
-                    goto okay;
+                    goto confirmed_tile_collision;
                     /* break; */
                 }
             }
         }
+    confirmed_tile_collision:
 
-    okay:
         bool was_on_ground = player.onground;
 
         player.onground = false;
@@ -380,8 +342,11 @@ void do_physics(float dt) {
                 float tile_w = TILE_TEX_SIZE;
                 float tile_h = TILE_TEX_SIZE;
 
+                if(t->id == TILE_NONE) continue;
+
+                /*NOTE(jerry): this is slightly... different for sloped tiles.*/
                 player.onground =
-                    t->id != TILE_NONE && rectangle_touching(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)
+                    rectangle_touching(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)
                     && (old_player_y + player.h <= tile_y);
 
                 if (player.onground) {
@@ -389,7 +354,7 @@ void do_physics(float dt) {
                 }
             }
         }
-#endif
+
     done:
         /*can use event system but whatever for now*/
         if (!was_on_ground && player.onground) {
@@ -413,14 +378,6 @@ void update_render_frame(float dt) {
         camera_set_focus_speed_x(12);
         camera_set_focus_speed_y(5);
         camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
-
-#if 1
-        for (int index = 0; index < block_count; ++index) {
-            struct world_block* block = blocks + index;
-            union color4f colors[] = {COLOR4F_RED, COLOR4F_BLUE, COLOR4F_GREEN};
-            draw_filled_rectangle(block->x, block->y, block->w, block->h, colors[index%array_count(colors)]);
-        }
-#endif
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         DEBUG_draw_tilemap(&global_test_tilemap);
