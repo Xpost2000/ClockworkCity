@@ -59,13 +59,13 @@
     :END:
 *** TODO (this)Tile world universe
     :LOGBOOK:
-    CLOCK: [2022-01-21 Fri 20:04]
+    CLOCK: [2022-01-21 Fri 20:04]--[2022-01-21 Fri 21:20] =>  1:16
     CLOCK: [2022-01-21 Fri 18:23]--[2022-01-21 Fri 19:05] =>  0:42
     :END:
     no editor yet.
     If I'm genuinely lazy, I could just used tiled but lets not.
 *** TODO (this)One sided tiles
-*** TODO (this)Tile slopes
+*** DONE (this)Tile slopes
 *** TODO (this)Tile stairs
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.

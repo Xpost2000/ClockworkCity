@@ -273,13 +273,15 @@ void do_physics(float dt) {
                             } else {
                                 /* dangerous if approaching from the bottom! */
                                 float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
-                                float delta_from_foot_to_tile_top = (tile_y - (player.y+player.h));
+                                float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/16)) {
+                                    if (player.y >= player_slope_snapped_location || player.onground && delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/3)) {
                                         player.y = player_slope_snapped_location;
                                     }
                                 } else {
+                                    /*this is technically still wrong. It looks okay enough. I'll probably refine it later or design
+                                     levels that avoid this physics quirk... Until I can figure it out*/
                                     player.y = tile_y + tile_h;
                                     player.vy = 0;
                                 }
@@ -290,10 +292,10 @@ void do_physics(float dt) {
                                 player.x = tile_x - player.w;
                             } else {
                                 float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
-                                float delta_from_foot_to_tile_top = (tile_y - (player.y+player.h));
+                                float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/16)) {
+                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/3)) {
                                         player.y = player_slope_snapped_location;
                                     }
                                 } else {
@@ -338,6 +340,7 @@ void do_physics(float dt) {
                         } break;
                         case TILE_SLOPE_L: {
                             float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+
                             if (roundf(old_player_y) == roundf(player_slope_snapped_location)) {
                                 player.vy = 0;
                                 goto confirmed_tile_collision;
@@ -381,6 +384,7 @@ void do_physics(float dt) {
                     switch (t->id) {
                         case TILE_SLOPE_L: {
                             float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+
                             if (roundf(player.y) == roundf(player_slope_snapped_location)) {
                                 player.onground = true;
                             } else {
