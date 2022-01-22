@@ -219,9 +219,9 @@ void do_player_input(float dt) {
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT] || gamepad->left_stick.axes[0] <= -MOVEMENT_THRESHOLD;
 
     if (move_right) {
-        player.vx = VPIXELS_PER_METER * 5;
+        player.vx = VPIXELS_PER_METER * 8;
     } else if (move_left) {
-        player.vx = VPIXELS_PER_METER * -5;
+        player.vx = VPIXELS_PER_METER * -8;
     }
 
     if (roundf(player.vy) == 0) {
@@ -248,58 +248,56 @@ void do_physics(float dt) {
         float old_player_x = player.x;
         player.x += player.vx * dt;
         
-    for(unsigned y = 0; y < tilemap->height; ++y) {
-        for(unsigned x = 0; x < tilemap->width; ++x) {
-            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+        for(unsigned y = 0; y < tilemap->height; ++y) {
+            for(unsigned x = 0; x < tilemap->width; ++x) {
+                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
 
-            float tile_x = x * TILE_TEX_SIZE;
-            float tile_y = y * TILE_TEX_SIZE;
-            float tile_w = TILE_TEX_SIZE;
-            float tile_h = TILE_TEX_SIZE;
+                float tile_x = x * TILE_TEX_SIZE;
+                float tile_y = y * TILE_TEX_SIZE;
+                float tile_w = TILE_TEX_SIZE;
+                float tile_h = TILE_TEX_SIZE;
 
-            if(t->id == TILE_NONE) continue;
+                if(t->id == TILE_NONE) continue;
 
-            if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
-                switch (t->id) {
-                    case TILE_SOLID: {
-                        if (old_player_x + player.w <= tile_x) {
-                            player.x = tile_x - player.w;
-                        } else if (old_player_x >= tile_x + tile_w) {
-                            player.x = tile_x + tile_w;
-                        }
-                    } break;
-                    case TILE_SLOPE_L: {
-                        if (old_player_x >= tile_x + tile_w) {
-                            player.x = tile_x + tile_w;
-                        } else {
-                            player.y = (tile_y - (player.x - tile_x)) - player.h;
-                        }
-                    } break;
-                    case TILE_SLOPE_R: {
-                        if (old_player_x + player.w <= tile_x) {
-                            player.x = tile_x - player.w;
-                        } else {
-                            player.y = (tile_y - (tile_x - player.x)) - player.h;
-                        }
-                    } break;
+                if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                    switch (t->id) {
+                        case TILE_SOLID: {
+                            if (old_player_x + player.w <= tile_x) {
+                                player.x = tile_x - player.w;
+                            } else if (old_player_x >= tile_x + tile_w) {
+                                player.x = tile_x + tile_w;
+                            }
+                        } break;
+                        case TILE_SLOPE_L: {
+                            if (old_player_x >= tile_x + tile_w) {
+                                player.x = tile_x + tile_w;
+                            } else {
+                                float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+                                if (player.y >= player_slope_snapped_location) {
+                                    player.y = player_slope_snapped_location;
+                                }
+                            }
+                        } break;
+                        case TILE_SLOPE_R: {
+                            if (old_player_x + player.w <= tile_x) {
+                                player.x = tile_x - player.w;
+                            } else {
+                                float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
+                                if (player.y >= player_slope_snapped_location) {
+                                    player.y = player_slope_snapped_location;
+                                }
+                            }
+                        } break;
+                    }
+
+                    player.vx = 0;
+                    goto finished_horizontal_tile_collision;
                 }
-
-                player.vx = 0;
-                goto finished_horizontal_tile_collision;
             }
         }
-    }
     finished_horizontal_tile_collision:
     }
 
-    /* 
-       vertical axis check is a bit more complicated because onground is a bit iffy to deal with like this.
-       Due to the way collisions are resolved to avoid the way I usually resolve them with plain AABBs (which looks
-       really inaccurate on my old platformy things). The touching vs. intersection check needs to happen separately
-       
-       That's fine though... Not many game entities that need an onground check any how I'm sure. The rest of the physics
-       is pretty standard though.
-    */
     {
         float old_player_y = player.y;
         player.y += player.vy * dt;
@@ -313,8 +311,11 @@ void do_physics(float dt) {
                 float tile_w = TILE_TEX_SIZE;
                 float tile_h = TILE_TEX_SIZE;
 
-                if(t->id == TILE_NONE) continue;
-
+                if(t->id != TILE_SOLID) continue;
+                /*
+                  We don't need to special case slopes here. They only matter when moving horizontally.
+                  That's cause the "slope" snapping logic also happens there, so we'll handle that there as well.
+                 */
                 if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
                     if (old_player_y + player.h <= tile_y) {
                         player.y = tile_y - (player.h);
@@ -323,7 +324,6 @@ void do_physics(float dt) {
                     }
                     player.vy = 0;
                     goto confirmed_tile_collision;
-                    /* break; */
                 }
             }
         }
