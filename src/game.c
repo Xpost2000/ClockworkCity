@@ -219,9 +219,9 @@ void do_player_input(float dt) {
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT] || gamepad->left_stick.axes[0] <= -MOVEMENT_THRESHOLD;
 
     if (move_right) {
-        player.vx = VPIXELS_PER_METER * 3;
+        player.vx = VPIXELS_PER_METER * 6;
     } else if (move_left) {
-        player.vx = VPIXELS_PER_METER * -3;
+        player.vx = VPIXELS_PER_METER * -6;
     }
 
     if (roundf(player.vy) == 0) {
@@ -276,7 +276,7 @@ void do_physics(float dt) {
                                 float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.y >= player_slope_snapped_location || player.onground && delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/3)) {
+                                    if (player.vy >= 0 && (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
                                         player.y = player_slope_snapped_location;
                                     }
                                 } else {
@@ -295,7 +295,7 @@ void do_physics(float dt) {
                                 float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/3)) {
+                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25)) {
                                         player.y = player_slope_snapped_location;
                                     }
                                 } else {
@@ -341,7 +341,7 @@ void do_physics(float dt) {
                         case TILE_SLOPE_L: {
                             float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
 
-                            if (roundf(old_player_y) == roundf(player_slope_snapped_location)) {
+                            if (player.vy >= 0 && roundf(old_player_y) == roundf(player_slope_snapped_location)) {
                                 player.vy = 0;
                                 goto confirmed_tile_collision;
                             }
