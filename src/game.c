@@ -105,6 +105,12 @@ struct tilemap DEBUG_tilemap_from_file(char* file) {
                     case '#': {
                         t->id = TILE_SOLID;
                     } break;
+                    case '>': {
+                        t->id = TILE_SLOPE_BR;
+                    } break;
+                    case '<': {
+                        t->id = TILE_SLOPE_BL;
+                    } break;
                     case '/': {
                         t->id = TILE_SLOPE_L;
                     } break;
@@ -121,7 +127,7 @@ struct tilemap DEBUG_tilemap_from_file(char* file) {
 }
 
 void DEBUG_draw_tilemap(struct tilemap* tilemap) {
-    const int TILE_TEX_SIZE = 16;
+    const int TILE_TEX_SIZE = 32;
     for(unsigned y = 0; y < tilemap->height; ++y) {
         for(unsigned x = 0; x < tilemap->width; ++x) {
             struct tile* t = &tilemap->tiles[y * tilemap->width + x];
@@ -160,7 +166,7 @@ struct world_block {
 
 struct entity player = {
     // no units, prolly pixels
-    .x = 380,
+    .x = 0,
     .y = 0,
     .w = 20,
     .h = VPIXELS_PER_METER,
@@ -169,11 +175,11 @@ struct entity player = {
 int block_count = 3;
 struct world_block blocks[999] = {
     /*floor*/
-    {250, 500, 900, 40},
+    {250-250, 500, 900, 40},
     /*wall*/
-    {500, 450, 40, 50},
+    {500-250, 450, 40, 50},
     /*ceiling */
-    {600, 400, 80, 10},
+    {600-250, 400, 80, 10},
 };
 
 bool rectangle_intersects(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
@@ -253,10 +259,14 @@ void do_player_input(float dt) {
 void do_physics(float dt) {
     player.vy += VPIXELS_PER_METER*13 * dt;
 
+    const int TILE_TEX_SIZE = 32;
+    struct tilemap* tilemap = &global_test_tilemap;
+
     {
         float old_player_x = player.x;
         player.x += player.vx * dt;
-
+        
+#if 0
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
 
@@ -270,6 +280,28 @@ void do_physics(float dt) {
                 break;
             }
         }
+#else
+    for(unsigned y = 0; y < tilemap->height; ++y) {
+        for(unsigned x = 0; x < tilemap->width; ++x) {
+            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+
+            float tile_x = x * TILE_TEX_SIZE;
+            float tile_y = y * TILE_TEX_SIZE;
+            float tile_w = TILE_TEX_SIZE;
+            float tile_h = TILE_TEX_SIZE;
+
+            if (t->id != TILE_NONE && rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                if (old_player_x + player.w <= tile_x) {
+                    player.x = tile_x - player.w;
+                } else if (old_player_x >= tile_x + tile_w) {
+                    player.x = tile_x + tile_w;
+                }
+                player.vx = 0;
+                break;
+            }
+        }
+    }
+#endif
     }
 
     /* 
@@ -285,6 +317,7 @@ void do_physics(float dt) {
         player.y += player.vy * dt;
 
         int first_top_intersection = 0;
+#if 0
 
         for (int index = 0; index < block_count; ++index) {
             struct world_block block = blocks[index];
@@ -310,7 +343,54 @@ void do_physics(float dt) {
                 rectangle_touching(player.x, player.y, player.w, player.h, block.x, block.y, block.w, block.h)
                 && (old_player_y + player.h <= block.y);
         }
+#else
+        for(unsigned y = 0; y < tilemap->height; ++y) {
+            for(unsigned x = 0; x < tilemap->width; ++x) {
+                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
 
+                float tile_x = x * TILE_TEX_SIZE;
+                float tile_y = y * TILE_TEX_SIZE;
+                float tile_w = TILE_TEX_SIZE;
+                float tile_h = TILE_TEX_SIZE;
+
+                if (t->id != TILE_NONE && rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                    if (old_player_y + player.h <= tile_y) {
+                        player.y = tile_y - (player.h);
+                    } else if (old_player_y >= tile_y + tile_h) {
+                        player.y = tile_y + tile_h;
+                    }
+                    player.vy = 0;
+                    goto okay;
+                    /* break; */
+                }
+            }
+        }
+
+    okay:
+        bool was_on_ground = player.onground;
+
+        player.onground = false;
+        /*stupid double scan*/
+        for(unsigned y = 0; y < tilemap->height; ++y) {
+            for(unsigned x = 0; x < tilemap->width; ++x) {
+                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+
+                float tile_x = x * TILE_TEX_SIZE;
+                float tile_y = y * TILE_TEX_SIZE;
+                float tile_w = TILE_TEX_SIZE;
+                float tile_h = TILE_TEX_SIZE;
+
+                player.onground =
+                    t->id != TILE_NONE && rectangle_touching(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)
+                    && (old_player_y + player.h <= tile_y);
+
+                if (player.onground) {
+                    goto done;
+                }
+            }
+        }
+#endif
+    done:
         /*can use event system but whatever for now*/
         if (!was_on_ground && player.onground) {
             play_sound(test_sound2);
@@ -334,13 +414,16 @@ void update_render_frame(float dt) {
         camera_set_focus_speed_y(5);
         camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
 
+#if 1
         for (int index = 0; index < block_count; ++index) {
             struct world_block* block = blocks + index;
             union color4f colors[] = {COLOR4F_RED, COLOR4F_BLUE, COLOR4F_GREEN};
             draw_filled_rectangle(block->x, block->y, block->w, block->h, colors[index%array_count(colors)]);
         }
+#endif
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+        DEBUG_draw_tilemap(&global_test_tilemap);
     } end_graphics_frame();
 
     begin_graphics_frame(); {
@@ -348,9 +431,6 @@ void update_render_frame(float dt) {
                   format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n",
                               player.onground,
                               player.x, player.y, player.vx, player.vy),
-        COLOR4F_WHITE);
-        draw_texture_subregion(knight_twoview, 200, 200, 300, 300, 0, 0, 64, 100, COLOR4F_WHITE);
-
-        DEBUG_draw_tilemap(&global_test_tilemap);
+                  COLOR4F_WHITE);
     } end_graphics_frame();
 }

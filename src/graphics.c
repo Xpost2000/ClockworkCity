@@ -2,6 +2,9 @@
   TODO(jerry):
   all of this is pretty slow right now but it'll get my job done for now.
   Rewrite this to be more efficient in the coming days once shit actually works.
+  
+  TODO(jerry):
+  fix the weird id issues and assertions
 */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -15,10 +18,10 @@
 #define RENDERER_MAX_FONTS    (256)
 
 local uint16_t texture_count                         = 0;
-local SDL_Texture*   textures[RENDERER_MAX_TEXTURES] = {};
+local SDL_Texture*   textures[RENDERER_MAX_TEXTURES+1] = {};
 
 local uint16_t font_count                 = 0;
-local TTF_Font* fonts[RENDERER_MAX_FONTS] = {};
+local TTF_Font* fonts[RENDERER_MAX_FONTS+1] = {};
 
 local SDL_Renderer* global_renderer;
 local SDL_Window*   global_window;
@@ -183,7 +186,9 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h,
                             int srx, int sry, int srw, int srh, union color4f color) {
     SDL_Texture* texture_object = textures[texture.id];
-    assert(texture_object && "weird... bad texture?");
+
+    if (texture.id != 0)
+        assert(texture_object && "weird... bad texture?");
 
     SDL_SetTextureColorMod(texture_object, color.r * 255, color.g * 255, color.b * 255);
     SDL_SetTextureAlphaMod(texture_object, color.a * 255);
@@ -222,7 +227,9 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
 
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
     TTF_Font* font_object = fonts[font.id];
-    assert(font_object && "weird... bad font?");
+
+    if (font.id != 0)
+        assert(font_object && "weird... bad font?");
 
     /*
       sorry performance gods.
@@ -239,7 +246,7 @@ void draw_text(font_id font, float x, float y, const char* cstr, union color4f c
 }
 
 texture_id load_texture(const char* texture_path) {
-    uint16_t free_id = texture_count++;
+    uint16_t free_id = 1 + texture_count++;
     texture_id result = {
         .id = free_id
     };
@@ -257,7 +264,7 @@ texture_id load_texture(const char* texture_path) {
 }
 
 font_id load_font(const char* font_path, int size) {
-    uint16_t free_id = font_count++;
+    uint16_t free_id = 1 + font_count++;
     font_id result = {
         .id = free_id
     };
@@ -281,13 +288,13 @@ void unload_texture(texture_id texture) {
 }
 
 void get_texture_dimensions(texture_id texture, int* width, int* height) {
-    assert((texture.id >= 0 && texture.id < RENDERER_MAX_TEXTURES) && "wtf? bad texture id??");
+    /* assert((texture.id > 0 && texture.id < RENDERER_MAX_TEXTURES+1) && "wtf? bad texture id??"); */
     SDL_Texture* texture_object = textures[texture.id];
     SDL_QueryTexture(texture_object, 0, 0, width, height);
 }
 
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height) {
-    assert((font.id >= 0 && font.id < RENDERER_MAX_FONTS) && "wtf? bad font id??");
+    assert((font.id > 0 && font.id < RENDERER_MAX_FONTS+1) && "wtf? bad font id??");
     TTF_Font* font_object = fonts[font.id];
 
     int line_starting_index = 0;
