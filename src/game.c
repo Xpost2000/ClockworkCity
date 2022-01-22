@@ -219,9 +219,9 @@ void do_player_input(float dt) {
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT] || gamepad->left_stick.axes[0] <= -MOVEMENT_THRESHOLD;
 
     if (move_right) {
-        player.vx = VPIXELS_PER_METER * 8;
+        player.vx = VPIXELS_PER_METER * 3;
     } else if (move_left) {
-        player.vx = VPIXELS_PER_METER * -8;
+        player.vx = VPIXELS_PER_METER * -3;
     }
 
     if (roundf(player.vy) == 0) {
@@ -240,9 +240,8 @@ void do_player_input(float dt) {
 }
 
 void do_physics(float dt) {
-    player.vy += VPIXELS_PER_METER*13 * dt;
-
     struct tilemap* tilemap = &global_test_tilemap;
+    player.vy += VPIXELS_PER_METER*13 * dt;
 
     {
         float old_player_x = player.x;
@@ -272,9 +271,17 @@ void do_physics(float dt) {
                             if (old_player_x >= tile_x + tile_w) {
                                 player.x = tile_x + tile_w;
                             } else {
+                                /* dangerous if approaching from the bottom! */
                                 float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
-                                if (player.y >= player_slope_snapped_location) {
-                                    player.y = player_slope_snapped_location;
+                                float delta_from_foot_to_tile_top = (tile_y - (player.y+player.h));
+
+                                if (player.y + player.h <= tile_y + tile_h) {
+                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/16)) {
+                                        player.y = player_slope_snapped_location;
+                                    }
+                                } else {
+                                    player.y = tile_y + tile_h;
+                                    player.vy = 0;
                                 }
                             }
                         } break;
@@ -283,8 +290,15 @@ void do_physics(float dt) {
                                 player.x = tile_x - player.w;
                             } else {
                                 float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
-                                if (player.y >= player_slope_snapped_location) {
-                                    player.y = player_slope_snapped_location;
+                                float delta_from_foot_to_tile_top = (tile_y - (player.y+player.h));
+
+                                if (player.y + player.h <= tile_y + tile_h) {
+                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= (TILE_TEX_SIZE/16)) {
+                                        player.y = player_slope_snapped_location;
+                                    }
+                                } else {
+                                    player.y = tile_y + tile_h;
+                                    player.vy = 0;
                                 }
                             }
                         } break;
@@ -311,54 +325,89 @@ void do_physics(float dt) {
                 float tile_w = TILE_TEX_SIZE;
                 float tile_h = TILE_TEX_SIZE;
 
-                if(t->id != TILE_SOLID) continue;
-                /*
-                  We don't need to special case slopes here. They only matter when moving horizontally.
-                  That's cause the "slope" snapping logic also happens there, so we'll handle that there as well.
-                 */
                 if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
-                    if (old_player_y + player.h <= tile_y) {
-                        player.y = tile_y - (player.h);
-                    } else if (old_player_y >= tile_y + tile_h) {
-                        player.y = tile_y + tile_h;
+                    switch (t->id) {
+                        case TILE_SOLID: {
+                            if (old_player_y + player.h <= tile_y) {
+                                player.y = tile_y - (player.h);
+                            } else if (old_player_y >= tile_y + tile_h) {
+                                player.y = tile_y + tile_h;
+                            }
+                            player.vy = 0;
+                            goto confirmed_tile_collision;
+                        } break;
+                        case TILE_SLOPE_L: {
+                            float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+                            if (roundf(old_player_y) == roundf(player_slope_snapped_location)) {
+                                player.vy = 0;
+                                goto confirmed_tile_collision;
+                            }
+                        } break;
+                        case TILE_SLOPE_R: {
+                            float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
+                            if (roundf(old_player_y) == roundf(player_slope_snapped_location)) {
+                                player.vy = 0;
+                                goto confirmed_tile_collision;
+                            }
+                        } break;
                     }
-                    player.vy = 0;
-                    goto confirmed_tile_collision;
+
                 }
             }
         }
     confirmed_tile_collision:
+        {
+            bool was_on_ground = player.onground;
+            player.onground = false;
+            /*stupid double scan*/
+            for(unsigned y = 0; y < tilemap->height; ++y) {
+                for(unsigned x = 0; x < tilemap->width; ++x) {
+                    struct tile* t = &tilemap->tiles[y * tilemap->width + x];
 
-        bool was_on_ground = player.onground;
+                    float tile_x = x * TILE_TEX_SIZE;
+                    float tile_y = y * TILE_TEX_SIZE;
+                    float tile_w = TILE_TEX_SIZE;
+                    float tile_h = TILE_TEX_SIZE;
 
-        player.onground = false;
-        /*stupid double scan*/
-        for(unsigned y = 0; y < tilemap->height; ++y) {
-            for(unsigned x = 0; x < tilemap->width; ++x) {
-                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+                    if(t->id == TILE_NONE) continue;
+                    if (!rectangle_touching(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) continue;
 
-                float tile_x = x * TILE_TEX_SIZE;
-                float tile_y = y * TILE_TEX_SIZE;
-                float tile_w = TILE_TEX_SIZE;
-                float tile_h = TILE_TEX_SIZE;
+                    /*NOTE(jerry): this is slightly... different for sloped tiles.*/
 
-                if(t->id == TILE_NONE) continue;
+                    if ((old_player_y + player.h <= tile_y)) {
+                        player.onground = true;
+                    }
 
-                /*NOTE(jerry): this is slightly... different for sloped tiles.*/
-                player.onground =
-                    rectangle_touching(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)
-                    && (old_player_y + player.h <= tile_y);
+                    switch (t->id) {
+                        case TILE_SLOPE_L: {
+                            float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+                            if (roundf(player.y) == roundf(player_slope_snapped_location)) {
+                                player.onground = true;
+                            } else {
+                                player.onground = false;
+                            }
+                        } break;
+                        case TILE_SLOPE_R: {
+                            float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
+                            if (roundf(player.y) == roundf(player_slope_snapped_location)) {
+                                player.onground = true;
+                            } else {
+                                player.onground = false;
+                            } 
+                        } break;
+                    }
 
-                if (player.onground) {
-                    goto done;
+                    if (player.onground) {
+                        goto done;
+                    }
                 }
             }
-        }
 
-    done:
-        /*can use event system but whatever for now*/
-        if (!was_on_ground && player.onground) {
-            play_sound(test_sound2);
+        done:
+            /*can use event system but whatever for now*/
+            if (!was_on_ground && player.onground) {
+                /* play_sound(test_sound2); */
+            }
         }
     }
 }
