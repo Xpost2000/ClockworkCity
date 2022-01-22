@@ -3,16 +3,24 @@ font_id    test_font;
 sound_id   test_sound;
 sound_id   test_sound2;
 
-/* 
-   all of this is temporary until I come up with a more easily
-   hackable entity codebase. Or a "game core",
-   
-   today I just wanted to refigure out my basic physics stuff and then I'll punch it into a more basic
-   platformer system.
-   
-   NOTE(jerry):
-   need to come up with basic world units. Which is probably the only game specific thing I require this early. I guess
-   that implies I figure out the art style too. Oh boy, bad pixel art here we go again! How bad can it be when I have a month?
+/*
+  TODO(jerry):
+  Patch up and clean up the slopes implementation
+  FIXME(jerry):
+  Slopes ignore the rest of the world when doing their advancing thing.
+
+  IE: when you slope upto a wall. You go through it.
+
+  Uh this shouldn't really be difficult to do. The map is already stored as a 2D array,
+  I just need to grab the neighbors within the direction of movement
+  
+  0 = slope
+  
+                XXX
+                 0
+  This should be all I need to grab... (of course this depends on the entity climbing!
+  If it's a big entity... Well, we'll be grabbing lots of tiles to make sure we don't smash into shit I guess.
+  As long as most entities are close to the players size though I don't have to worry about this.)
 */
 
 /*
@@ -159,7 +167,7 @@ struct entity {
 
 struct entity player = {
     // no units, prolly pixels
-    .x = 0,
+    .x = -VPIXELS_PER_METER/4,
     .y = 0,
     .w = VPIXELS_PER_METER/2,
     .h = VPIXELS_PER_METER,
@@ -219,9 +227,9 @@ void do_player_input(float dt) {
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT] || gamepad->left_stick.axes[0] <= -MOVEMENT_THRESHOLD;
 
     if (move_right) {
-        player.vx = VPIXELS_PER_METER * 6;
+        player.vx = VPIXELS_PER_METER * 5;
     } else if (move_left) {
-        player.vx = VPIXELS_PER_METER * -6;
+        player.vx = VPIXELS_PER_METER * -5;
     }
 
     if (roundf(player.vy) == 0) {
@@ -246,7 +254,7 @@ void do_physics(float dt) {
     {
         float old_player_x = player.x;
         player.x += player.vx * dt;
-        
+
         for(unsigned y = 0; y < tilemap->height; ++y) {
             for(unsigned x = 0; x < tilemap->width; ++x) {
                 struct tile* t = &tilemap->tiles[y * tilemap->width + x];
@@ -271,8 +279,9 @@ void do_physics(float dt) {
                             if (old_player_x >= tile_x + tile_w) {
                                 player.x = tile_x + tile_w;
                             } else {
-                                /* dangerous if approaching from the bottom! */
-                                float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+                                float slope_x_offset = ((player.x + player.w) - tile_x);
+
+                                float player_slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - player.h;
                                 float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
@@ -282,8 +291,12 @@ void do_physics(float dt) {
                                 } else {
                                     /*this is technically still wrong. It looks okay enough. I'll probably refine it later or design
                                      levels that avoid this physics quirk... Until I can figure it out*/
-                                    player.y = tile_y + tile_h;
-                                    player.vy = 0;
+                                    if (old_player_x + player.w <= tile_x) {
+                                        player.x = tile_x - player.w;
+                                    } else {
+                                        player.y = tile_y + tile_h;
+                                        player.vy = 0;
+                                    }
                                 }
                             }
                         } break;
@@ -291,16 +304,22 @@ void do_physics(float dt) {
                             if (old_player_x + player.w <= tile_x) {
                                 player.x = tile_x - player.w;
                             } else {
-                                float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
-                                float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
+                                float slope_x_offset = (tile_x - player.x);
+
+                                float player_slope_snapped_location = (tile_y - slope_x_offset) - player.h;
+                                float delta_from_foot_to_tile_top = (player.y - player_slope_snapped_location);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25)) {
+                                    if (player.vy >= 0 && (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
                                         player.y = player_slope_snapped_location;
                                     }
                                 } else {
-                                    player.y = tile_y + tile_h;
-                                    player.vy = 0;
+                                    if (old_player_x >= tile_x + tile_w) {
+                                        player.x = tile_x + tile_w;
+                                    } else {
+                                        player.y = tile_y + tile_h;
+                                        player.vy = 0;
+                                    }
                                 }
                             }
                         } break;
@@ -348,7 +367,7 @@ void do_physics(float dt) {
                         } break;
                         case TILE_SLOPE_R: {
                             float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
-                            if (roundf(old_player_y) == roundf(player_slope_snapped_location)) {
+                            if (player.vy >= 0 && roundf(old_player_y) == roundf(player_slope_snapped_location)) {
                                 player.vy = 0;
                                 goto confirmed_tile_collision;
                             }
@@ -408,10 +427,6 @@ void do_physics(float dt) {
             }
 
         done:
-            /*can use event system but whatever for now*/
-            if (!was_on_ground && player.onground) {
-                /* play_sound(test_sound2); */
-            }
         }
     }
 }

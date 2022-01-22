@@ -46,4 +46,6 @@ void* system_allocate_memory(size_t amount);
 void  system_deallocate_memory(void* ptr);
 void* system_allocate_zeroed_memory(size_t amount);
 
+uint64_t rdtsc(void);
+
 #endif

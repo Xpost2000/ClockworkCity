@@ -1,5 +1,6 @@
 /* avoid multiple linkage */
 #include "common.h"
+#include <x86intrin.h>
 
 char* clone_cstring(char* cstr) {
     size_t length = strlen(cstr);
@@ -121,4 +122,8 @@ void* system_allocate_zeroed_memory(size_t amount) {
     void* ptr = system_allocate_memory(amount);
     zero_buffer_memory(ptr, amount);
     return ptr;
+}
+
+uint64_t rdtsc(void) {
+    return __rdtsc();
 }
