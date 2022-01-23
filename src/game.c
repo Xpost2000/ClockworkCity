@@ -48,6 +48,7 @@ char* tile_id_filestrings[] = {
     "assets/testtiles/slope45degr.png",
     "assets/testtiles/slope45degl.png",
 };
+
 texture_id tile_textures[TILE_ID_COUNT] = {};
 void DEBUG_load_all_tile_assets(void) {
     for (unsigned i = 0; i < TILE_ID_COUNT; ++i) {
@@ -59,8 +60,20 @@ void DEBUG_load_all_tile_assets(void) {
 }
 
 struct tile {
+    /*tiles will store relative positions (in the case of moving tile islands)*/
+    /*this is redundant, but this'll allow me to use a different storage method if I want.*/
+    /*also simplifies some other code later, as I don't need to derive information like the tile rectangle*/
+    uint16_t x;
+    uint16_t y;
     uint32_t id;
 };
+
+bool tile_is_slope(struct tile* t) {
+    return ((t->id == TILE_SLOPE_BL) ||
+            (t->id == TILE_SLOPE_BR) ||
+            (t->id == TILE_SLOPE_L)  ||
+            (t->id == TILE_SLOPE_R));
+}
 /* should be "streamed" */
 struct tilemap {
     uint16_t width;
@@ -107,6 +120,8 @@ struct tilemap DEBUG_tilemap_from_file(char* file) {
 
             for(unsigned x = 0; x < result.width; ++x) {
                 struct tile* t = &result.tiles[y * result.width + x];
+                t->y = y;
+                t->x = x;
 
                 switch (current_line[x]) {
                     case '.': {
@@ -235,62 +250,95 @@ void do_physics(float dt) {
                 if(t->id == TILE_NONE) continue;
 
                 if (rectangle_intersects_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
-                    switch (t->id) {
-                        case TILE_SOLID: {
-                            if (old_player_x + player.w <= tile_x) {
-                                player.x = tile_x - player.w;
-                            } else if (old_player_x >= tile_x + tile_w) {
-                                player.x = tile_x + tile_w;
-                            }
-                        } break;
-                        case TILE_SLOPE_L: {
-                            if (old_player_x >= tile_x + tile_w) {
-                                player.x = tile_x + tile_w;
-                            } else {
-                                float slope_x_offset = ((player.x + player.w) - tile_x);
-
-                                float player_slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - player.h;
-                                float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
-
-                                if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.vy >= 0 && (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
-                                        player.y = player_slope_snapped_location;
-                                    }
+                    if (tile_is_slope(t)) {
+                        switch (t->id) {
+                            case TILE_SLOPE_L: {
+                                if (old_player_x >= tile_x + tile_w) {
+                                    player.x = tile_x + tile_w;
                                 } else {
-                                    /*this is technically still wrong. It looks okay enough. I'll probably refine it later or design
-                                     levels that avoid this physics quirk... Until I can figure it out*/
-                                    if (old_player_x + player.w <= tile_x) {
-                                        player.x = tile_x - player.w;
+                                    float slope_x_offset = ((player.x + player.w) - tile_x);
+
+                                    float player_slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - player.h;
+                                    float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
+
+                                    if (player.y + player.h <= tile_y + tile_h) {
+                                        if (player.vy >= 0 && (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
+                                            player.y = player_slope_snapped_location;
+                                        }
                                     } else {
-                                        player.y = tile_y + tile_h;
-                                        player.vy = 0;
+                                        if (old_player_x + player.w <= tile_x) {
+                                            player.x = tile_x - player.w;
+                                        } else {
+                                            player.y = tile_y + tile_h;
+                                            player.vy = 0;
+                                        }
                                     }
                                 }
-                            }
-                        } break;
-                        case TILE_SLOPE_R: {
-                            if (old_player_x + player.w <= tile_x) {
-                                player.x = tile_x - player.w;
-                            } else {
-                                float slope_x_offset = clampf((player.x - tile_x), 0, tile_w);
-
-                                float player_slope_snapped_location = (tile_y + slope_x_offset) - player.h;
-                                float delta_from_foot_to_tile_top = (player.y - player_slope_snapped_location);
-
-                                if (player.y + player.h <= tile_y + tile_h) {
-                                    if (player.vy >= 0 && (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
-                                        player.y = player_slope_snapped_location;
-                                    }
+                            } break;
+                            case TILE_SLOPE_R: {
+                                if (old_player_x + player.w <= tile_x) {
+                                    player.x = tile_x - player.w;
                                 } else {
-                                    if (old_player_x >= tile_x + tile_w) {
-                                        player.x = tile_x + tile_w;
+                                    float slope_x_offset = clampf((player.x - tile_x), 0, tile_w);
+
+                                    float player_slope_snapped_location = (tile_y + slope_x_offset) - player.h;
+                                    float delta_from_foot_to_tile_top = (player.y - player_slope_snapped_location);
+
+                                    if (player.y + player.h <= tile_y + tile_h) {
+                                        if (player.vy >= 0 && (player.y >= player_slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
+                                            player.y = player_slope_snapped_location;
+                                        }
                                     } else {
-                                        player.y = tile_y + tile_h;
-                                        player.vy = 0;
+                                        if (old_player_x >= tile_x + tile_w) {
+                                            player.x = tile_x + tile_w;
+                                        } else {
+                                            player.y = tile_y + tile_h;
+                                            player.vy = 0;
+                                        }
                                     }
                                 }
-                            }
-                        } break;
+                            } break;
+                            case TILE_SLOPE_BL: {
+                                if (old_player_x >= tile_x + tile_w) {
+                                    player.x = tile_x + tile_w;
+                                } else {
+                                    if (player.y < tile_y) {
+                                        player.y = tile_y - player.h; 
+                                    } else {
+                                        float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
+                                        float player_slope_snapped_location = (tile_y + slope_x_offset);
+                                        player.y = player_slope_snapped_location;
+                                        /* 
+                                           leads to a similar issue which hasn't been fixed yet
+                                           which is what happens when a slope goes into an obstacle?
+                                        */
+                                    }
+                                }
+                            } break;
+                            case TILE_SLOPE_BR: {
+                                if (old_player_x + player.w <= tile_x) {
+                                    player.x = tile_x - player.w;
+                                } else {
+                                    if (player.y < tile_y) {
+                                        player.y = tile_y - player.h; 
+                                    } else {
+                                        float slope_x_offset = (tile_x - player.x);
+                                        float player_slope_snapped_location = ((tile_y + tile_h) + slope_x_offset);
+                                        player.y = player_slope_snapped_location;
+                                        /* 
+                                           leads to a similar issue which hasn't been fixed yet
+                                           which is what happens when a slope goes into an obstacle?
+                                        */
+                                    }
+                                }
+                            } break;
+                        }
+                    } else {
+                        if (old_player_x + player.w <= tile_x) {
+                            player.x = tile_x - player.w;
+                        } else if (old_player_x >= tile_x + tile_w) {
+                            player.x = tile_x + tile_w;
+                        }
                     }
 
                     player.vx = 0;
@@ -304,8 +352,6 @@ void do_physics(float dt) {
     float old_player_y = player.y;
     {
         player.y += player.vy * dt;
-
-        /* fprintf(stderr, "old player_y: %f, current y: %f\n", roundf(old_player_y), roundf(player.y)); */
 
         for(unsigned y = 0; y < tilemap->height; ++y) {
             for(unsigned x = 0; x < tilemap->width; ++x) {
@@ -343,6 +389,12 @@ void do_physics(float dt) {
                                 player.vy = 0;
                                 goto confirmed_tile_collision;
                             }
+                        } break;
+                        case TILE_SLOPE_BL: {
+                            
+                        } break;
+                        case TILE_SLOPE_BR: {
+                            
                         } break;
                     }
 
