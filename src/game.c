@@ -365,11 +365,14 @@ void do_physics(float dt) {
                 if (rectangle_intersects_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
                     switch (t->id) {
                         case TILE_SOLID: {
-                            if (old_player_y + player.h <= tile_y) {
+                            if (player.y + player.h > tile_y &&
+                                player.y + player.h < tile_y + tile_h) {
                                 player.y = tile_y - (player.h);
-                            } else if (old_player_y >= tile_y + tile_h) {
+                            } else if (player.y <= tile_y + tile_h &&
+                                       player.y + player.h >= tile_y + tile_h) {
                                 player.y = tile_y + tile_h;
                             }
+
                             player.vy = 0;
                             goto confirmed_tile_collision;
                         } break;
@@ -390,11 +393,14 @@ void do_physics(float dt) {
                                 goto confirmed_tile_collision;
                             }
                         } break;
-                        case TILE_SLOPE_BL: {
-                            
-                        } break;
+                        case TILE_SLOPE_BL: 
                         case TILE_SLOPE_BR: {
-                            
+                            /* duplicated but okay. */
+                            if (player.y < tile_y) {
+                                player.y = tile_y - player.h; 
+                                player.vy = 0;
+                                goto confirmed_tile_collision;
+                            }
                         } break;
                     }
 
