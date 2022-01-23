@@ -19,6 +19,46 @@ int random_ranged_integer(int min, int max) {
     return (rand() % (max - min)) + min;
 }
 
+bool rectangle_intersects_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
+    float x1min = x1;
+    float x1max = x1 + w1;
+
+    float y1min = y1;
+    float y1max = y1 + h1;
+
+    float x2min = x2;
+    float x2max = x2 + w2;
+
+    float y2min = y2;
+    float y2max = y2 + h2;
+
+    return (x1min < x2max && x1max > x2min) && (y1min < y2max && y1max > y2min);
+}
+
+bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
+    float x1min = x1;
+    float x1max = x1 + w1;
+
+    float y1min = y1;
+    float y1max = y1 + h1;
+
+    float x2min = x2;
+    float x2max = x2 + w2;
+
+    float y2min = y2;
+    float y2max = y2 + h2;
+
+    return (x1min <= x2max && x1max >= x2min) && (y1min <= y2max && y1max >= y2min);
+}
+
+bool rectangle_intersects(struct rectangle a, struct rectangle b) {
+    return rectangle_intersects_v(a.x, a.y, a.w, a.h, b.x, b.y, b.w, b.h);
+}
+
+bool rectangle_overlapping(struct rectangle a, struct rectangle b) {
+    return rectangle_overlapping_v(a.x, a.y, a.w, a.h, b.x, b.y, b.w, b.h);
+}
+
 /* starting from receives next line index.
    only unix line endings. fuck windows
  */

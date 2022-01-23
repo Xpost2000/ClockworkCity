@@ -30,7 +30,7 @@ sound_id   test_sound2;
   something that's a little more acceptable since I have so little code to help write anything right now lololo.
 */
 
-const int TILE_TEX_SIZE = 32;
+const int TILE_TEX_SIZE = 16;
 enum tile_id {
     TILE_NONE, /*shouldn't happen but okay*/
     TILE_SOLID,
@@ -173,39 +173,6 @@ struct entity player = {
     .h = VPIXELS_PER_METER,
 };
 
-bool rectangle_intersects(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
-    float x1min = x1;
-    float x1max = x1 + w1;
-
-    float y1min = y1;
-    float y1max = y1 + h1;
-
-    float x2min = x2;
-    float x2max = x2 + w2;
-
-    float y2min = y2;
-    float y2max = y2 + h2;
-
-    return (x1min < x2max && x1max > x2min) && (y1min < y2max && y1max > y2min);
-}
-
-/*yes there's a difference*/
-bool rectangle_touching(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
-    float x1min = x1;
-    float x1max = x1 + w1;
-
-    float y1min = y1;
-    float y1max = y1 + h1;
-
-    float x2min = x2;
-    float x2max = x2 + w2;
-
-    float y2min = y2;
-    float y2max = y2 + h2;
-
-    return (x1min <= x2max && x1max >= x2min) && (y1min <= y2max && y1max >= y2min);
-}
-
 void load_static_resources(void) {
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
@@ -267,7 +234,7 @@ void do_physics(float dt) {
 
                 if(t->id == TILE_NONE) continue;
 
-                if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                if (rectangle_intersects_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
                     switch (t->id) {
                         case TILE_SOLID: {
                             if (old_player_x + player.w <= tile_x) {
@@ -349,7 +316,7 @@ void do_physics(float dt) {
                 float tile_w = TILE_TEX_SIZE;
                 float tile_h = TILE_TEX_SIZE;
 
-                if (rectangle_intersects(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
+                if (rectangle_intersects_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
                     switch (t->id) {
                         case TILE_SOLID: {
                             if (old_player_y + player.h <= tile_y) {
@@ -397,7 +364,7 @@ void do_physics(float dt) {
                     float tile_h = TILE_TEX_SIZE;
 
                     if(t->id == TILE_NONE) continue;
-                    if (!rectangle_touching(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) continue;
+                    if (!rectangle_overlapping_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) continue;
 
                     /*NOTE(jerry): this is slightly... different for sloped tiles.*/
 

@@ -27,6 +27,18 @@
 #define zero_buffer_memory(x, l) memset(x, 0, l)
 #define zero_array(x) zero_buffer_memory(x, array_count(x))
 
+struct rectangle {
+    float x;
+    float y;
+    float w;
+    float h;
+};
+
+bool rectangle_intersects_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
+bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
+bool rectangle_intersects(struct rectangle a, struct rectangle b);
+bool rectangle_overlapping(struct rectangle a, struct rectangle b);
+
 shared_storage float maxf(float a, float b) {
     if (a > b) return a;
     return b;
