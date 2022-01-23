@@ -192,10 +192,10 @@ local void update_all_controller_inputs(void) {
 
         {
             gamepad->left_stick.axes[0] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX) / (32767.0f);
-            gamepad->left_stick.axes[1] = (float)-SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY) / (32767.0f);
+            gamepad->left_stick.axes[1] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY) / (32767.0f);
 
             gamepad->right_stick.axes[0] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX) / (32767.0f);
-            gamepad->right_stick.axes[1] = (float)-SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) / (32767.0f);
+            gamepad->right_stick.axes[1] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) / (32767.0f);
         }
     }
 }

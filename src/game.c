@@ -205,13 +205,21 @@ void do_player_input(float dt) {
     player.vx = 0;
     const float MOVEMENT_THRESHOLD = 0.5;
 
-    bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT] || gamepad->left_stick.axes[0] >= MOVEMENT_THRESHOLD;
-    bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT] || gamepad->left_stick.axes[0] <= -MOVEMENT_THRESHOLD;
+    bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
+    bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
 
     if (move_right) {
         player.vx = VPIXELS_PER_METER * 5;
     } else if (move_left) {
         player.vx = VPIXELS_PER_METER * -5;
+    }
+
+    if (gamepad->left_stick.axes[0] != 0) {
+        player.vx = VPIXELS_PER_METER * 5 * gamepad->left_stick.axes[0];
+    }
+
+    if (gamepad->left_stick.axes[1] != 0) {
+        player.vy = VPIXELS_PER_METER * 5 * gamepad->left_stick.axes[1];
     }
 
     if (roundf(player.vy) == 0) {
@@ -232,7 +240,8 @@ void do_player_input(float dt) {
 
 void do_physics(float dt) {
     struct tilemap* tilemap = &global_test_tilemap;
-    player.vy += VPIXELS_PER_METER*13 * dt;
+    if (0)
+    player.vy += VPIXELS_PER_METER*20 * dt;
 
     float old_player_x = player.x;
     {
@@ -269,7 +278,14 @@ void do_physics(float dt) {
                                         if (old_player_x + player.w <= tile_x) {
                                             player.x = tile_x - player.w;
                                         } else {
-                                            player.y = tile_y + tile_h;
+                                            float delta_from_foot_to_tile_bottom = (player.y - (tile_y + tile_h));
+
+                                            if (fabs(delta_from_foot_to_tile_bottom) < fabs(delta_from_foot_to_tile_top)) {
+                                                player.y = tile_y + tile_h;
+                                            } else {
+                                                player.y = player_slope_snapped_location;
+                                            }
+
                                             player.vy = 0;
                                         }
                                     }
@@ -292,7 +308,20 @@ void do_physics(float dt) {
                                         if (old_player_x >= tile_x + tile_w) {
                                             player.x = tile_x + tile_w;
                                         } else {
-                                            player.y = tile_y + tile_h;
+                                            /*
+                                              this is slightly trickier, the best thing to do for this scheme
+                                              I think, would just be to evaluate the height distance between the bottom
+                                              and where we would be on the slope. Then just pick the closest of the two.
+                                              This would make the noclipping not look weird, and might fix clipping through
+                                              the floor sometimes.
+                                             */
+                                            float delta_from_foot_to_tile_bottom = (player.y - (tile_y + tile_h));
+
+                                            if (fabs(delta_from_foot_to_tile_bottom) < fabs(delta_from_foot_to_tile_top)) {
+                                                player.y = tile_y + tile_h;
+                                            } else {
+                                                player.y = player_slope_snapped_location;
+                                            }
                                             player.vy = 0;
                                         }
                                     }
@@ -302,12 +331,17 @@ void do_physics(float dt) {
                                 if (old_player_x >= tile_x + tile_w) {
                                     player.x = tile_x + tile_w;
                                 } else {
-                                    if (player.y < tile_y) {
+                                    if (player.y+player.h < tile_y) {
                                         player.y = tile_y - player.h; 
-                                    } else {
+                                    } else { 
                                         float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
                                         float player_slope_snapped_location = (tile_y + slope_x_offset);
-                                        player.y = player_slope_snapped_location;
+
+                                        if (player.y < player_slope_snapped_location) {
+                                            player.y = player_slope_snapped_location;
+                                            if (player.vy < 0)
+                                                player.vy = 0;
+                                        }
                                         /* 
                                            leads to a similar issue which hasn't been fixed yet
                                            which is what happens when a slope goes into an obstacle?
@@ -324,7 +358,14 @@ void do_physics(float dt) {
                                     } else {
                                         float slope_x_offset = (tile_x - player.x);
                                         float player_slope_snapped_location = ((tile_y + tile_h) + slope_x_offset);
-                                        player.y = player_slope_snapped_location;
+                                        float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
+
+                                        if (player.y <= player_slope_snapped_location) {
+                                            if (player.vy < 0) {
+                                                player.vy = 0;
+                                            }
+                                            player.y = player_slope_snapped_location;
+                                        }
                                         /* 
                                            leads to a similar issue which hasn't been fixed yet
                                            which is what happens when a slope goes into an obstacle?
@@ -368,8 +409,10 @@ void do_physics(float dt) {
                             if (player.y + player.h > tile_y &&
                                 player.y + player.h < tile_y + tile_h) {
                                 player.y = tile_y - (player.h);
-                            } else if (player.y <= tile_y + tile_h &&
-                                       player.y + player.h >= tile_y + tile_h) {
+                            }
+
+                            if (player.y <= tile_y + tile_h &&
+                                player.y + player.h >= tile_y + tile_h) {
                                 player.y = tile_y + tile_h;
                             }
 
