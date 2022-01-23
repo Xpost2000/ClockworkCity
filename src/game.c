@@ -391,10 +391,10 @@ void do_physics(float dt) {
                                 if (old_player_x >= tile_x + tile_w) {
                                     player.x = tile_x + tile_w;
                                 } else {
-                                    if (player.y > tile_y) {
-                                        float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
-                                        float player_slope_snapped_location = (tile_y + slope_x_offset);
+                                    float slope_x_offset = ((player.x + player.w) - tile_x);
+                                    float player_slope_snapped_location = (tile_y + slope_x_offset);
 
+                                    if (player.y > tile_y) {
                                         if (player.y < player_slope_snapped_location) {
                                             player.y = player_slope_snapped_location;
                                             if (player.vy < 0)
@@ -405,7 +405,19 @@ void do_physics(float dt) {
                                            which is what happens when a slope goes into an obstacle?
                                         */
                                     } else {
-                                        player.x = tile_x - player.w;
+                                        if (old_player_x + player.w <= tile_x) {
+                                            player.x = tile_x - player.w;
+                                        /* 
+                                           leads to a similar issue which hasn't been fixed yet
+                                           which is what happens when a slope goes into an obstacle?
+                                        */
+                                        } else {
+                                            player.y = tile_y - player.h;
+                                        /* 
+                                           leads to a similar issue which hasn't been fixed yet
+                                           which is what happens when a slope goes into an obstacle?
+                                        */
+                                        }
                                     }
                                 }
                             } break;
@@ -429,7 +441,19 @@ void do_physics(float dt) {
                                            which is what happens when a slope goes into an obstacle?
                                         */
                                     } else {
-                                        player.x = tile_x + tile_w;
+                                        if (old_player_x >= tile_x + tile_w) {
+                                            player.x = tile_x + tile_w;
+                                            /* 
+                                               leads to a similar issue which hasn't been fixed yet
+                                               which is what happens when a slope goes into an obstacle?
+                                            */
+                                        } else {
+                                            player.y = tile_y - player.h;
+                                            /* 
+                                               leads to a similar issue which hasn't been fixed yet
+                                               which is what happens when a slope goes into an obstacle?
+                                            */
+                                        }
                                     }
                                 }
                             } break;
@@ -488,11 +512,10 @@ void do_physics(float dt) {
                                 goto confirmed_tile_collision;
                             }
                         } break;
-                        case TILE_SLOPE_BL: 
+                        case TILE_SLOPE_BL:
                         case TILE_SLOPE_BR: {
                             /* duplicated but okay. */
-                            if (player.y < tile_y) {
-                                player.y = tile_y - player.h; 
+                            if (player.y + player.h <= tile_y) {
                                 player.vy = 0;
                                 goto confirmed_tile_collision;
                             }
