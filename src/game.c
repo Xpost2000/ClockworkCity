@@ -30,7 +30,7 @@ sound_id   test_sound2;
   something that's a little more acceptable since I have so little code to help write anything right now lololo.
 */
 
-const int TILE_TEX_SIZE = 16;
+const int TILE_TEX_SIZE = 32;
 enum tile_id {
     TILE_NONE, /*shouldn't happen but okay*/
     TILE_SOLID,
@@ -252,8 +252,8 @@ void do_physics(float dt) {
     struct tilemap* tilemap = &global_test_tilemap;
     player.vy += VPIXELS_PER_METER*13 * dt;
 
+    float old_player_x = player.x;
     {
-        float old_player_x = player.x;
         player.x += player.vx * dt;
 
         for(unsigned y = 0; y < tilemap->height; ++y) {
@@ -305,9 +305,9 @@ void do_physics(float dt) {
                             if (old_player_x + player.w <= tile_x) {
                                 player.x = tile_x - player.w;
                             } else {
-                                float slope_x_offset = (tile_x - player.x);
+                                float slope_x_offset = clampf((player.x - tile_x), 0, tile_w);
 
-                                float player_slope_snapped_location = (tile_y - slope_x_offset) - player.h;
+                                float player_slope_snapped_location = (tile_y + slope_x_offset) - player.h;
                                 float delta_from_foot_to_tile_top = (player.y - player_slope_snapped_location);
 
                                 if (player.y + player.h <= tile_y + tile_h) {
@@ -334,9 +334,11 @@ void do_physics(float dt) {
     finished_horizontal_tile_collision:
     }
 
+    float old_player_y = player.y;
     {
-        float old_player_y = player.y;
         player.y += player.vy * dt;
+
+        /* fprintf(stderr, "old player_y: %f, current y: %f\n", roundf(old_player_y), roundf(player.y)); */
 
         for(unsigned y = 0; y < tilemap->height; ++y) {
             for(unsigned x = 0; x < tilemap->width; ++x) {
@@ -367,7 +369,9 @@ void do_physics(float dt) {
                             }
                         } break;
                         case TILE_SLOPE_R: {
-                            float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
+                            float slope_x_offset = clampf((player.x - tile_x), 0, tile_w);
+                            float player_slope_snapped_location = (tile_y + slope_x_offset) - player.h;
+
                             if (player.vy >= 0 && roundf(old_player_y) == roundf(player_slope_snapped_location)) {
                                 player.vy = 0;
                                 goto confirmed_tile_collision;

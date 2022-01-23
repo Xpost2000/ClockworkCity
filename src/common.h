@@ -27,6 +27,23 @@
 #define zero_buffer_memory(x, l) memset(x, 0, l)
 #define zero_array(x) zero_buffer_memory(x, array_count(x))
 
+shared_storage float maxf(float a, float b) {
+    if (a > b) return a;
+    return b;
+}
+
+shared_storage float minf(float a, float b) {
+    if (a < b) return a;
+    return b;
+}
+
+shared_storage float clampf(float v, float a, float b) {
+    if (v < a) v = a;
+    else if (v > b) v = b;
+
+    return v;
+}
+
 /*beh*/
 #define safe_assignment(x) if (x) *x 
 #define random_element(fixed_size_array) fixed_size_array[random_ranged_integer(0, array_count(fixed_size_array))]
