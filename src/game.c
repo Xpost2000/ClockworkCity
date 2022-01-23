@@ -323,9 +323,9 @@ void do_physics(float dt) {
                                 if (old_player_x >= tile_x + tile_w) {
                                     player.x = tile_x + tile_w;
                                 } else {
-                                    float slope_x_offset = ((player.x + player.w) - tile_x);
-
+                                    float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
                                     float player_slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - player.h;
+
                                     float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
 
                                     if (player.y + player.h <= tile_y + tile_h) {
@@ -354,8 +354,8 @@ void do_physics(float dt) {
                                     player.x = tile_x - player.w;
                                 } else {
                                     float slope_x_offset = clampf((player.x - tile_x), 0, tile_w);
-
                                     float player_slope_snapped_location = (tile_y + slope_x_offset) - player.h;
+
                                     float delta_from_foot_to_tile_top = (player.y - player_slope_snapped_location);
 
                                     if (player.y + player.h <= tile_y + tile_h) {
@@ -469,7 +469,8 @@ void do_physics(float dt) {
                             goto confirmed_tile_collision;
                         } break;
                         case TILE_SLOPE_L: {
-                            float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+                            float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
+                            float player_slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - player.h;
 
                             if (player.vy >= 0 && roundf(old_player_y) == roundf(player_slope_snapped_location)) {
                                 player.vy = 0;
@@ -524,7 +525,8 @@ void do_physics(float dt) {
 
                     switch (t->id) {
                         case TILE_SLOPE_L: {
-                            float player_slope_snapped_location = ((tile_y + tile_h) - ((player.x + player.w) - tile_x)) - player.h;
+                            float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
+                            float player_slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - player.h;
 
                             if (roundf(player.y) == roundf(player_slope_snapped_location)) {
                                 player.onground = true;
@@ -533,7 +535,9 @@ void do_physics(float dt) {
                             }
                         } break;
                         case TILE_SLOPE_R: {
-                            float player_slope_snapped_location = (tile_y - (tile_x - player.x)) - player.h;
+                            float slope_x_offset = clampf((player.x - tile_x), 0, tile_w);
+                            float player_slope_snapped_location = (tile_y + slope_x_offset) - player.h;
+
                             if (roundf(player.y) == roundf(player_slope_snapped_location)) {
                                 player.onground = true;
                             } else {
