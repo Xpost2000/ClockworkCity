@@ -59,34 +59,110 @@
     :END:
 *** DONE (this)Tile slopes
 ** <2022-01-22 Sat> 
-*** TODO (this)Tile world universe
-    :LOGBOOK:
-    CLOCK: [2022-01-21 Fri 20:04]--[2022-01-21 Fri 21:20] =>  1:16
-    CLOCK: [2022-01-21 Fri 18:23]--[2022-01-21 Fri 19:05] =>  0:42
-    :END:
-    no editor yet.
-    If I'm genuinely lazy, I could just used tiled but lets not.
-*** TODO (this)One sided tiles
-*** TODO (this)Tile stairs
-*** TODO (reallybasicthis)particle systems that can collide and bounce
-    Looks kind of cool I guess, not necessarily interactive.
-*** TODO (??) Tile world editor
+*** TODO Fix up the slope tile edge cases (not necessarily in this order)
+    - [ ] Fix what happens when approaching from the bottom.
+    - [ ] Fix snapping when I'm not high enough to snap into it
+      I just noticed this kind of breaks if I "fall" into the left corner of the slope... So
+      this is going to be a lot of fun to try and fix...
+      
+*** TODO Clean up slope tile code
+*** TODO [0/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
     pretty generic stuff, so should be fair game since there's no assets. I could use
     this to prototype world layout I guess...
+
+    Obviously the tilemap format isn't final yet! So yeah.
+    
+    - [ ] Place some tiles
+    - [ ] Select different tile types
+    - [ ] Write to disk
+    - [ ] Load from disk
+    - [ ] Playtest mode (might not get this one?)
+    - [ ] Or something
+*** TODO (reallybasicthis)particle systems that can collide and bounce
+    Looks kind of cool I guess, not necessarily interactive.
+
+    Just wanna try and simulate some fire and smoke
+*** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
+    Just play around with this. It can be useful for making some cool special effects!
+*** TODO Resolution independent rendering.
+*** TODO cpu "decal" system
+    I don't know enough about gpu magic to do this with opengl, but calculating some random
+    numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
+    enough (considering apparently a -O2 naive software renderer runs at lightspeed on this computer,
+    I'm sure blitting on a smaller tilemap, and not even the whole thing would be pancakes easy...)
+
+    I kinda want to do this cause it would look cool for generic violent effects or liquid splatter or
+    something.
+
+    Probably will perform not so great but I think the frame budget is really generous...
+
+    Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
+*** TODO Simple radial lighting
+    I could use a "light texture", but I want to do more generic tile lighting.
+
+    I'm considering just using BFS bounded by a distance formula, and calling that a day.
+    Pretty sure that'll look okay enough for what I need.
+** <2022-01-23 Sun>
+*** TODO (ingame console)
+    I'm not coding this from scratch, I'm literally just going to copy and paste the ingame-console from
+    bim simply cause it works fine already.
+
+    It's not a scripting language or anything which kinda sucks, it's just a basic quake style console.
+    It works pretty well imo, and is easy to integrate so... free 1.2k lines to the source code lol
+
+    Probably only going to use this for basic cheats, and level loading, game state setting, and testing
+    things like seeing the ending or whatever.
+    
+*** TODO (animated sprite system) or something?
+*** TODO Load different levels/tilemaps/chunks/whatever
+*** TODO Moveable tilemap "islands" / platforms
+    Editor support for these... Is going to be a bitch probably.
+
+    I guess the way this fits into the collision system without proper physics...
+    Will also be a bitch!
+
+    It... May be better to just make everything work into a separate "physics" world,
+    and just let the physics work itself out automatically...
+
+    But the code for what I currently have isn't so ridiculous. (slopes are the only complicated
+    part honestly...)
+    
 *** TODO Try to build on ubuntu or something
     someone teach me how to distribute on linux, I'll provide source anyways but
     senpai pls.
-*** TODO Rope like objects (this is definitely not possible without custom rendering lol)
-    Oh no bad pixel art engage... Is this really worth it considering what I have to draw?
-    uh...... Well, if I need it... I'll have it I guess.
+*** TODO Rope like objects 
+    Basic rope swinging should be fine.
 *** TODO Basic debug gui stuff
-*** TODO (maybe think, but no code?)Consider thinking of the entity system
-*** TODO maybe refactor stuff?
-*** TODO (tomorrow, (finish over weekend))Start OpenGL renderer as the last thing I guess.
+*** TODO Background tiles or something
+*** TODO (?)Consider thinking of the entity system
+*** TODO (?)Start OpenGL renderer as the last thing I guess.
+*** TODO Cleanup and refactor the code at the end of the week.
+*** TODO Basic Menu Game State system, and a normal game state system
+    Main Menu, Loading a save file, Credits, Options, and Quit.
 
-* Jam Time
+    This is just going to exist to have ANY menu... Game pause is also
+    a thing here.
+
+    Also I guess a basic idea of dying is okay.
+    
+** <2022-01-24 Mon>
+   90% sure if I can do most of the stuff above... I'm probably in more than acceptable
+   shape for the jam. I'm probably going to just add graphics features at this point or
+   bugfix, or optimize engine stuff. If I think of any actual generic metroidvania/platformer
+   features I'm probably missing. This is just extends until the start of the jam.
+
+   Or I might just continually refine the game tools for this engine/framework thingie. Then just
+   like 7DRL, I "fork" the engine to make the game.
+
+   I will find it horribly ironic if this goes just as bad as 7DRL since I made the godot framework
+   for that a week in advance, and I still fucked up in the game making process LOL. But this is a month
+   and not a week.
+   
+* Jam Time <2022-02-15 Tue>
   When the jam starts put tasks here. This is game-specific stuff,
   hopefully by this time I have a plan for the game plot and obviously
   the engine should be ready by this time (or good enough...)
+
+  Hopefully the 

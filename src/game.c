@@ -237,10 +237,11 @@ void do_player_input(float dt) {
     }
 
     if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
-        if (player.onground) {
+        if (player.onground && player.vy == 0) {
             player.vy = VPIXELS_PER_METER * -10;
             player.onground = false;
             play_sound(test_sound);
+            fprintf(stderr, "jump\n");
         }
     }
 
