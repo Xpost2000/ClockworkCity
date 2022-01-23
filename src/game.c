@@ -299,6 +299,7 @@ void do_player_input(float dt) {
 
 void do_physics(float dt) {
     struct tilemap* tilemap = &global_test_tilemap;
+    if (0)
     player.vy += VPIXELS_PER_METER*20 * dt;
 
     float old_player_x = player.x;
@@ -390,9 +391,7 @@ void do_physics(float dt) {
                                 if (old_player_x >= tile_x + tile_w) {
                                     player.x = tile_x + tile_w;
                                 } else {
-                                    if (player.y+player.h < tile_y) {
-                                        player.y = tile_y - player.h; 
-                                    } else { 
+                                    if (player.y > tile_y) {
                                         float slope_x_offset = clampf(((player.x + player.w) - tile_x), 0, tile_w);
                                         float player_slope_snapped_location = (tile_y + slope_x_offset);
 
@@ -405,6 +404,8 @@ void do_physics(float dt) {
                                            leads to a similar issue which hasn't been fixed yet
                                            which is what happens when a slope goes into an obstacle?
                                         */
+                                    } else {
+                                        player.x = tile_x - player.w;
                                     }
                                 }
                             } break;
@@ -412,9 +413,7 @@ void do_physics(float dt) {
                                 if (old_player_x + player.w <= tile_x) {
                                     player.x = tile_x - player.w;
                                 } else {
-                                    if (player.y < tile_y) {
-                                        player.y = tile_y - player.h; 
-                                    } else {
+                                    if (player.y > tile_y) {
                                         float slope_x_offset = (tile_x - player.x);
                                         float player_slope_snapped_location = ((tile_y + tile_h) + slope_x_offset);
                                         float delta_from_foot_to_tile_top = (player_slope_snapped_location - player.y);
@@ -429,13 +428,16 @@ void do_physics(float dt) {
                                            leads to a similar issue which hasn't been fixed yet
                                            which is what happens when a slope goes into an obstacle?
                                         */
+                                    } else {
+                                        player.x = tile_x + tile_w;
                                     }
                                 }
                             } break;
                         }
                     } else {
-                        do_collision_response_tile_left_edge(t, &player);
-                        do_collision_response_tile_right_edge(t, &player);
+                        if (!do_collision_response_tile_left_edge(t, &player)) {
+                            do_collision_response_tile_right_edge(t, &player);
+                        }
                     }
 
                     player.vx = 0;
