@@ -94,24 +94,6 @@
     Just wanna try and simulate some fire and smoke
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
-*** TODO Resolution independent rendering.
-*** TODO cpu "decal" system
-    I don't know enough about gpu magic to do this with opengl, but calculating some random
-    numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
-    enough (considering apparently a -O2 naive software renderer runs at lightspeed on this computer,
-    I'm sure blitting on a smaller tilemap, and not even the whole thing would be pancakes easy...)
-
-    I kinda want to do this cause it would look cool for generic violent effects or liquid splatter or
-    something.
-
-    Probably will perform not so great but I think the frame budget is really generous...
-
-    Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
-*** TODO Simple radial lighting
-    I could use a "light texture", but I want to do more generic tile lighting.
-
-    I'm considering just using BFS bounded by a distance formula, and calling that a day.
-    Pretty sure that'll look okay enough for what I need.
 ** <2022-01-24 Mon>
    90% sure if I can do most of the stuff above... I'm probably in more than acceptable
    shape for the jam. I'm probably going to just add graphics features at this point or
@@ -125,6 +107,7 @@
    for that a week in advance, and I still fucked up in the game making process LOL. But this is a month
    and not a week.
    
+   Need to handle some quick business, and will be late coming home so don't expect most of this.
 *** TODO (ingame console)
     I'm not coding this from scratch, I'm literally just going to copy and paste the ingame-console from
     bim simply cause it works fine already.
@@ -167,6 +150,26 @@
 
     Also I guess a basic idea of dying is okay.
     
+*** TODO Resolution independent rendering.
+*** TODO cpu "decal" system
+    I don't know enough about gpu magic to do this with opengl, but calculating some random
+    numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
+    enough (considering apparently a -O2 naive software renderer runs at lightspeed on this computer,
+    I'm sure blitting on a smaller tilemap, and not even the whole thing would be pancakes easy...)
+
+    I kinda want to do this cause it would look cool for generic violent effects or liquid splatter or
+    something.
+
+    Probably will perform not so great but I think the frame budget is really generous...
+
+    Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
+*** TODO Simple radial lighting
+    I could use a "light texture", but I want to do more generic tile lighting.
+
+    I'm considering just using BFS bounded by a distance formula, and calling that a day.
+    Pretty sure that'll look okay enough for what I need.
+** <2022-01-25 Tue>
+   I have a meeting today.
 * Jam Time <2022-02-15 Tue>
   When the jam starts put tasks here. This is game-specific stuff,
   hopefully by this time I have a plan for the game plot and obviously

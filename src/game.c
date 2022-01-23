@@ -167,6 +167,9 @@ struct tilemap global_test_tilemap = {};
 
 #define VPIXELS_PER_METER (16)
 
+/*
+  This might just turn into an uber struct or something.
+*/
 struct entity {
     float x;
     float y;
@@ -177,8 +180,64 @@ struct entity {
     float vx;
     float vy;
     bool onground;
+
+    /* player specific */
     float jump_leniancy_timer;
 };
+
+local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* ent) {
+    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
+
+    float entity_right_edge = ent->x + ent->w;
+    float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
+
+    if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
+        ent->x = t->x*TILE_TEX_SIZE - ent->w;
+        return true;
+    }
+
+    return false;
+}
+
+local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* ent) {
+    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
+
+    float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
+    if (ent->x < tile_right_edge && ent->x > t->x) {
+        ent->x = tile_right_edge;
+        return true;
+    }
+
+    return false;
+}
+
+local bool do_collision_response_tile_top_edge(struct tile* t, struct entity* ent) {
+    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
+
+    float entity_bottom_edge = ent->y + ent->h;
+    float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
+
+    if (entity_bottom_edge > t->y && entity_bottom_edge < tile_bottom_edge) {
+        ent->y = t->y * TILE_TEX_SIZE - ent->h;
+        return true;
+    }
+
+    return false;
+}
+
+local bool do_collision_response_tile_bottom_edge(struct tile* t, struct entity* ent) {
+    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
+
+    float entity_bottom_edge = ent->y + ent->h;
+    float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
+
+    if (ent->y <= tile_bottom_edge && entity_bottom_edge >= tile_bottom_edge) {
+        ent->y = tile_bottom_edge;
+        return true;
+    }
+
+    return false;
+}
 
 struct entity player = {
     // no units, prolly pixels
@@ -240,7 +299,6 @@ void do_player_input(float dt) {
 
 void do_physics(float dt) {
     struct tilemap* tilemap = &global_test_tilemap;
-    if (0)
     player.vy += VPIXELS_PER_METER*20 * dt;
 
     float old_player_x = player.x;
@@ -322,6 +380,7 @@ void do_physics(float dt) {
                                             } else {
                                                 player.y = player_slope_snapped_location;
                                             }
+
                                             player.vy = 0;
                                         }
                                     }
@@ -375,11 +434,8 @@ void do_physics(float dt) {
                             } break;
                         }
                     } else {
-                        if (old_player_x + player.w <= tile_x) {
-                            player.x = tile_x - player.w;
-                        } else if (old_player_x >= tile_x + tile_w) {
-                            player.x = tile_x + tile_w;
-                        }
+                        do_collision_response_tile_left_edge(t, &player);
+                        do_collision_response_tile_right_edge(t, &player);
                     }
 
                     player.vx = 0;
@@ -406,15 +462,8 @@ void do_physics(float dt) {
                 if (rectangle_intersects_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) {
                     switch (t->id) {
                         case TILE_SOLID: {
-                            if (player.y + player.h > tile_y &&
-                                player.y + player.h < tile_y + tile_h) {
-                                player.y = tile_y - (player.h);
-                            }
-
-                            if (player.y <= tile_y + tile_h &&
-                                player.y + player.h >= tile_y + tile_h) {
-                                player.y = tile_y + tile_h;
-                            }
+                            do_collision_response_tile_top_edge(t, &player);
+                            do_collision_response_tile_bottom_edge(t, &player);
 
                             player.vy = 0;
                             goto confirmed_tile_collision;
