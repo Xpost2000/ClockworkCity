@@ -27,6 +27,13 @@
 #define zero_buffer_memory(x, l) memset(x, 0, l)
 #define zero_array(x) zero_buffer_memory(x, array_count(x))
 
+#define swap(t, a, b)                           \
+    do {                                        \
+        t _tmp = a;                             \
+        a = b;                                  \
+        b = _tmp;                               \
+    } while(0)
+
 struct rectangle {
     float x;
     float y;

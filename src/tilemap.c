@@ -161,7 +161,7 @@ local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* e
     float entity_right_edge = ent->x + ent->w;
     float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
 
-    if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
+    if (entity_right_edge >= t->x && entity_right_edge <= tile_right_edge) {
         ent->x = t->x*TILE_TEX_SIZE - ent->w;
         return true;
     }
@@ -173,7 +173,7 @@ local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* 
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
 
     float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
-    if (roundf(ent->x) < tile_right_edge && roundf(ent->x) > t->x) {
+    if (roundf(ent->x) <= tile_right_edge && roundf(ent->x) >= t->x) {
         ent->x = tile_right_edge;
         return true;
     }
@@ -225,110 +225,82 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
 
             if(t->id == TILE_NONE) continue;
 
-            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
-                                       tile_x, tile_y, tile_w, tile_h)) {
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
                 if (tile_is_slope(t)) {
-                    switch (t->id) {
-                        case TILE_SLOPE_L: {
-                            if (old_x >= tile_x + tile_w) {
-                                entity->x = tile_x + tile_w;
-                            } else {
-                                float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
-                                float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
+                    /* assume this is for right facing (left) slope first. (slope = 1) */
+                    bool taller_edge_intersection = (old_x >= tile_x + tile_w);
+                    bool smaller_edge_intersection = (old_x + entity->w <= tile_x);
+                    float taller_edge_correction_position = tile_x + tile_w;
+                    float smaller_edge_correction_position = tile_x - entity->w;
 
-                                if (entity->y + entity->h <= tile_y + tile_h) {
-                                    if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
-                                        entity->y = slope_snapped_location;
-                                        entity->vy = 0;
+                    if (t->id == TILE_SLOPE_R || t->id == TILE_SLOPE_BR) {
+                        /*just reversed.*/
+                        swap(bool, taller_edge_intersection, smaller_edge_intersection);
+                        swap(float, taller_edge_correction_position, smaller_edge_correction_position);
+                    }
+
+                    if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
+                        if (taller_edge_intersection) {
+                            entity->x = taller_edge_correction_position;
+                        } else {
+                            float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+                            float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
+                            float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
+
+                            if (entity->y + entity->h <= tile_y + tile_h) {
+                                /*
+                                  TODO(jerry):
+                                  this is the wrong condition, I need more data to properly determine
+                                  when I should "anchor on".
+
+                                  This is a very small bug compared to other shit I've fucked up so far
+                                  so I can sleep soundly at night knowing this is still here.
+                                */
+                                if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/4))) {
+                                    entity->y = slope_snapped_location;
+#if 0
+                                    /*something like this?*/
+                                    if (hit_anything) {
+                                        entity->x = old_x;
+                                        entity->y = last_y_before_slope_snap;
                                     }
+#endif
+                                    entity->vy = 0;
+                                }
+                            } else {
+                                if (smaller_edge_intersection) {
+                                    entity->x = smaller_edge_correction_position;
                                 } else {
-                                    if (old_x + entity->w <= tile_x) {
-                                        entity->x = tile_x - entity->w;
+                                    if (fabs(delta_from_foot_to_tile_bottom) < fabs(delta_from_foot_to_tile_top)) {
+                                        entity->y = tile_y + tile_h;
                                     } else {
-                                        float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
-
-                                        if (fabs(delta_from_foot_to_tile_bottom) < fabs(delta_from_foot_to_tile_top)) {
-                                            entity->y = tile_y + tile_h;
-                                        } else {
-                                            entity->y = slope_snapped_location;
-                                        }
-
-                                        entity->vy = 0;
-                                    }
-                                }
-                            }
-                        } break;
-                        case TILE_SLOPE_R: {
-                            if (old_x + entity->w <= tile_x) {
-                                entity->x = tile_x - entity->w;
-                            } else {
-                                float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
-                                float delta_from_foot_to_tile_top = (entity->y - slope_snapped_location);
-
-                                if (entity->y + entity->h <= tile_y + tile_h) {
-                                    if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
                                         entity->y = slope_snapped_location;
+                                    }
+
+                                    entity->vy = 0;
+                                }
+                            }
+                        }
+                    } else {
+                        if (taller_edge_intersection) {
+                            entity->x = taller_edge_correction_position;
+                        } else {
+                            float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+
+                            if (entity->y >= tile_y) {
+                                if (entity->y < slope_snapped_location) {
+                                    entity->y = slope_snapped_location;
+
+                                    if (entity->vy < 0) {
                                         entity->vy = 0;
                                     }
-                                } else {
-                                    if (old_x >= tile_x + tile_w) {
-                                        entity->x = tile_x + tile_w;
-                                    } else {
-                                        float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
-
-                                        if (fabs(delta_from_foot_to_tile_bottom) < fabs(delta_from_foot_to_tile_top)) {
-                                            entity->y = tile_y + tile_h;
-                                        } else {
-                                            entity->y = slope_snapped_location;
-                                        }
-
-                                        entity->vy = 0;
-                                    }
                                 }
-                            }
-                        } break;
-                        case TILE_SLOPE_BL: {
-                            if (old_x >= tile_x + tile_w) {
-                                entity->x = tile_x + tile_w;
                             } else {
-                                float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
-
-                                if (entity->y >= tile_y) {
-                                    if (entity->y < slope_snapped_location) {
-                                        entity->y = slope_snapped_location;
-
-                                        if (entity->vy < 0) {
-                                            entity->vy = 0;
-                                        }
-                                    }
-                                } else {
-                                    if (old_x + entity->w >= tile_x) {
-                                        entity->x = tile_x - entity->w;
-                                    }
+                                if (smaller_edge_intersection) {
+                                    entity->x = smaller_edge_correction_position;
                                 }
                             }
-                        } break;
-                        case TILE_SLOPE_BR: {
-                            if (old_x + entity->w <= tile_x) {
-                                entity->x = tile_x - entity->w;
-                            } else {
-                                if (entity->y >= tile_y) {
-                                    float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
-
-                                    if (entity->y <= slope_snapped_location) {
-                                        entity->y = roundf(slope_snapped_location);
-                                        if (entity->vy < 0) {
-                                            entity->vy = 0;
-                                        }
-                                    }
-
-                                } else {
-                                    if (old_x <= tile_x + tile_w) {
-                                        entity->x = tile_x + tile_w;
-                                    }
-                                }
-                            }
-                        } break;
+                        }
                     }
                 } else {
                     if (!do_collision_response_tile_left_edge(t, entity)) {
