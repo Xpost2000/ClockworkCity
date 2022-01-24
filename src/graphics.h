@@ -54,5 +54,6 @@ void draw_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color);
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color);
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
+void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union color4f color);
 
 #endif

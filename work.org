@@ -76,6 +76,22 @@
     Uh. I guess I fixed the issue. Not sure why the inequality needs to be this way.
     I mean I kind of do, but not 100%. But okay.
     
+** <2022-01-24 Mon>
+   90% sure if I can do most of the stuff above... I'm probably in more than acceptable
+   shape for the jam. I'm probably going to just add graphics features at this point or
+   bugfix, or optimize engine stuff. If I think of any actual generic metroidvania/platformer
+   features I'm probably missing. This is just extends until the start of the jam.
+
+   Or I might just continually refine the game tools for this engine/framework thingie. Then just
+   like 7DRL, I "fork" the engine to make the game.
+
+   I will find it horribly ironic if this goes just as bad as 7DRL since I made the godot framework
+   for that a week in advance, and I still fucked up in the game making process LOL. But this is a month
+   and not a week.
+   
+   Need to handle some quick business, and will be late coming home so don't expect most of this.
+*** TODO Text input system
+    To type stuff
 *** TODO [4/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
@@ -98,20 +114,6 @@
     Just wanna try and simulate some fire and smoke
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
-** <2022-01-24 Mon>
-   90% sure if I can do most of the stuff above... I'm probably in more than acceptable
-   shape for the jam. I'm probably going to just add graphics features at this point or
-   bugfix, or optimize engine stuff. If I think of any actual generic metroidvania/platformer
-   features I'm probably missing. This is just extends until the start of the jam.
-
-   Or I might just continually refine the game tools for this engine/framework thingie. Then just
-   like 7DRL, I "fork" the engine to make the game.
-
-   I will find it horribly ironic if this goes just as bad as 7DRL since I made the godot framework
-   for that a week in advance, and I still fucked up in the game making process LOL. But this is a month
-   and not a week.
-   
-   Need to handle some quick business, and will be late coming home so don't expect most of this.
 *** TODO Slopes! When I walk into an obstacle!
     This isn't really that difficult to fix. Just kind of annoying.
 *** TODO (ingame console)

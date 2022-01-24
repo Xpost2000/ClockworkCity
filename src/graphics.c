@@ -144,6 +144,30 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
     return dimensions[1];
 }
 
+void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union color4f color) {
+    TTF_Font* font_object = fonts[font.id];
+    if (font.id != 0)
+        assert(font_object && "weird... bad font?");
+
+    SDL_Texture* rendered_text;
+    SDL_Surface* text_surface = TTF_RenderGlyph_Blended(font_object, codepoint,
+                                                        (SDL_Color) {color.r * 255, color.g * 255,
+                                                           color.b * 255, color.a * 255});
+
+    _camera_transform_v2(&x, &y);
+    rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
+    SDL_FreeSurface(text_surface);
+
+    int dimensions[2] = {};
+    {
+        SDL_QueryTexture(rendered_text, 0, 0, dimensions, dimensions+1);
+        SDL_RenderCopy(global_renderer, rendered_text,
+                       NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
+    }
+
+    SDL_DestroyTexture(rendered_text);
+}
+
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
     TTF_Font* font_object = fonts[font.id];
 

@@ -13,6 +13,9 @@
 #include "graphics.h"
 #include "audio.h"
 
+#define CONSOLE_IMPLEMENTATION
+#include "blackiron_console_sfl.h"
+
 #define WINDOW_NAME "Metroidvania Jam 15"
 
 SDL_Window* global_window;
@@ -22,6 +25,47 @@ bool running = true;
 
 local void load_static_resources(void);
 local void update_render_frame(float dt);
+
+local font_id _console_font;
+void _console_draw_codepoint(void* context, uint32_t codepoint, float x, float y, float r, float g, float b, float a) {
+    /*
+      This weirdness is a holdover from the blackiron renderer, which had text render
+      above the baseline.
+
+      This renderer doesn't do that.
+      NOTE(jerry): lerping looks weird with this setup for whatever reason. Rest of the console works fine though.
+    */
+    int height;
+    get_text_dimensions(_console_font, "b", 0, &height);
+    draw_codepoint(_console_font, x, y-height, codepoint, color4f(r,g,b,a));
+}
+
+void _console_draw_rectangle(void* context, float x, float y, float w, float h, float r, float g, float b, float a) {
+    draw_filled_rectangle(x, y, w, h, color4f(r, g, b, a));
+}
+
+void _console_set_scissor_region(void* context, float x, float y, float w, float h) {
+}
+
+struct console_screen_metrics _console_get_screen_metrics(void* context) {
+    int dimens[2];
+    get_screen_dimensions(dimens, dimens+1);
+
+    return (struct console_screen_metrics) {
+        .width = dimens[0],
+        .height = dimens[1]
+    };
+}
+
+struct console_text_metrics _console_measure_text(void* context, char* text_utf8) {
+    int dimens[2];
+    get_text_dimensions(_console_font, text_utf8, dimens, dimens+1);
+
+    return (struct console_text_metrics) {
+        .width = dimens[0],
+        .height = dimens[1],
+    };
+}
 
 local int translate_sdl_scancode(int scancode) {
     local int _sdl_scancode_to_input_keycode_table[255] = {
@@ -220,10 +264,28 @@ local void handle_sdl_event(SDL_Event event) {
 
                I'll find out later.
              */
-            if (event.type == SDL_KEYDOWN) {
-                register_key_down(translate_sdl_scancode(event.key.keysym.scancode));
+            if (console_active()) {
+                if (event.type == SDL_KEYDOWN) {
+                    if (event.key.keysym.scancode == SDL_SCANCODE_BACKSPACE) {
+                        console_send_character('\b');
+                    } else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT) {
+                        console_move_backward_character();
+                    } else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
+                        console_move_forward_character();
+                    } else if (event.key.keysym.scancode == SDL_SCANCODE_F1) {
+                        console_kill_line_from_current_position();
+                    }
+
+                    if (event.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+                        console_submit();
+                    }
+                }
             } else {
-                register_key_up(translate_sdl_scancode(event.key.keysym.scancode));
+                if (event.type == SDL_KEYDOWN) {
+                    register_key_down(translate_sdl_scancode(event.key.keysym.scancode));
+                } else {
+                    register_key_up(translate_sdl_scancode(event.key.keysym.scancode));
+                }
             }
         } break;
         /*TODO(jerry): handle mouse relative mode later*/
@@ -254,6 +316,14 @@ local void handle_sdl_event(SDL_Event event) {
         case SDL_CONTROLLERDEVICEADDED: {
             poll_and_register_controllers();
         } break;
+        case SDL_TEXTINPUT: {
+            char* input_text = event.text.text;
+            size_t input_length = strlen(input_text);
+#if 0
+            send_text_input(input_text, input_length);
+#endif
+            console_send_character(input_text[0]);
+        } break;
     }
 }
 
@@ -279,6 +349,15 @@ local void initialize(void) {
     audio_initialize();
 
     load_static_resources();
+    console_initialize(
+        (struct console_render_procedures) {
+            .context            = NULL,
+            .draw_codepoint     = _console_draw_codepoint,
+            .draw_quad          = _console_draw_rectangle,
+            .set_scissor_region = _console_set_scissor_region,
+            .get_screen_metrics = _console_get_screen_metrics,
+            .measure_text       = _console_measure_text,
+        });
 }
 
 local void deinitialize(void) {
@@ -319,7 +398,9 @@ int main(int argc, char** argv) {
         /*NOTE(jerry): camera should operate on "game"/"graphics" time
          not IRL time ticks*/
         camera_update(dt);
+
         update_render_frame(dt);
+        console_frame(dt);
 
         present_graphics_frame();
         end_input_frame();
