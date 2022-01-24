@@ -1,20 +1,31 @@
 const int TILE_TEX_SIZE = 16;
+/*these aren't really tile ids, these are more like flags/properties*/
+/*core logic is here though, so I guess it don't matter, can worry about later.*/
+/*need to find test platformer tileset to try out some ideas...*/
 enum tile_id {
     TILE_NONE, /*shouldn't happen but okay*/
     TILE_SOLID,
-    TILE_SLOPE_BL,
     TILE_SLOPE_BR,
+    TILE_SLOPE_BL,
     TILE_SLOPE_R,
     TILE_SLOPE_L,
     TILE_ID_COUNT,
 };
-char* tile_id_filestrings[] = {
+shared_storage char* tile_id_filestrings[] = {
     0,
-    "assets/testtiles/block.png",
-    "assets/testtiles/slope45degbl.png",
-    "assets/testtiles/slope45degbr.png",
-    "assets/testtiles/slope45degr.png",
-    "assets/testtiles/slope45degl.png",
+    [TILE_SOLID] = "assets/testtiles/block.png",
+    [TILE_SLOPE_BL] = "assets/testtiles/slope45degbl.png",
+    [TILE_SLOPE_BR] = "assets/testtiles/slope45degbr.png",
+    [TILE_SLOPE_R] = "assets/testtiles/slope45degr.png",
+    [TILE_SLOPE_L] = "assets/testtiles/slope45degl.png",
+};
+shared_storage char* tile_type_strings[] = {
+    0,
+    [TILE_SOLID] = "solid",
+    [TILE_SLOPE_BL] = "bottom left slope(45 deg)",
+    [TILE_SLOPE_BR] = "bottom right slope(45 deg)",
+    [TILE_SLOPE_R] = "right slope(45 deg)",
+    [TILE_SLOPE_L] = "left slope(45 deg)",
 };
 
 texture_id tile_textures[TILE_ID_COUNT] = {};
@@ -31,8 +42,8 @@ struct tile {
     /*tiles will store relative positions (in the case of moving tile islands)*/
     /*this is redundant, but this'll allow me to use a different storage method if I want.*/
     /*also simplifies some other code later, as I don't need to derive information like the tile rectangle*/
-    uint16_t x;
-    uint16_t y;
+    int32_t x;
+    int32_t y;
     uint32_t id;
 };
 
@@ -144,13 +155,17 @@ struct tilemap DEBUG_tilemap_from_file(char* file) {
     return result;
 }
 
+void draw_tiles(struct tile* tiles, size_t count) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct tile* t = &tiles[index];
+        draw_texture(tile_textures[t->id],
+                     t->x * TILE_TEX_SIZE, t->y * TILE_TEX_SIZE,
+                     TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_WHITE);
+    } 
+}
+
 void DEBUG_draw_tilemap(struct tilemap* tilemap) {
-    for(unsigned y = 0; y < tilemap->height; ++y) {
-        for(unsigned x = 0; x < tilemap->width; ++x) {
-            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
-            draw_texture(tile_textures[t->id], x * TILE_TEX_SIZE, y * TILE_TEX_SIZE, TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_WHITE);
-        }
-    }
+    draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
 }
 
 struct tilemap global_test_tilemap = {};

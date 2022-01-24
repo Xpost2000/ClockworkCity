@@ -63,9 +63,32 @@ shared_storage float clampf(float v, float a, float b) {
     return v;
 }
 
+shared_storage int clampi(int v, int a, int b) {
+    if (v < a) v = a;
+    else if (v > b) v = b;
+
+    return v;
+}
+
+shared_storage int max_int(int a, int b) {
+    if (a > b) return a;
+    return b;
+}
+
+shared_storage int min_int(int a, int b) {
+    if (a < b) return a;
+    return b;
+}
+
 /*beh*/
 #define safe_assignment(x) if (x) *x 
 #define random_element(fixed_size_array) fixed_size_array[random_ranged_integer(0, array_count(fixed_size_array))]
+
+#define Kilobyte(x) (x * 1024)
+#define Megabyte(x) (Kilobyte(x) * 1024)
+#define Gigabyte(x) (Megabyte(x) * 1024)
+#define Terabyte(x) (Gigabyte(x) * 1024)
+
 char* clone_cstring(char* cstr);
 float random_float(void);
 int random_ranged_integer(int min, int max);

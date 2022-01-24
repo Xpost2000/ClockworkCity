@@ -20,8 +20,8 @@ local float global_elapsed_time = 0;
 local SDL_GameController* global_controller_devices[4] = {};
 bool running = true;
 
-void load_static_resources(void);
-void update_render_frame(float dt);
+local void load_static_resources(void);
+local void update_render_frame(float dt);
 
 local int translate_sdl_scancode(int scancode) {
     local int _sdl_scancode_to_input_keycode_table[255] = {

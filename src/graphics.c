@@ -5,6 +5,9 @@
   
   TODO(jerry):
   fix the weird id issues and assertions
+  
+  TODO(jerry):
+  Blend modes
 */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -38,7 +41,8 @@ inline union color4f color4f(float r, float g, float b, float a) {
 
 void graphics_initialize(void* window_handle) {
     global_window = window_handle;
-    global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1, SDL_RENDERER_ACCELERATED);
+    global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
     active_camera = &global_camera;
 }
 

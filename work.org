@@ -76,18 +76,20 @@
     Uh. I guess I fixed the issue. Not sure why the inequality needs to be this way.
     I mean I kind of do, but not 100%. But okay.
     
-*** TODO [0/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
+*** TODO [4/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
     pretty generic stuff, so should be fair game since there's no assets. I could use
     this to prototype world layout I guess...
 
     Obviously the tilemap format isn't final yet! So yeah.
+
+    (this is for a basic one btw. I have a week to QOL this shit. LOL GOOD LUCK)
     
-    - [ ] Place some tiles
-    - [ ] Select different tile types
-    - [ ] Write to disk
-    - [ ] Load from disk
+    - [X] Place some tiles
+    - [X] Select different tile types
+    - [X] Write to disk
+    - [X] Load from disk
     - [ ] Playtest mode (might not get this one?)
     - [ ] Or something
 *** TODO (reallybasicthis)particle systems that can collide and bounce

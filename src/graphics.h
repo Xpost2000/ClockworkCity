@@ -19,11 +19,12 @@ union color4f {
     float rgba[4];
 };
 
-shared_storage union color4f COLOR4F_BLACK = {{0, 0, 0, 1}};
-shared_storage union color4f COLOR4F_RED   = {{1, 0, 0, 1}};
-shared_storage union color4f COLOR4F_GREEN = {{0, 1, 0, 1}};
-shared_storage union color4f COLOR4F_BLUE  = {{0, 0, 1, 1}};
-shared_storage union color4f COLOR4F_WHITE = {{1, 1, 1, 1}};
+shared_storage union color4f COLOR4F_BLACK             = {{0, 0, 0, 1}};
+shared_storage union color4f COLOR4F_RED               = {{1, 0, 0, 1}};
+shared_storage union color4f COLOR4F_GREEN             = {{0, 1, 0, 1}};
+shared_storage union color4f COLOR4F_BLUE              = {{0, 0, 1, 1}};
+shared_storage union color4f COLOR4F_WHITE             = {{1, 1, 1, 1}};
+shared_storage union color4f COLOR4F_DARKGRAY             = {{0.3, 0.3, 0.3, 1}};
 
 union color4f color4f(float r, float g, float b, float a);
 
