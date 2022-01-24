@@ -80,7 +80,6 @@ void do_player_input(float dt) {
         if (player.onground && player.vy == 0) {
             player.vy = VPIXELS_PER_METER * -10;
             player.onground = false;
-            play_sound(test_sound);
         }
     }
 
