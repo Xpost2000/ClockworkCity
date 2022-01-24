@@ -81,7 +81,6 @@ void do_player_input(float dt) {
             player.vy = VPIXELS_PER_METER * -10;
             player.onground = false;
             play_sound(test_sound);
-            fprintf(stderr, "jump\n");
         }
     }
 

@@ -284,7 +284,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             if (old_x >= tile_x + tile_w) {
                                 entity->x = tile_x + tile_w;
                             } else {
-                                float slope_x_offset = ((entity->x + entity->w) - tile_x);
+                                float slope_x_offset = clampf(((entity->x + entity->w) - tile_x), 0, tile_w);
                                 float slope_snapped_location = (tile_y + slope_x_offset);
 
                                 if (entity->y > tile_y) {
@@ -358,7 +358,6 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                 }
 
                 entity->vx = 0;
-                return;
             }
         }
     }
@@ -388,7 +387,15 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                     } break;
                     case TILE_SLOPE_R:
                     case TILE_SLOPE_L: {
-                        if (entity->vy >= 0 && roundf(old_y) == roundf(tile_get_slope_height(t, entity->x, entity->w, entity->h))) {
+                        if (entity->vy >= 0 && roundf(old_y) == (tile_get_slope_height(t, entity->x, entity->w, entity->h))) {
+                            /*
+                              somewhere along the line, something fucked up and on the tippy top
+                              of a slope, I somehow avoid setting entity->vy to 0? Or some other
+                              number magic happened. I actually really don't know why I need this.
+                              
+                              I probably won't know until like I forget this codebase and reread it!
+                             */
+                            entity->y = roundf(entity->y);
                             entity->vy = 0;
                             return;
                         }
@@ -397,6 +404,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                     case TILE_SLOPE_BR: {
                         /* duplicated but okay. */
                         if (entity->y + entity->h <= tile_y) {
+                            entity->y = roundf(entity->y);
                             entity->vy = 0;
                             return;
                         }
