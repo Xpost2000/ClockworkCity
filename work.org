@@ -72,6 +72,10 @@
     CLOCK: [2022-01-23 Sun 16:44]--[2022-01-23 Sun 17:08] =>  0:24
     CLOCK: [2022-01-23 Sun 16:24]--[2022-01-23 Sun 16:44] =>  0:20
     :END:
+*** DONE Really... Weird issue with solid tiles when it is in the first row... WTF?
+    Uh. I guess I fixed the issue. Not sure why the inequality needs to be this way.
+    I mean I kind of do, but not 100%. But okay.
+    
 *** TODO [0/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally

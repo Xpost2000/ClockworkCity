@@ -187,7 +187,7 @@ local bool do_collision_response_tile_top_edge(struct tile* t, struct entity* en
     float entity_bottom_edge = roundf(ent->y) + ent->h;
     float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
 
-    if (entity_bottom_edge > t->y && entity_bottom_edge < tile_bottom_edge) {
+    if (entity_bottom_edge >= t->y && entity_bottom_edge <= tile_bottom_edge) {
         ent->y = t->y * TILE_TEX_SIZE - ent->h;
         return true;
     }
@@ -233,9 +233,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             if (old_x >= tile_x + tile_w) {
                                 entity->x = tile_x + tile_w;
                             } else {
-                                float slope_x_offset = clampf(((entity->x + entity->w) - tile_x), 0, tile_w);
-                                float slope_snapped_location = roundf((tile_y + tile_h) - slope_x_offset) - entity->h;
-
+                                float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
                                 float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
 
                                 if (entity->y + entity->h <= tile_y + tile_h) {
@@ -264,9 +262,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             if (old_x + entity->w <= tile_x) {
                                 entity->x = tile_x - entity->w;
                             } else {
-                                float slope_x_offset = clampf((entity->x - tile_x), 0, tile_w);
-                                float slope_snapped_location = roundf(tile_y + slope_x_offset) - entity->h;
-
+                                float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
                                 float delta_from_foot_to_tile_top = (entity->y - slope_snapped_location);
 
                                 if (entity->y + entity->h <= tile_y + tile_h) {
@@ -295,8 +291,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             if (old_x >= tile_x + tile_w) {
                                 entity->x = tile_x + tile_w;
                             } else {
-                                float slope_x_offset = clampf(((entity->x + entity->w) - tile_x), 0, tile_w);
-                                float slope_snapped_location = roundf(tile_y + slope_x_offset);
+                                float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
 
                                 if (entity->y >= tile_y) {
                                     if (entity->y < slope_snapped_location) {
@@ -318,9 +313,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 entity->x = tile_x - entity->w;
                             } else {
                                 if (entity->y >= tile_y) {
-                                    float slope_x_offset = (tile_x - entity->x);
-                                    float slope_snapped_location = ((tile_y + tile_h) + slope_x_offset);
-                                    float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
+                                    float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
 
                                     if (entity->y <= slope_snapped_location) {
                                         entity->y = roundf(slope_snapped_location);
@@ -374,16 +367,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                     case TILE_SLOPE_R:
                     case TILE_SLOPE_L: {
                         if (entity->vy >= 0 && roundf(entity->y) == roundf(tile_get_slope_height(t, entity->x, entity->w, entity->h))) {
-                            /*
-                              somewhere along the line, something fucked up and on the tippy top
-                              of a slope, I somehow avoid setting entity->vy to 0? Or some other
-                              number magic happened. I actually really don't know why I need this.
-                              
-                              I probably won't know until like I forget this codebase and reread it!
-                              
-                              NOTE(jerry): Honestly it's probably just cause I suck at keeping track of
-                              what the collision resolution modifies the state of everything lol.
-                             */
+                            /*HACK*/
                             entity->y = roundf(entity->y);
                             entity->vy = 0;
                         }
@@ -397,10 +381,6 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                         if (fabs(delta_from_foot_to_tile_top) < fabs(delta_from_foot_to_slope_location)) {
                             entity->y = tile_y - entity->h;
                             entity->vy = 0;
-                        } else {
-                            /*
-                              Handled in the horizontal path.
-                             */
                         }
                     } break;
                 }
