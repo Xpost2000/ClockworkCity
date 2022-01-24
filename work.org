@@ -116,7 +116,7 @@
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Slopes! When I walk into an obstacle!
     This isn't really that difficult to fix. Just kind of annoying.
-*** TODO (ingame console)
+*** DONE (ingame console)
     I'm not coding this from scratch, I'm literally just going to copy and paste the ingame-console from
     bim simply cause it works fine already.
 

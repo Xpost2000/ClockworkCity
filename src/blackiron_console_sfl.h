@@ -736,7 +736,7 @@ void console_display(void) {
     {
         {
             float x_cursor  = 0;
-            float y_cursor  = input_line_y + slide_offset_y;
+            float y_cursor  = input_line_y;
 
             for (decode__internal_console_utf8_iterator iterator = decode__internal_console_utf8_from(_global_console.input_line, _global_console.input_line_count+1);
                  decode__internal_console_utf8_iterator_valid(&iterator);
