@@ -67,13 +67,11 @@
       this is going to be a lot of fun to try and fix...
     - [X] Handle BL BR slopes
       
-*** TODO Clean up slope tile code
+*** DONE Clean up slope tile code
     :LOGBOOK:
     CLOCK: [2022-01-23 Sun 16:44]--[2022-01-23 Sun 17:08] =>  0:24
     CLOCK: [2022-01-23 Sun 16:24]--[2022-01-23 Sun 16:44] =>  0:20
     :END:
-*** TODO Slopes! When I walk into an obstacle!
-    This isn't really that difficult to fix. Just kind of annoying.
 *** TODO [0/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
@@ -108,6 +106,8 @@
    and not a week.
    
    Need to handle some quick business, and will be late coming home so don't expect most of this.
+*** TODO Slopes! When I walk into an obstacle!
+    This isn't really that difficult to fix. Just kind of annoying.
 *** TODO (ingame console)
     I'm not coding this from scratch, I'm literally just going to copy and paste the ingame-console from
     bim simply cause it works fine already.
