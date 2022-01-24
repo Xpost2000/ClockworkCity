@@ -43,7 +43,9 @@ void begin_graphics_frame(void);
 void end_graphics_frame(void);
 
 void present_graphics_frame(void);
+
 void report_screen_dimensions(int* dimensions);
+void get_screen_dimensions(int* width, int* height);
 
 void clear_color(union color4f color);
 

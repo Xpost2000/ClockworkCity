@@ -33,8 +33,8 @@ enum game_mode {
     GAME_MODE_COUNT,
 };
 
-/* enum game_mode mode = GAME_MODE_EDITOR; */
-enum game_mode mode = GAME_MODE_PLAYING;
+enum game_mode mode = GAME_MODE_EDITOR;
+/* enum game_mode mode = GAME_MODE_PLAYING; */
 
 #include "tilemap.c"
 #include "gameplay_mode.c"

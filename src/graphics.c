@@ -55,6 +55,11 @@ void report_screen_dimensions(int* dimensions) {
     screen_dimensions[1] = dimensions[1];
 }
 
+void get_screen_dimensions(int* width, int* height) {
+    safe_assignment(width)  = screen_dimensions[0];
+    safe_assignment(height) = screen_dimensions[1];
+}
+
 local void _set_draw_color(union color4f color) {
     SDL_SetRenderDrawColor(global_renderer, color.r * 255, color.g * 255,
                            color.b * 255, color.a * 255);
