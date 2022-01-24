@@ -8,6 +8,8 @@ struct entity player = {
 
 local void load_gameplay_resources(void) {
     /*?*/
+    DEBUG_load_all_tile_assets();
+    global_test_tilemap = DEBUG_tilemap_from_file("assets/testmap.txt");
 }
 
 local void do_physics(float dt) {

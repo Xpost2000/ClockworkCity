@@ -86,6 +86,20 @@ local void editor_try_to_place_block(int grid_x, int grid_y) {
     tile->id = editor.placement_type;
 }
 
+local void editor_erase_block(int grid_x, int grid_y) {
+    struct tile* tile = existing_block_at(editor.tiles, editor.tile_count, grid_x, grid_y);
+
+    if (!tile) {
+        return;
+    }
+
+    tile->id = TILE_NONE;
+}
+
+local void editor_clear_all(void) {
+    editor.tile_count = 0;
+}
+
 local void load_tilemap_editor_resources(void) {
     editor.arena = editor_alloc_arena(Megabyte(64));
     editor.tiles = editor_memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tiles));
@@ -134,30 +148,23 @@ local void tilemap_editor_update_render_frame(float dt) {
         editor.placement_type--;
     }
 
-    if (is_key_pressed(KEY_SPACE) && is_key_down(KEY_W)) {
-        editor_output_to_binary_file("test.chunkpiece");
-    }
-
-    if (is_key_pressed(KEY_SPACE) && is_key_down(KEY_S)) {
-        editor_load_from_binary_file("test.chunkpiece");
-    }
-
-
     editor.placement_type = clampi(editor.placement_type, TILE_SOLID, TILE_ID_COUNT-1);
 
     begin_graphics_frame(); {
         draw_filled_rectangle(0, 0, 640, 480, COLOR4F_BLACK);
         /*grid*/
         {
-            int row_count = (480/TILE_TEX_SIZE);
-            int col_count = (640/TILE_TEX_SIZE);
+            int screen_dimensions[2];
+            get_screen_dimensions(screen_dimensions, screen_dimensions+1);
+            int row_count = (screen_dimensions[1]/TILE_TEX_SIZE) + (screen_dimensions[1] % TILE_TEX_SIZE);
+            int col_count = (screen_dimensions[0]/TILE_TEX_SIZE) + (screen_dimensions[0] % TILE_TEX_SIZE);
 
             for (int y = 0; y < row_count; ++y) {
-                draw_rectangle(0, y * TILE_TEX_SIZE, 640, 2, COLOR4F_DARKGRAY);
+                draw_rectangle(0, y * TILE_TEX_SIZE, screen_dimensions[0], 2, COLOR4F_DARKGRAY);
             }
 
             for (int x = 0; x < col_count; ++x) {
-                draw_rectangle(x * TILE_TEX_SIZE, 0, 2, 480, COLOR4F_DARKGRAY);
+                draw_rectangle(x * TILE_TEX_SIZE, 0, 2, screen_dimensions[1], COLOR4F_DARKGRAY);
             }
         }
 
@@ -195,8 +202,8 @@ local void tilemap_editor_update_render_frame(float dt) {
             int mouse_position[2];
             get_mouse_location(mouse_position, mouse_position+1);
 
-            bool left_click;
-            get_mouse_buttons(&left_click, 0, 0);
+            bool left_click, right_click;
+            get_mouse_buttons(&left_click, 0, &right_click);
 
             {
                 mouse_position[0] = (mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
@@ -210,6 +217,9 @@ local void tilemap_editor_update_render_frame(float dt) {
             if (left_click) {
                 editor_try_to_place_block(mouse_position[0]/TILE_TEX_SIZE,
                                           mouse_position[1]/TILE_TEX_SIZE);
+            } else if (right_click) {
+                editor_erase_block(mouse_position[0]/TILE_TEX_SIZE,
+                                   mouse_position[1]/TILE_TEX_SIZE);
             }
         }
 

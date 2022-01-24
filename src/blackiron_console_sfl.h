@@ -16,6 +16,7 @@
   why there was some small weird bugs.
   
   Ugh... I'll backport it later but I'll hardcode some new constants.
+  UGH! THIS DOESN'T HAVE THE TAB COMPLETION YET! GOTTA BACKPORT FEATURES LATER THIS WEEK!!!
  */
 #ifndef CONSOLE_H
 #define CONSOLE_H
@@ -762,6 +763,10 @@ void console_display(void) {
 }
 
 void console_system_execute(char* line, size_t line_size);
+void console_execute_cstr(char* line) {
+    console_system_execute(line, strlen(line));
+}
+
 void console_submit(void) {
     if (_global_console.input_line_count > 0) {
         console_system_execute(_global_console.input_line, _global_console.input_line_count);

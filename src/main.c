@@ -17,6 +17,8 @@
 #include "blackiron_console_sfl.h"
 
 #define WINDOW_NAME "Metroidvania Jam 15"
+#define DEFAULT_RESOLUTION_X 1024
+#define DEFAULT_RESOLUTION_Y 768
 
 SDL_Window* global_window;
 local float global_elapsed_time = 0;
@@ -25,6 +27,7 @@ bool running = true;
 
 local void load_static_resources(void);
 local void update_render_frame(float dt);
+local void register_console_commands();
 
 local font_id _console_font;
 void _console_draw_codepoint(void* context, uint32_t codepoint, float x, float y, float r, float g, float b, float a) {
@@ -340,8 +343,8 @@ local void initialize(void) {
     global_window = SDL_CreateWindow(
         WINDOW_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        640, 480,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
+        DEFAULT_RESOLUTION_X, DEFAULT_RESOLUTION_Y,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP
     );
     {
         int screen_dimensions[2];
@@ -362,6 +365,8 @@ local void initialize(void) {
             .get_screen_metrics = _console_get_screen_metrics,
             .measure_text       = _console_measure_text,
         });
+    console_printf("Welcome to xvania\na C metroidvania game engine thing for\nMetroidvania Jam 15.\n");
+    register_console_commands();
 }
 
 local void deinitialize(void) {
@@ -415,3 +420,5 @@ int main(int argc, char** argv) {
     deinitialize();
     return 0;
 }
+
+#include "console_commands.c"

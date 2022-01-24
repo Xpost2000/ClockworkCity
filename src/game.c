@@ -43,13 +43,10 @@ enum game_mode mode = GAME_MODE_EDITOR;
 local void load_static_resources(void) {
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
-    _console_font  = load_font("assets/pxplusvga8.ttf", 16);
+    _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
 
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
-
-    DEBUG_load_all_tile_assets();
-    global_test_tilemap = DEBUG_tilemap_from_file("assets/testmap.txt");
 
     load_gameplay_resources();
     load_tilemap_editor_resources();

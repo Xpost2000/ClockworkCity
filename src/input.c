@@ -66,5 +66,5 @@ void begin_input_frame(void) {
 }
 void end_input_frame(void) {
     global_input.last_state = global_input.current_state;
-    zero_buffer_memory(&global_input.current_state, sizeof(global_input.current_state));
+    zero_array(global_input.current_state.keys);
 }
