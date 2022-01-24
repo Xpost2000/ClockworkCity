@@ -42,6 +42,21 @@ bool tile_is_slope(struct tile* t) {
             (t->id == TILE_SLOPE_L)  ||
             (t->id == TILE_SLOPE_R));
 }
+
+float tile_get_slope_height(struct tile* t, float x, float w, float h) {
+    float tile_x = t->x * TILE_TEX_SIZE;
+    float tile_y = t->y * TILE_TEX_SIZE;
+    float tile_w = TILE_TEX_SIZE;
+    float tile_h = TILE_TEX_SIZE;
+
+    if (t->id == TILE_SLOPE_L) {
+        float slope_x_offset = clampf(((x + w) - tile_x), 0, tile_w);
+        return ((tile_y + tile_h) - slope_x_offset - h);
+    } else {
+        float slope_x_offset = clampf((x - tile_x), 0, tile_w);
+        return ((tile_y + slope_x_offset) - h);
+    }
+}
 /* should be "streamed" */
 struct tilemap {
     uint16_t width;
@@ -147,7 +162,7 @@ local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* 
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
 
     float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
-    if (ent->x < tile_right_edge && ent->x > t->x) {
+    if (roundf(ent->x) < tile_right_edge && roundf(ent->x) > t->x) {
         ent->x = tile_right_edge;
         return true;
     }
@@ -158,7 +173,7 @@ local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* 
 local bool do_collision_response_tile_top_edge(struct tile* t, struct entity* ent) {
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
 
-    float entity_bottom_edge = ent->y + ent->h;
+    float entity_bottom_edge = roundf(ent->y) + ent->h;
     float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
 
     if (entity_bottom_edge > t->y && entity_bottom_edge < tile_bottom_edge) {
@@ -199,7 +214,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
 
             if(t->id == TILE_NONE) continue;
 
-            if (rectangle_intersects_v(roundf(entity->x), roundf(entity->y), entity->w, entity->h,
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
                                        tile_x, tile_y, tile_w, tile_h)) {
                 if (tile_is_slope(t)) {
                     switch (t->id) {
@@ -349,61 +364,46 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
 
 void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
     float old_y = entity->y;
-    {
-        entity->y += entity->vy * dt;
+    entity->y += entity->vy * dt;
 
-        for(unsigned y = 0; y < tilemap->height; ++y) {
-            for(unsigned x = 0; x < tilemap->width; ++x) {
-                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+    for(unsigned y = 0; y < tilemap->height; ++y) {
+        for(unsigned x = 0; x < tilemap->width; ++x) {
+            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
 
-                float tile_x = x * TILE_TEX_SIZE;
-                float tile_y = y * TILE_TEX_SIZE;
-                float tile_w = TILE_TEX_SIZE;
-                float tile_h = TILE_TEX_SIZE;
+            float tile_x = x * TILE_TEX_SIZE;
+            float tile_y = y * TILE_TEX_SIZE;
+            float tile_w = TILE_TEX_SIZE;
+            float tile_h = TILE_TEX_SIZE;
 
-                if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
-                    switch (t->id) {
-                        case TILE_SOLID: {
-                            do_collision_response_tile_top_edge(t, entity);
-                            do_collision_response_tile_bottom_edge(t, entity);
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
+                switch (t->id) {
+                    case TILE_SOLID: {
+                        do_collision_response_tile_top_edge(t, entity);
+                        do_collision_response_tile_bottom_edge(t, entity);
 
+                        entity->vy = 0;
+                        return;
+                    } break;
+                    case TILE_SLOPE_R:
+                    case TILE_SLOPE_L: {
+                        if (entity->vy >= 0 && roundf(old_y) == roundf(tile_get_slope_height(t, entity->x, entity->w, entity->h))) {
                             entity->vy = 0;
-                            goto confirmed_tile_collision;
-                        } break;
-                        case TILE_SLOPE_L: {
-                            float slope_x_offset = clampf(((entity->x + entity->w) - tile_x), 0, tile_w);
-                            float slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - entity->h;
-
-                            if (entity->vy >= 0 && roundf(old_y) == roundf(slope_snapped_location)) {
-                                entity->vy = 0;
-                                goto confirmed_tile_collision;
-                            }
-                        } break;
-                        case TILE_SLOPE_R: {
-                            float slope_x_offset = clampf((entity->x - tile_x), 0, tile_w);
-                            float slope_snapped_location = (tile_y + slope_x_offset) - entity->h;
-
-                            if (entity->vy >= 0 && roundf(old_y) == roundf(slope_snapped_location)) {
-                                entity->vy = 0;
-                                goto confirmed_tile_collision;
-                            }
-                        } break;
-                        case TILE_SLOPE_BL:
-                        case TILE_SLOPE_BR: {
-                            /* duplicated but okay. */
-                            if (entity->y + entity->h <= tile_y) {
-                                entity->vy = 0;
-                                goto confirmed_tile_collision;
-                            }
-                        } break;
-                    }
-
+                            return;
+                        }
+                    } break;
+                    case TILE_SLOPE_BL:
+                    case TILE_SLOPE_BR: {
+                        /* duplicated but okay. */
+                        if (entity->y + entity->h <= tile_y) {
+                            entity->vy = 0;
+                            return;
+                        }
+                    } break;
                 }
+
             }
         }
     }
-confirmed_tile_collision:
-        return;
 }
 
 void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct entity* entity, float dt) {
@@ -411,7 +411,7 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
     {
         bool was_on_ground = entity->onground;
         entity->onground = false;
-        /*stupid double scan*/
+
         for(unsigned y = 0; y < tilemap->height; ++y) {
             for(unsigned x = 0; x < tilemap->width; ++x) {
                 struct tile* t = &tilemap->tiles[y * tilemap->width + x];
@@ -422,7 +422,7 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
                 float tile_h = TILE_TEX_SIZE;
 
                 if(t->id == TILE_NONE) continue;
-                if (!rectangle_overlapping_v(roundf(entity->x), roundf(entity->y), entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) continue;
+                if (!rectangle_overlapping_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) continue;
 
                 /*NOTE(jerry): this is slightly... different for sloped tiles.*/
 
@@ -430,27 +430,14 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
                     entity->onground = true;
                 }
 
-                switch (t->id) {
-                    case TILE_SLOPE_L: {
-                        float slope_x_offset = clampf(((entity->x + entity->w) - tile_x), 0, tile_w);
-                        float slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - entity->h;
+                if (tile_is_slope(t)) {
+                    float slope_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
 
-                        if (roundf(entity->y) == roundf(slope_snapped_location)) {
-                            entity->onground = true;
-                        } else {
-                            entity->onground = false;
-                        }
-                    } break;
-                    case TILE_SLOPE_R: {
-                        float slope_x_offset = clampf((entity->x - tile_x), 0, tile_w);
-                        float slope_snapped_location = (tile_y + slope_x_offset) - entity->h;
-
-                        if (roundf(entity->y) == roundf(slope_snapped_location)) {
-                            entity->onground = true;
-                        } else {
-                            entity->onground = false;
-                        } 
-                    } break;
+                    if (roundf(entity->y) == roundf(slope_location)) {
+                        entity->onground = true;
+                    } else {
+                        entity->onground = false;
+                    }
                 }
 
                 if (entity->onground) {

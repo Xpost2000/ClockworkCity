@@ -53,7 +53,7 @@ void do_player_input(float dt) {
 
     player.vx = 0;
     const float MOVEMENT_THRESHOLD = 0.5;
-    const int MAX_SPEED = 10;
+    const int MAX_SPEED = 5;
 
     bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
@@ -67,6 +67,10 @@ void do_player_input(float dt) {
     if (gamepad->left_stick.axes[0] != 0) {
         player.vx = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[0];
     }
+
+    /* if (gamepad->left_stick.axes[1] != 0) { */
+    /*     player.vy = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[1]; */
+    /* } */
 
     if (roundf(player.vy) == 0) {
         player.jump_leniancy_timer = 0.3;
