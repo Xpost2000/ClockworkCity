@@ -223,13 +223,14 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 entity->x = tile_x + tile_w;
                             } else {
                                 float slope_x_offset = clampf(((entity->x + entity->w) - tile_x), 0, tile_w);
-                                float slope_snapped_location = ((tile_y + tile_h) - slope_x_offset) - entity->h;
+                                float slope_snapped_location = roundf((tile_y + tile_h) - slope_x_offset) - entity->h;
 
                                 float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
 
                                 if (entity->y + entity->h <= tile_y + tile_h) {
                                     if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
                                         entity->y = slope_snapped_location;
+                                        entity->vy = 0;
                                     }
                                 } else {
                                     if (old_x + entity->w <= tile_x) {
@@ -253,13 +254,14 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 entity->x = tile_x - entity->w;
                             } else {
                                 float slope_x_offset = clampf((entity->x - tile_x), 0, tile_w);
-                                float slope_snapped_location = (tile_y + slope_x_offset) - entity->h;
+                                float slope_snapped_location = roundf(tile_y + slope_x_offset) - entity->h;
 
                                 float delta_from_foot_to_tile_top = (entity->y - slope_snapped_location);
 
                                 if (entity->y + entity->h <= tile_y + tile_h) {
                                     if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/2.25))) {
                                         entity->y = slope_snapped_location;
+                                        entity->vy = 0;
                                     }
                                 } else {
                                     if (old_x >= tile_x + tile_w) {
