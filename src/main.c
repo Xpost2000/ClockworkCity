@@ -274,6 +274,10 @@ local void handle_sdl_event(SDL_Event event) {
                         console_move_forward_character();
                     } else if (event.key.keysym.scancode == SDL_SCANCODE_F1) {
                         console_kill_line_from_current_position();
+                    } else if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
+                        console_previous_history_entry();
+                    } else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
+                        console_next_history_entry();
                     }
 
                     if (event.key.keysym.scancode == SDL_SCANCODE_RETURN) {

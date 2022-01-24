@@ -9,6 +9,13 @@
   - Kind of easy integration
   - Tab completion
   - basic emacs keybindings
+  
+  NOTE(jerry):
+  Oh wait. I just realized the theming never got backported from the engine,
+  since this is a slightly earlier version of the console... Which explains
+  why there was some small weird bugs.
+  
+  Ugh... I'll backport it later but I'll hardcode some new constants.
  */
 #ifndef CONSOLE_H
 #define CONSOLE_H
@@ -82,8 +89,8 @@ static bool is_human_readable_ascii_character(char character) {
 #define CONSOLE_SCROLLBACK_BUFFER_SIZE (16384 + 1)
 #define CONSOLE_INPUT_LINE_BUFFER_SIZE (512)
 
-#define CONSOLE_CURSOR_BLINK_TIMER_MAX (0.75)
-#define CONSOLE_SCREEN_PORTION (0.65)
+#define CONSOLE_CURSOR_BLINK_TIMER_MAX (0.45)
+#define CONSOLE_SCREEN_PORTION (0.45)
 #define CONSOLE_INPUT_HISTORY_MAX_ENTRIES (8)
 #define CONSOLE_DROPSHADOW_X_OFFSET (2.3)
 #define CONSOLE_DROPSHADOW_Y_OFFSET (1)
@@ -694,12 +701,15 @@ void console_display(void) {
 
     {
         float rgba[4];
-        _internal_console_decode_rgba_from_uint32(0x008C77FF, rgba);
+        /* _internal_console_decode_rgba_from_uint32(0x008C77FF, rgba); */
+        _internal_console_decode_rgba_from_uint32(0xF50F22FF, rgba);
+        
         _global_console.render_procedures.draw_quad(_global_console.render_procedures.context, 0, slide_offset_y, console_width, console_height, rgba[0], rgba[1], rgba[2], 0.93);
     }
     {
         float rgba[4];
-        _internal_console_decode_rgba_from_uint32(0x005A44FF, rgba);
+        /* _internal_console_decode_rgba_from_uint32(0x005A44FF, rgba); */
+        _internal_console_decode_rgba_from_uint32(0x752A30FF, rgba);
         _global_console.render_procedures.draw_quad(_global_console.render_procedures.context, 0, input_line_y + slide_offset_y, _global_console.width, glyph_height*1.1, rgba[0], rgba[1], rgba[2], 1.0);
     }
 
