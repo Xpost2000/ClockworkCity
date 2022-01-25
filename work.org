@@ -90,8 +90,28 @@
    and not a week.
    
    Need to handle some quick business, and will be late coming home so don't expect most of this.
-*** TODO Text input system
+
+   Not today I guess.
+   
+*** DONE (ingame console)
+    I'm not coding this from scratch, I'm literally just going to copy and paste the ingame-console from
+    bim simply cause it works fine already.
+
+    It's not a scripting language or anything which kinda sucks, it's just a basic quake style console.
+    It works pretty well imo, and is easy to integrate so... free 1.2k lines to the source code lol
+
+    Probably only going to use this for basic cheats, and level loading, game state setting, and testing
+    things like seeing the ending or whatever.
+    
+*** DONE Text input system
     To type stuff
+** <2022-01-25 Tue>
+   I have a meeting today.
+
+   However I get home earlier, and the meeting starts quite late so I most certainly have time
+   to work on this. Most of my work is expected to be done on the weekend atm, but obviously if I
+   can chisel out small pieces, this is very helpful and I probably will.
+   
 *** TODO [4/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
@@ -116,16 +136,6 @@
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Slopes! When I walk into an obstacle!
     This isn't really that difficult to fix. Just kind of annoying.
-*** DONE (ingame console)
-    I'm not coding this from scratch, I'm literally just going to copy and paste the ingame-console from
-    bim simply cause it works fine already.
-
-    It's not a scripting language or anything which kinda sucks, it's just a basic quake style console.
-    It works pretty well imo, and is easy to integrate so... free 1.2k lines to the source code lol
-
-    Probably only going to use this for basic cheats, and level loading, game state setting, and testing
-    things like seeing the ending or whatever.
-    
 *** TODO (animated sprite system) or something?
 *** TODO Load different levels/tilemaps/chunks/whatever
 *** TODO Moveable tilemap "islands" / platforms
@@ -176,11 +186,29 @@
 
     I'm considering just using BFS bounded by a distance formula, and calling that a day.
     Pretty sure that'll look okay enough for what I need.
-** <2022-01-25 Tue>
-   I have a meeting today.
+** <2022-01-26 Wed>
+   Hmmm, I think I'm actually free on this day!
+** <2022-01-27 Thu>
+   RTX 3050 comes out!
+
+   I'm also free today!
+** <2022-01-28 Fri>
+   I come home VERY late today! (thanks club that I go to of my own choice.),
+
+   If anything I'm probably just going to try and clean stuff up. Maybe one or two more features
+** Weekend...
+   4 days off so yay.
+
+   I can likely get lots of work done during this time, though I want to take a day off or something.
+
+   It'll depend on the progress I make.
 * Jam Time <2022-02-15 Tue>
   When the jam starts put tasks here. This is game-specific stuff,
   hopefully by this time I have a plan for the game plot and obviously
   the engine should be ready by this time (or good enough...)
 
-  Hopefully the 
+  I'm allowing myself a buffer period of like 4-5 days if my engine doesn't have it's shit together by
+  now, (I mean... I am taking my time and I don't currently feel like I'm under too much pressure to get something out,
+  since atm I'm not planning on doing something that requires lots of artistic power, which is where I'd drain most of my time.
+
+  I of course still need sprites, but I mean like very minimal art style that almost looks like vector art might pass...).
