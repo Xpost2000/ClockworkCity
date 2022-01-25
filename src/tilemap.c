@@ -381,7 +381,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                               This is a very small bug compared to other shit I've fucked up so far
                               so I can sleep soundly at night knowing this is still here.
                             */
-                            if (true || entity->vy >= 0 && (entity->y >= slope_snapped_location)) {
+                            if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= TILE_TEX_SIZE/((float)entity->h * 0.0754))) {
                                 float old_y = entity->y;
                                 entity->y = slope_snapped_location;
 

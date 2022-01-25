@@ -133,7 +133,7 @@
     Just wanna try and simulate some fire and smoke
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
-*** TODO Slopes! When I walk into an obstacle!
+*** DONE Slopes! When I walk into an obstacle!
     This isn't really that difficult to fix. Just kind of annoying.
 *** TODO Spikes (don't die immediately, just reset to last grounded area.)
 *** TODO Load different levels/tilemaps/chunks/whatever

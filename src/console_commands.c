@@ -59,6 +59,25 @@ Define_Console_Command(editor_playtest) {
     player.y = editor.camera_y;
 }
 
+/*TODO(jerry): STUPID, allow direct loading from the file!*/
+Define_Console_Command(load) {
+    if (argument_count != 1) {
+        console_printf("provide file name\n");
+        return;
+    } 
+
+    struct console_system_variant csmode = parameters[0];
+    if (!(csmode.type & CONSOLE_VARIABLE_TYPE_STRING)) {
+        console_printf("filename must be string\n");
+        return;
+    }
+
+    char* command_string = csmode.string;
+    editor_load_from_binary_file(command_string);
+    editor_serialize_into_game_memory();
+    mode = GAME_MODE_PLAYING;
+}
+
 Define_Console_Command(noclip) {
     console_printf("dirty cheater\n");
     noclip ^= 1;
@@ -73,4 +92,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_editor_load);
     console_system_register_command(&cmd_editor_clear);
     console_system_register_command(&cmd_editor_playtest);
+    console_system_register_command(&cmd_load);
 }
