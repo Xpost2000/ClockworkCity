@@ -1,5 +1,3 @@
-struct tilemap global_test_tilemap = {};
-
 struct entity player = {
     // no units, prolly pixels
     .x = -VPIXELS_PER_METER/4,
@@ -9,13 +7,12 @@ struct entity player = {
 };
 
 local void load_gameplay_resources(void) {
-    /*?*/
     DEBUG_load_all_tile_assets();
-    global_test_tilemap = DEBUG_tilemap_from_file("assets/testmap.txt");
+    game_state->loaded_level = DEBUG_tilemap_from_file(&game_memory_arena, "assets/testmap.txt");
 }
 
 local void do_physics(float dt) {
-    struct tilemap* tilemap = &global_test_tilemap;
+    struct tilemap* tilemap = game_state->loaded_level;
     player.vy += VPIXELS_PER_METER*20 * dt;
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
@@ -76,7 +73,7 @@ local void game_update_render_frame(float dt) {
         camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
-        DEBUG_draw_tilemap(&global_test_tilemap);
+        DEBUG_draw_tilemap(game_state->loaded_level);
     } end_graphics_frame();
 
     begin_graphics_frame(); {

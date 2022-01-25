@@ -1,4 +1,10 @@
+struct game_state {
+    struct tilemap* loaded_level;
+};
+
+/*TODO(jerry): move some game state globals into this.*/
 local struct memory_arena game_memory_arena;
+local struct game_state* game_state;
 
 local texture_id knight_twoview;
 local font_id    test_font;
@@ -48,6 +54,10 @@ local void load_static_resources(void) {
 
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
+
+    game_memory_arena = allocate_memory_arena(Megabyte(8));
+
+    game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
 
     load_gameplay_resources();
     load_tilemap_editor_resources();

@@ -36,6 +36,10 @@ void memory_arena_clear(struct memory_arena* arena) {
     arena->used = 0;
 }
 
+void memory_arena_clear_top(struct memory_arena* arena) {
+    arena->top_used = 0;
+}
+
 void memory_arena_deallocate(struct memory_arena* arena) {
     arena->used = 0;
     arena->capacity = 0;

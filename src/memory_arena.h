@@ -38,6 +38,8 @@ struct temporary_arena begin_temporary_memory(struct memory_arena* arena, size_t
 void end_temporary_memory(struct temporary_arena* temp);
 
 void memory_arena_clear(struct memory_arena* arena);
+void memory_arena_clear_top(struct memory_arena* arena);
+
 void memory_arena_deallocate(struct memory_arena* arena);
 
 #endif

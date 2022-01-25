@@ -117,37 +117,42 @@ struct tilemap {
 
   ehh....
 */
-struct tilemap DEBUG_tilemap_from_file(char* file) {
-    struct tilemap result = {};
+struct tilemap* DEBUG_tilemap_from_file(struct memory_arena* arena, char* file) {
+    /*
+      allocates from the top.
+      Bottom is for permenant information / persistent. Top is for levels or more temp stuff
+    */
+    struct tilemap* result = memory_arena_push_top(arena, sizeof(*result));
     char* filestring = load_entire_file(file);
 
     {
-        result.height = count_lines_of_cstring(filestring);
-        result.width = 0;
+        result->height = count_lines_of_cstring(filestring);
+        result->width = 0;
 
         int index = 0;
         char* current_line;
 
         while (current_line = get_line_starting_from(filestring, &index)){
             int current_length = strlen(current_line);
-            if (result.width < current_length) {
-                result.width = current_length;
+            if (result->width < current_length) {
+                result->width = current_length;
             }
         }
     }
 
-    result.tiles = system_allocate_zeroed_memory(result.width * result.height * sizeof(*result.tiles));
-    printf("%d x %d\n", result.width, result.height);
+    /* result->tiles = system_allocate_zeroed_memory(result.width * result.height * sizeof(*result.tiles)); */
+    result->tiles = memory_arena_push_top(arena, result->width * result->height * sizeof(*result->tiles));
+    printf("%d x %d\n", result->width, result->height);
 
     {
         int index = 0;
         char* current_line;
 
-        for(unsigned y = 0; y < result.height; ++y) {
+        for(unsigned y = 0; y < result->height; ++y) {
             current_line = get_line_starting_from(filestring, &index);
 
-            for(unsigned x = 0; x < result.width; ++x) {
-                struct tile* t = &result.tiles[y * result.width + x];
+            for(unsigned x = 0; x < result->width; ++x) {
+                struct tile* t = &result->tiles[y * result->width + x];
                 t->y = y;
                 t->x = x;
 
