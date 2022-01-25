@@ -79,9 +79,9 @@ local void game_update_render_frame(float dt) {
 
     begin_graphics_frame(); {
         draw_text(test_font, 0, 0,
-                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n",
+                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n%f ms",
                               player.onground,
-                              player.x, player.y, player.vx, player.vy),
+                              player.x, player.y, player.vx, player.vy, dt * 1000.0f),
                   COLOR4F_WHITE);
     } end_graphics_frame();
 }

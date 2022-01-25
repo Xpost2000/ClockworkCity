@@ -127,7 +127,6 @@
     - [X] Write to disk
     - [X] Load from disk
     - [ ] Playtest mode (might not get this one?)
-    - [ ] Or something
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
@@ -136,6 +135,7 @@
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Slopes! When I walk into an obstacle!
     This isn't really that difficult to fix. Just kind of annoying.
+*** TODO Spikes (don't die immediately, just reset to last grounded area.)
 *** TODO (animated sprite system) or something?
 *** TODO Load different levels/tilemaps/chunks/whatever
 *** TODO Moveable tilemap "islands" / platforms

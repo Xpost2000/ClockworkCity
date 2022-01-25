@@ -14,7 +14,7 @@ run: game.exe
 	./game.exe
 
 game.exe: $(SRCFILES)
-	gcc src/main.c src/common.c src/graphics.c src/input.c src/audio.c $(CFLAGS) $(CLIBS) -o $@
+	gcc src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -o $@
 
 clean: 
 	-rm game.exe

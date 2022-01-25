@@ -1,44 +1,8 @@
-/*
-  Obviously I need this to look better and work a bit better,
-  this is just a quick hack for the night.
-*/
-/*will be a world editor*/
+#include "memory_arena.h"
 #define EDITOR_TILE_MAX_COUNT (16384)
-struct editor_memory_arena {
-    size_t used;
-    size_t capacity;
-    void* memory;
-};
-
-void* editor_memory_arena_push(struct editor_memory_arena* arena, size_t amount) {
-    assert(arena->used < arena->capacity && "Out of arena memory (does not grow!)");
-    void* result = arena->memory + arena->used;
-    arena->used += amount;
-    return result;
-}
-
-struct editor_memory_arena editor_alloc_arena(size_t sz) {
-    return (struct editor_memory_arena) {
-        .used = 0,
-        .capacity = sz,
-        /*should this be virtual memory?*/
-        .memory = system_allocate_zeroed_memory(sz)
-    };
-}
-
-void editor_memory_arena_clear(struct editor_memory_arena* arena) {
-    arena->used = 0;
-}
-
-void editor_memory_arena_deallocate(struct editor_memory_arena* arena) {
-    arena->used = 0;
-    arena->capacity = 0;
-    system_deallocate_memory(arena->memory);
-    arena->memory = NULL;
-}
 
 struct editor_state {
-    struct editor_memory_arena arena;
+    struct memory_arena arena;
 
     float camera_x;
     float camera_y;
@@ -106,8 +70,8 @@ local void editor_clear_all(void) {
 }
 
 local void load_tilemap_editor_resources(void) {
-    editor.arena = editor_alloc_arena(Megabyte(2));
-    editor.tiles = editor_memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tiles));
+    editor.arena = allocate_memory_arena(Megabyte(2));
+    editor.tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tiles));
     console_printf("Arena is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
                    editor.arena.used, editor.arena.used / 1024,
                    editor.arena.used / (1024 * 1024), editor.arena.used / (1024*1024*1024));
@@ -135,6 +99,8 @@ local void editor_output_to_binary_file(char* filename) {
 
 local void editor_load_from_binary_file(char* filename) {
     FILE* f = fopen(filename, "rb+");
+
+    if (!f) return;
 
     char magic[8] = {};
 
