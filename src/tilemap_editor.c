@@ -119,27 +119,35 @@ local void editor_load_from_binary_file(char* filename) {
 }
 
 static void editor_serialize_into_game_memory(void) {
+    int min_x;
+    int min_y;
+    get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, &min_x, &min_y,
+                                     &editor.tilemap.width, &editor.tilemap.height);
+
     struct temporary_arena temp = begin_temporary_memory(&editor.arena, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
     struct tile* tilemap_rectangle = memory_arena_push(&temp, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
 
     {
         zero_buffer_memory(tilemap_rectangle, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
-        /* memcpy(tilemap_rectangle, editor.tilemap.tiles, editor.tilemap.tile_count); */
+
         for (size_t index = 0; index < editor.tilemap.tile_count; ++index) {
             struct tile* t = editor.tilemap.tiles + index;
-            console_printf("%d, %d = tile\n", t->x, t->y);
-            tilemap_rectangle[t->y * editor.tilemap.width + t->x] = *t;
+            int index_y = ((t->y) - (min_y));
+            int index_x = ((t->x) - (min_x));
+            assert(index_y >= 0 && index_x >= 0);
+            int index_mapped = index_y * editor.tilemap.width + index_x;
+            assert(index_mapped >= 0 && index_mapped < editor.tilemap.width * editor.tilemap.height);
+            tilemap_rectangle[index_mapped] = *t;
         }
-        console_printf("copied %d tiles\n", editor.tilemap.tile_count);
     }
 
     memory_arena_clear_top(&game_memory_arena);
-    game_state->loaded_level = memory_arena_push_top(&game_memory_arena, sizeof(game_state->loaded_level));
+    game_state->loaded_level = memory_arena_push_top(&game_memory_arena, sizeof(*game_state->loaded_level));
     game_state->loaded_level->width  = editor.tilemap.width;
     game_state->loaded_level->height = editor.tilemap.height;
+
     game_state->loaded_level->tiles  = memory_arena_copy_buffer_top(&game_memory_arena, tilemap_rectangle,
                                                                     editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
-
     end_temporary_memory(&temp);
 }
 

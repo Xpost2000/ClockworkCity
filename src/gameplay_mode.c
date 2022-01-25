@@ -13,7 +13,7 @@ local void load_gameplay_resources(void) {
 
 local void do_physics(float dt) {
     struct tilemap* tilemap = game_state->loaded_level;
-    player.vy += VPIXELS_PER_METER*20 * dt;
+    /* player.vy += VPIXELS_PER_METER*20 * dt; */
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
     do_moving_entity_vertical_collision_response(tilemap, &player, dt);
@@ -40,9 +40,9 @@ local void do_player_input(float dt) {
         player.vx = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[0];
     }
 
-    /* if (gamepad->left_stick.axes[1] != 0) { */
-    /*     player.vy = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[1]; */
-    /* } */
+    if (gamepad->left_stick.axes[1] != 0) {
+        player.vy = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[1];
+    }
 
     if (roundf(player.vy) == 0) {
         player.jump_leniancy_timer = 0.3;

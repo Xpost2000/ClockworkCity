@@ -69,8 +69,8 @@ void get_bounding_rectangle_for_tiles(struct tile* tiles, size_t tile_count, int
         if (t->y > max_y) max_y = t->y;
     }
 
-    int width = max_x - min_x;
-    int height = max_y - min_y;
+    int width = (max_x+1) - min_x;
+    int height = (max_y+1) - min_y;
 
     console_printf("min x: %d, max x: %d\n", min_x, max_x);
     console_printf("min y: %d, max y: %d\n", min_y, max_y);
