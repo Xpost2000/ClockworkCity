@@ -17,8 +17,8 @@
 #include "blackiron_console_sfl.h"
 
 #define WINDOW_NAME "Metroidvania Jam 15"
-#define DEFAULT_RESOLUTION_X 1024
-#define DEFAULT_RESOLUTION_Y 768
+#define DEFAULT_RESOLUTION_X 640
+#define DEFAULT_RESOLUTION_Y 480
 
 SDL_Window* global_window;
 local float global_elapsed_time = 0;
@@ -354,8 +354,8 @@ local void initialize(void) {
 
     graphics_initialize(global_window);
     audio_initialize();
+    _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
 
-    load_static_resources();
     console_initialize(
         (struct console_render_procedures) {
             .context            = NULL,
@@ -367,6 +367,7 @@ local void initialize(void) {
         });
     console_printf("Welcome to xvania\na C metroidvania game engine thing for\nMetroidvania Jam 15.\n");
     register_console_commands();
+    load_static_resources();
 }
 
 local void deinitialize(void) {
@@ -407,9 +408,11 @@ int main(int argc, char** argv) {
         /*NOTE(jerry): camera should operate on "game"/"graphics" time
          not IRL time ticks*/
         camera_update(dt);
-
         update_render_frame(dt);
-        console_frame(dt);
+
+        begin_graphics_frame();{
+            console_frame(dt);
+        } end_graphics_frame();
 
         present_graphics_frame();
         end_input_frame();

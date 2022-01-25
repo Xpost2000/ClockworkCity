@@ -27,6 +27,7 @@ shared_storage union color4f COLOR4F_WHITE             = {{1, 1, 1, 1}};
 shared_storage union color4f COLOR4F_DARKGRAY             = {{0.3, 0.3, 0.3, 1}};
 
 union color4f color4f(float r, float g, float b, float a);
+bool within_screen_bounds(int x, int y, int w, int h);
 
 void get_texture_dimensions(texture_id texture, int* width, int* height);
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height);

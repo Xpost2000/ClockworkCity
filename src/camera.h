@@ -41,4 +41,6 @@ void camera_set_focus_speed_y(float speed);
 void camera_set_focus_position(float x, float y);
 void camera_update(float dt);
 void camera_reset_transform(void);
+
+void transform_point_into_camera_space(int* x, int* y);
 #endif

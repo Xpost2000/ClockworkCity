@@ -88,3 +88,15 @@ void camera_reset_transform(void) {
         .interpolation_speed[0] = 1.0, .interpolation_speed[1] = 1.0
     };
 }
+
+void transform_point_into_camera_space(int* x, int* y) {
+    if (!active_camera) return;
+
+    if (x) {
+        *x += active_camera->visual_position_x - screen_dimensions[0]/2;
+    }
+
+    if (y) {
+        *y += active_camera->visual_position_y - screen_dimensions[1]/2;
+    }
+}

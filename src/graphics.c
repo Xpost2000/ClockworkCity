@@ -39,6 +39,10 @@ inline union color4f color4f(float r, float g, float b, float a) {
     };
 }
 
+bool within_screen_bounds(int x, int y, int w, int h) {
+    return rectangle_overlapping_v(x, y, w, h, 0, 0, screen_dimensions[0], screen_dimensions[1]);
+}
+
 void graphics_initialize(void* window_handle) {
     global_window = window_handle;
     global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -93,7 +97,10 @@ void draw_filled_rectangle(float x, float y, float w, float h, union color4f col
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
     _camera_transform_v2(&x, &y);
-    SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
+
+    if (within_screen_bounds(x, y, w, h)) {
+        SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
+    }
 }
 
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color) {
@@ -113,9 +120,12 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
     SDL_SetTextureAlphaMod(texture_object, color.a * 255);
 
     _camera_transform_v2(&x, &y);
-    SDL_RenderCopy(global_renderer, texture_object,
-                   &(SDL_Rect){srx, sry, srw, srh},
-                   &(SDL_Rect){x, y, w, h});
+
+    if (within_screen_bounds(x, y, w, h)) {
+        SDL_RenderCopy(global_renderer, texture_object,
+                       &(SDL_Rect){srx, sry, srw, srh},
+                       &(SDL_Rect){x, y, w, h});
+    }
 }
 
 /* 
