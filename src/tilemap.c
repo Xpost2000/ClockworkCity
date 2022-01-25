@@ -1,4 +1,4 @@
-const int TILE_TEX_SIZE = 16;
+const int TILE_TEX_SIZE = VPIXELS_PER_METER;
 /*these aren't really tile ids, these are more like flags/properties*/
 /*core logic is here though, so I guess it don't matter, can worry about later.*/
 /*need to find test platformer tileset to try out some ideas...*/

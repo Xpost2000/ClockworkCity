@@ -144,9 +144,10 @@ local void editor_load_from_binary_file(char* filename) {
     fread(&editor.tile_count, sizeof(editor.tile_count), 1, f);
     fread(editor.tiles, sizeof(*editor.tiles) * editor.tile_count, 1, f);
 
-    fprintf(stderr, "%d\n", editor.tile_count);
-
     fclose(f);
+
+    editor.camera_x = 0;
+    editor.camera_y = 0;
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {
@@ -202,7 +203,6 @@ local void tilemap_editor_update_render_frame(float dt) {
         set_active_camera(get_global_camera());
         camera_set_position(editor.camera_x, editor.camera_y);
 
-        draw_filled_rectangle(0, 0, 640, 480, COLOR4F_BLACK);
         /*grid*/
         {
             int screen_dimensions[2];
@@ -219,13 +219,14 @@ local void tilemap_editor_update_render_frame(float dt) {
              */
             const int SCREENFUL_FILLS = 100;
 
-            int row_count = (screen_dimensions[1] * SCREENFUL_FILLS) / TILE_TEX_SIZE;
-            int col_count = (screen_dimensions[0] * SCREENFUL_FILLS) / TILE_TEX_SIZE;
+            int row_count = (screen_dimensions[1]) / TILE_TEX_SIZE;
+            int col_count = (screen_dimensions[0]) / TILE_TEX_SIZE;
 
-            int x_offset = -SCREENFUL_FILLS/2 * screen_dimensions[0];
-            int y_offset = -SCREENFUL_FILLS/2 * screen_dimensions[1];
+            int x_offset = -SCREENFUL_FILLS/2 * (col_count * TILE_TEX_SIZE);
+            int y_offset = -SCREENFUL_FILLS/2 * (row_count * TILE_TEX_SIZE);
 
-            draw_grid(x_offset, y_offset, row_count, col_count, 1, COLOR4F_DARKGRAY);
+            draw_grid(x_offset, y_offset, row_count * SCREENFUL_FILLS,
+                      col_count * SCREENFUL_FILLS, 1, COLOR4F_DARKGRAY);
         }
 
         /* cursor */
