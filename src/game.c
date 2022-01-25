@@ -1,4 +1,5 @@
 struct game_state {
+    /*whoops this is an additional indirection. Fix this at the end of the night*/
     struct tilemap* loaded_level;
 };
 

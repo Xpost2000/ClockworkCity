@@ -2,21 +2,37 @@
 #include "memory_arena.h"
 
 void* memory_arena_push(struct memory_arena* arena, size_t amount) {
-    assert(arena->used+arena->top_used < arena->capacity && "Out of arena memory (does not grow!)");
-    void* result = arena->memory + arena->used;
-    arena->used += amount;
-    return result;
+    return memory_arena_push_bottom(arena, amount);
 }
 
 void* memory_arena_push_top(struct memory_arena* arena, size_t amount) {
-    assert(arena->used+arena->top_used < arena->capacity && "Out of arena memory (does not grow!)");
+    assert(arena->used+arena->top_used <= arena->capacity && "Out of arena memory (does not grow!)");
     arena->top_used += amount;
     void* result = (arena->memory + arena->capacity) - arena->top_used;
     return result;
 }
 
 void* memory_arena_push_bottom(struct memory_arena* arena, size_t amount) {
-    return memory_arena_push(arena, amount);
+    assert(arena->used+arena->top_used <= arena->capacity && "Out of arena memory (does not grow!)");
+    void* result = arena->memory + arena->used;
+    arena->used += amount;
+    return result;
+}
+
+void* memory_arena_copy_buffer(struct memory_arena* arena, void* buffer, size_t buffer_length) {
+    return memory_arena_copy_buffer_bottom(arena, buffer, buffer_length);
+}
+
+void* memory_arena_copy_buffer_top(struct memory_arena* arena, void* buffer, size_t buffer_length) {
+    void* result = memory_arena_push_top(arena, buffer_length);
+    memcpy(result, buffer, buffer_length);
+    return result;
+}
+
+void* memory_arena_copy_buffer_bottom(struct memory_arena* arena, void* buffer, size_t buffer_length) {
+    void* result = memory_arena_push_bottom(arena, buffer_length);
+    memcpy(result, buffer, buffer_length);
+    return result;
 }
 
 size_t memory_arena_total_usage(struct memory_arena* arena) {

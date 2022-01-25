@@ -30,6 +30,10 @@ void* memory_arena_push(struct memory_arena* arena, size_t amount);
 void* memory_arena_push_bottom(struct memory_arena* arena, size_t amount);
 void* memory_arena_push_top(struct memory_arena* arena, size_t amount);
 
+void* memory_arena_copy_buffer(struct memory_arena* arena, void* buffer, size_t buffer_length);
+void* memory_arena_copy_buffer_top(struct memory_arena* arena, void* buffer, size_t buffer_length);
+void* memory_arena_copy_buffer_bottom(struct memory_arena* arena, void* buffer, size_t buffer_length);
+
 size_t memory_arena_total_usage(struct memory_arena* arena);
 
 struct memory_arena allocate_memory_arena(size_t sz);

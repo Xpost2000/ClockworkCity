@@ -24,11 +24,6 @@ struct editor_state {
 
 local struct editor_state editor;
 
-
-static void editor_serialize_into_game_memory(void) {
-    
-}
-
 struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, int grid_y) {
     for (unsigned index = 0; index < tile_count; ++index) {
         struct tile* t = tiles + index;
@@ -92,6 +87,7 @@ local void editor_output_to_binary_file(char* filename) {
 
     int width, height;
     get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, NULL/*x*/, NULL/*y*/, &width, &height);
+    console_printf("width height: %d, %d\n", width, height);
 
     fwrite(&width, sizeof(width), 1, f);
     fwrite(&height, sizeof(height), 1, f);
@@ -107,13 +103,12 @@ local void editor_load_from_binary_file(char* filename) {
     if (!f) return;
 
     char magic[8] = {};
-    int width, height;
 
     fread(magic, 8, 1, f);
     assert(strncmp(magic, "LOVEYOU!", 8) == 0);
 
-    fread(&width, sizeof(width), 1, f);
-    fread(&height, sizeof(height), 1, f);
+    fread(&editor.tilemap.width, sizeof(editor.tilemap.width), 1, f);
+    fread(&editor.tilemap.height, sizeof(editor.tilemap.height), 1, f);
     fread(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
     fread(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
 
@@ -121,6 +116,31 @@ local void editor_load_from_binary_file(char* filename) {
 
     editor.camera_x = 0;
     editor.camera_y = 0;
+}
+
+static void editor_serialize_into_game_memory(void) {
+    struct temporary_arena temp = begin_temporary_memory(&editor.arena, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
+    struct tile* tilemap_rectangle = memory_arena_push(&temp, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
+
+    {
+        zero_buffer_memory(tilemap_rectangle, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
+        /* memcpy(tilemap_rectangle, editor.tilemap.tiles, editor.tilemap.tile_count); */
+        for (size_t index = 0; index < editor.tilemap.tile_count; ++index) {
+            struct tile* t = editor.tilemap.tiles + index;
+            console_printf("%d, %d = tile\n", t->x, t->y);
+            tilemap_rectangle[t->y * editor.tilemap.width + t->x] = *t;
+        }
+        console_printf("copied %d tiles\n", editor.tilemap.tile_count);
+    }
+
+    memory_arena_clear_top(&game_memory_arena);
+    game_state->loaded_level = memory_arena_push_top(&game_memory_arena, sizeof(game_state->loaded_level));
+    game_state->loaded_level->width  = editor.tilemap.width;
+    game_state->loaded_level->height = editor.tilemap.height;
+    game_state->loaded_level->tiles  = memory_arena_copy_buffer_top(&game_memory_arena, tilemap_rectangle,
+                                                                    editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
+
+    end_temporary_memory(&temp);
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {

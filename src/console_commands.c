@@ -54,6 +54,9 @@ Define_Console_Command(editor_clear) {
 Define_Console_Command(editor_playtest) {
     console_printf("loading current editor map into game... As if new spawn\n");
     editor_serialize_into_game_memory();
+    mode = GAME_MODE_PLAYING;
+    player.x = editor.camera_x;
+    player.y = editor.camera_y;
 }
 
 void register_console_commands(void) {
@@ -63,4 +66,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_editor_save);
     console_system_register_command(&cmd_editor_load);
     console_system_register_command(&cmd_editor_clear);
+    console_system_register_command(&cmd_editor_playtest);
 }
