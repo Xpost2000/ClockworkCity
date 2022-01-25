@@ -51,6 +51,11 @@ Define_Console_Command(editor_clear) {
     editor_clear_all();
 }
 
+Define_Console_Command(editor_playtest) {
+    console_printf("loading current editor map into game... As if new spawn\n");
+    editor_serialize_into_game_memory();
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
     console_system_register_command(&cmd_editor);

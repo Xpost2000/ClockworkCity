@@ -2,10 +2,25 @@
 #include "memory_arena.h"
 
 void* memory_arena_push(struct memory_arena* arena, size_t amount) {
-    assert(arena->used < arena->capacity && "Out of arena memory (does not grow!)");
+    assert(arena->used+arena->top_used < arena->capacity && "Out of arena memory (does not grow!)");
     void* result = arena->memory + arena->used;
     arena->used += amount;
     return result;
+}
+
+void* memory_arena_push_top(struct memory_arena* arena, size_t amount) {
+    assert(arena->used+arena->top_used < arena->capacity && "Out of arena memory (does not grow!)");
+    arena->top_used += amount;
+    void* result = (arena->memory + arena->capacity) - arena->top_used;
+    return result;
+}
+
+void* memory_arena_push_bottom(struct memory_arena* arena, size_t amount) {
+    return memory_arena_push(arena, amount);
+}
+
+size_t memory_arena_total_usage(struct memory_arena* arena) {
+    return arena->used + arena->top_used;
 }
 
 /*NOTE(jerry): should I allow a growing arena?*/
@@ -29,7 +44,8 @@ void memory_arena_deallocate(struct memory_arena* arena) {
 }
 
 struct temporary_arena begin_temporary_memory(struct memory_arena* arena, size_t amount) {
-    size_t marker = arena->used;
+    size_t bottom_marker = arena->used;
+    size_t top_marker = arena->top_used;
     void* base_address = memory_arena_push(arena, amount);
 
     struct temporary_arena temporary = (struct temporary_arena) {
@@ -38,15 +54,17 @@ struct temporary_arena begin_temporary_memory(struct memory_arena* arena, size_t
         .memory = base_address,
 
         .owner = arena,
-        .restoration_marker = marker,
+        .bottom_marker = bottom_marker,
+        .top_marker = top_marker,
     };
 
     return temporary;
 }
 
 void end_temporary_memory(struct temporary_arena* temp) {
-    temp->used     = 0;
-    temp->capacity = 0;
-    temp->memory   = NULL;
-    temp->owner->used = temp->restoration_marker;
+    temp->used            = 0;
+    temp->capacity        = 0;
+    temp->memory          = NULL;
+    temp->owner->used     = temp->bottom_marker;
+    temp->owner->top_used = temp->top_marker;
 }

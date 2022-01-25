@@ -12,6 +12,7 @@
 #include "camera.h"
 #include "graphics.h"
 #include "audio.h"
+#include "memory_arena.h"
 
 #define CONSOLE_IMPLEMENTATION
 #include "blackiron_console_sfl.h"

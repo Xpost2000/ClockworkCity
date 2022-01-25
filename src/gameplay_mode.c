@@ -1,3 +1,5 @@
+struct tilemap global_test_tilemap = {};
+
 struct entity player = {
     // no units, prolly pixels
     .x = -VPIXELS_PER_METER/4,

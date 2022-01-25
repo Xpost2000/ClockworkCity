@@ -1,7 +1,9 @@
-texture_id knight_twoview;
-font_id    test_font;
-sound_id   test_sound;
-sound_id   test_sound2;
+local struct memory_arena game_memory_arena;
+
+local texture_id knight_twoview;
+local font_id    test_font;
+local sound_id   test_sound;
+local sound_id   test_sound2;
 
 /*
   physics "constants"

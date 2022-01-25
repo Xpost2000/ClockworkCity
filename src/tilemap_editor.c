@@ -1,30 +1,33 @@
 #include "memory_arena.h"
 #define EDITOR_TILE_MAX_COUNT (16384)
 
+struct editable_tilemap {
+    uint32_t tile_count;
+    int width;
+    int height;
+    struct tile* tiles;
+};
 struct editor_state {
     struct memory_arena arena;
 
     float camera_x;
     float camera_y;
 
-    uint32_t tile_count;
     /*
-      Contiguous storage only for this.
-      
-      When writing to disk, I will copy the buffer and rearrange
-      it so it can be addressed like a 2D array.
-      
-      Kind of expensive but whatever.
-      
-      (TODO): Technically, I could do this tonight, but I'm too lazy to.
-      Replace this with the tilemap struct.
+      This is a slightly different layout to the ingame format.
+      This is basically a source format
     */
-    struct tile* tiles;
+    struct editable_tilemap tilemap;
 
     enum tile_id placement_type;
 };
 
 local struct editor_state editor;
+
+
+static void editor_serialize_into_game_memory(void) {
+    
+}
 
 struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, int grid_y) {
     for (unsigned index = 0; index < tile_count; ++index) {
@@ -38,12 +41,12 @@ struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, i
 }
 
 local void editor_try_to_place_block(int grid_x, int grid_y) {
-    assert(editor.tile_count < EDITOR_TILE_MAX_COUNT);
+    assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
 
-    struct tile* tile = existing_block_at(editor.tiles, editor.tile_count, grid_x, grid_y);
+    struct tile* tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
 
     if (!tile) {
-        tile = &editor.tiles[editor.tile_count++];
+        tile = &editor.tilemap.tiles[editor.tilemap.tile_count++];
     } else {
     }
 
@@ -54,7 +57,7 @@ local void editor_try_to_place_block(int grid_x, int grid_y) {
 }
 
 local void editor_erase_block(int grid_x, int grid_y) {
-    struct tile* tile = existing_block_at(editor.tiles, editor.tile_count, grid_x, grid_y);
+    struct tile* tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
 
     if (!tile) {
         return;
@@ -64,17 +67,18 @@ local void editor_erase_block(int grid_x, int grid_y) {
 }
 
 local void editor_clear_all(void) {
-    editor.tile_count = 0;
+    editor.tilemap.tile_count = 0;
     editor.camera_x = 0;
     editor.camera_y = 0;
 }
 
 local void load_tilemap_editor_resources(void) {
     editor.arena = allocate_memory_arena(Megabyte(2));
-    editor.tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tiles));
+    editor.tilemap.tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    size_t memusage = memory_arena_total_usage(&editor.arena);
     console_printf("Arena is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
-                   editor.arena.used, editor.arena.used / 1024,
-                   editor.arena.used / (1024 * 1024), editor.arena.used / (1024*1024*1024));
+                   memusage, memusage / 1024,
+                   memusage / (1024 * 1024), memusage / (1024*1024*1024));
 }
 
 /*braindead code for the night
@@ -84,15 +88,15 @@ local void editor_output_to_binary_file(char* filename) {
 
     char magic[] = "LOVEYOU!";
 
-    /*
-      right now I'm not even doing the transformation to make it a 2D array on disk.
-      
-      Also I'm hoping that doing that should be fine because the 2D array should be densely packed.
-    */
-
     fwrite(magic, 8, 1, f);
-    fwrite(&editor.tile_count, sizeof(editor.tile_count), 1, f);
-    fwrite(editor.tiles, sizeof(*editor.tiles) * editor.tile_count, 1, f);
+
+    int width, height;
+    get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, NULL/*x*/, NULL/*y*/, &width, &height);
+
+    fwrite(&width, sizeof(width), 1, f);
+    fwrite(&height, sizeof(height), 1, f);
+    fwrite(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
+    fwrite(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
 
     fclose(f);
 }
@@ -103,12 +107,15 @@ local void editor_load_from_binary_file(char* filename) {
     if (!f) return;
 
     char magic[8] = {};
+    int width, height;
 
     fread(magic, 8, 1, f);
     assert(strncmp(magic, "LOVEYOU!", 8) == 0);
 
-    fread(&editor.tile_count, sizeof(editor.tile_count), 1, f);
-    fread(editor.tiles, sizeof(*editor.tiles) * editor.tile_count, 1, f);
+    fread(&width, sizeof(width), 1, f);
+    fread(&height, sizeof(height), 1, f);
+    fread(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
+    fread(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
 
     fclose(f);
 
@@ -235,13 +242,13 @@ local void tilemap_editor_update_render_frame(float dt) {
 
         /* world */
         {
-            draw_tiles(editor.tiles, editor.tile_count);
+            draw_tiles(editor.tilemap.tiles, editor.tilemap.tile_count);
         }
     } end_graphics_frame();
 
     begin_graphics_frame();{
         draw_text(test_font, 0, 0, "world edit", COLOR4F_WHITE);
-        draw_text(test_font, 0, 32, format_temp("tilecount: %d", editor.tile_count), COLOR4F_WHITE);
+        draw_text(test_font, 0, 32, format_temp("tilecount: %d", editor.tilemap.tile_count), COLOR4F_WHITE);
 
         /*"tool" bar*/
         {

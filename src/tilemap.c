@@ -54,6 +54,30 @@ bool tile_is_slope(struct tile* t) {
             (t->id == TILE_SLOPE_R));
 }
 
+void get_bounding_rectangle_for_tiles(struct tile* tiles, size_t tile_count, int* x, int* y, int* w, int* h) {
+    int min_x = tiles[0].x;
+    int min_y = tiles[0].y;
+    int max_x = min_x;
+    int max_y = min_y;
+
+    for (size_t index = 0; index < tile_count; ++index) {
+        struct tile* t = tiles + index;
+
+        if (t->x < min_x) min_x = t->x;
+        if (t->y < min_y) min_y = t->y;
+        if (t->x > max_x) max_x = t->x;
+        if (t->y > max_y) max_y = t->y;
+    }
+
+    int width = max_x - min_x;
+    int height = max_y - min_y;
+
+    safe_assignment(x) = min_x;
+    safe_assignment(y) = min_y;
+    safe_assignment(w) = width;
+    safe_assignment(h) = height;
+}
+
 float tile_get_slope_height(struct tile* t, float x, float w, float h) {
     float tile_x = t->x * TILE_TEX_SIZE;
     float tile_y = t->y * TILE_TEX_SIZE;
@@ -166,8 +190,6 @@ void draw_tiles(struct tile* tiles, size_t count) {
 void DEBUG_draw_tilemap(struct tilemap* tilemap) {
     draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
 }
-
-struct tilemap global_test_tilemap = {};
 
 local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* ent) {
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
