@@ -254,6 +254,65 @@ local bool do_collision_response_tile_bottom_edge(struct tile* t, struct entity*
     return false;
 }
 
+local bool tile_intersects_rectangle(struct tile* t, float x, float y, float w, float h) {
+    float tile_x = t->x * TILE_TEX_SIZE;
+    float tile_y = t->y * TILE_TEX_SIZE;
+    float tile_w = TILE_TEX_SIZE;
+    float tile_h = TILE_TEX_SIZE;
+
+    if (rectangle_intersects_v(x, y, w, h, tile_x, tile_y, tile_w, tile_h)) {
+        if (tile_is_slope(t)) {
+            if (t->id == TILE_SLOPE_R || t->id == TILE_SLOPE_L) {
+                if (y > tile_get_slope_height(t, x, w, h)) {
+                    return true;
+                }
+            } else {
+                if (y < tile_get_slope_height(t, x, w, h)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct tilemap* tilemap, size_t excluded_index) {
+    /*kind of stupid for assuming my entities are only single rectangles but I know this is true for 90% of my games...*/
+    size_t total_tile_count = tilemap->height * tilemap->width;
+
+    for(unsigned other_index = 0; other_index < excluded_index; ++other_index) {
+        struct tile* t = &tilemap->tiles[other_index];
+
+        if(t->id == TILE_NONE) continue;
+
+        if (tile_intersects_rectangle(t, entity->x, entity->y, entity->w, entity->h)) {
+            return true;
+        }
+    }
+
+    for(unsigned other_index = excluded_index+1; other_index < total_tile_count; ++other_index) {
+        struct tile* t = &tilemap->tiles[other_index];
+
+        float tile_x = t->x * TILE_TEX_SIZE;
+        float tile_y = t->y * TILE_TEX_SIZE;
+        float tile_w = TILE_TEX_SIZE;
+        float tile_h = TILE_TEX_SIZE;
+
+        if(t->id == TILE_NONE) continue;
+
+        if (tile_intersects_rectangle(t, entity->x, entity->y, entity->w, entity->h)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /* maybe move to entity.c? */
 void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
     float old_x = entity->x;
@@ -303,14 +362,14 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                               so I can sleep soundly at night knowing this is still here.
                             */
                             if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/4))) {
+                                float old_y = entity->y;
                                 entity->y = slope_snapped_location;
-#if 0
-                                /*something like this?*/
-                                if (hit_anything) {
+
+                                if (entity_intersects_any_tiles_excluding(entity, tilemap, index)) {
                                     entity->x = old_x;
-                                    entity->y = last_y_before_slope_snap;
+                                    entity->y = old_y;
                                 }
-#endif
+
                                 entity->vy = 0;
                             }
                         } else {
