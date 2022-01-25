@@ -59,8 +59,14 @@ Define_Console_Command(editor_playtest) {
     player.y = editor.camera_y;
 }
 
+Define_Console_Command(noclip) {
+    console_printf("dirty cheater\n");
+    noclip ^= 1;
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
+    console_system_register_command(&cmd_noclip);
     console_system_register_command(&cmd_editor);
     console_system_register_command(&cmd_gameplay);
     console_system_register_command(&cmd_editor_save);

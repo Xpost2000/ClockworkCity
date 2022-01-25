@@ -1,3 +1,4 @@
+bool noclip = false;
 struct entity player = {
     // no units, prolly pixels
     .x = -VPIXELS_PER_METER/4,
@@ -12,8 +13,15 @@ local void load_gameplay_resources(void) {
 }
 
 local void do_physics(float dt) {
+    if (noclip) {
+        player.x += player.vx * dt;
+        player.y += player.vy * dt;
+        return;   
+    }
+
     struct tilemap* tilemap = game_state->loaded_level;
-    /* player.vy += VPIXELS_PER_METER*20 * dt; */
+
+    player.vy += VPIXELS_PER_METER*20 * dt;
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
     do_moving_entity_vertical_collision_response(tilemap, &player, dt);
@@ -36,12 +44,15 @@ local void do_player_input(float dt) {
         player.vx = VPIXELS_PER_METER * -MAX_SPEED;
     }
 
-    if (gamepad->left_stick.axes[0] != 0) {
+    if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
         player.vx = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[0];
     }
 
-    if (gamepad->left_stick.axes[1] != 0) {
-        player.vy = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[1];
+    if (noclip) {
+        player.vy = 0;
+        if (fabs(gamepad->left_stick.axes[1]) >= 0.1) {
+            player.vy = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[1];
+        }
     }
 
     if (roundf(player.vy) == 0) {

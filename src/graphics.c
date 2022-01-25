@@ -146,8 +146,10 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
     {
         SDL_QueryTexture(rendered_text, 0, 0, dimensions, dimensions+1);
 
-        SDL_RenderCopy(global_renderer, rendered_text,
-                       NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
+        if (within_screen_bounds(x, y, dimensions[0], dimensions[1])) {
+            SDL_RenderCopy(global_renderer, rendered_text,
+                           NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
+        }
     }
 
     SDL_DestroyTexture(rendered_text);

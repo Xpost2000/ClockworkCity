@@ -112,7 +112,7 @@
    to work on this. Most of my work is expected to be done on the weekend atm, but obviously if I
    can chisel out small pieces, this is very helpful and I probably will.
    
-*** TODO [4/6] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
+*** DONE [5/5] (??) Tile world editor (pt1, really crufty bad UI without mouse, just place different tiles)
     This will eventually be expanded to a world link editor.
     I'll have to code in specific functionality per game, but this is generally
     pretty generic stuff, so should be fair game since there's no assets. I could use
@@ -126,7 +126,7 @@
     - [X] Select different tile types
     - [X] Write to disk
     - [X] Load from disk
-    - [ ] Playtest mode (might not get this one?)
+    - [X] Playtest mode (might not get this one?)
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
@@ -136,8 +136,14 @@
 *** TODO Slopes! When I walk into an obstacle!
     This isn't really that difficult to fix. Just kind of annoying.
 *** TODO Spikes (don't die immediately, just reset to last grounded area.)
-*** TODO (animated sprite system) or something?
 *** TODO Load different levels/tilemaps/chunks/whatever
+*** TODO Simple radial lighting
+    I could use a "light texture", but I want to do more generic tile lighting.
+
+    I'm considering just using BFS bounded by a distance formula, and calling that a day.
+    Pretty sure that'll look okay enough for what I need.
+** <2022-01-26 Wed>
+   Hmmm, I think I'm actually free on this day!
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.
 
@@ -150,6 +156,7 @@
     But the code for what I currently have isn't so ridiculous. (slopes are the only complicated
     part honestly...)
     
+*** TODO (animated sprite system) or something?
 *** TODO Try to build on ubuntu or something
     someone teach me how to distribute on linux, I'll provide source anyways but
     senpai pls.
@@ -159,7 +166,6 @@
 *** TODO Background tiles or something
 *** TODO (?)Consider thinking of the entity system
 *** TODO (?)Start OpenGL renderer as the last thing I guess.
-*** TODO Cleanup and refactor the code at the end of the week.
 *** TODO Basic Menu Game State system, and a normal game state system
     Main Menu, Loading a save file, Credits, Options, and Quit.
 
@@ -181,13 +187,6 @@
     Probably will perform not so great but I think the frame budget is really generous...
 
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
-*** TODO Simple radial lighting
-    I could use a "light texture", but I want to do more generic tile lighting.
-
-    I'm considering just using BFS bounded by a distance formula, and calling that a day.
-    Pretty sure that'll look okay enough for what I need.
-** <2022-01-26 Wed>
-   Hmmm, I think I'm actually free on this day!
 ** <2022-01-27 Thu>
    RTX 3050 comes out!
 
@@ -196,6 +195,7 @@
    I come home VERY late today! (thanks club that I go to of my own choice.),
 
    If anything I'm probably just going to try and clean stuff up. Maybe one or two more features
+*** TODO Cleanup and refactor the code at the end of the week.
 ** Weekend...
    4 days off so yay.
 
