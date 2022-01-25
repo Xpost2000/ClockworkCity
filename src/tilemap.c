@@ -285,12 +285,26 @@ local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct t
     /*kind of stupid for assuming my entities are only single rectangles but I know this is true for 90% of my games...*/
     size_t total_tile_count = tilemap->height * tilemap->width;
 
+    struct tile* excluded_tile = &tilemap->tiles[excluded_index];
+
     for(unsigned other_index = 0; other_index < excluded_index; ++other_index) {
         struct tile* t = &tilemap->tiles[other_index];
 
         if(t->id == TILE_NONE) continue;
 
         if (tile_intersects_rectangle(t, entity->x, entity->y, entity->w, entity->h)) {
+            /*
+              This prevents us from "nicking" off slopes. This only works if we are on slopes of the
+              same type.
+              
+              This should not prevent you from transitioning to other slopes though.
+             */
+            if (excluded_tile->id == TILE_SLOPE_L || excluded_tile->id == TILE_SLOPE_R) {
+                if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
+                    return false;
+                }
+            }
+
             return true;
         }
     }
@@ -306,6 +320,12 @@ local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct t
         if(t->id == TILE_NONE) continue;
 
         if (tile_intersects_rectangle(t, entity->x, entity->y, entity->w, entity->h)) {
+            if (excluded_tile->id == TILE_SLOPE_L || excluded_tile->id == TILE_SLOPE_R) {
+                if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
+                    return false;
+                }
+            }
+
             return true;
         }
     }
@@ -361,7 +381,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                               This is a very small bug compared to other shit I've fucked up so far
                               so I can sleep soundly at night knowing this is still here.
                             */
-                            if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)TILE_TEX_SIZE/4))) {
+                            if (true || entity->vy >= 0 && (entity->y >= slope_snapped_location)) {
                                 float old_y = entity->y;
                                 entity->y = slope_snapped_location;
 
