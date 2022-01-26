@@ -419,7 +419,13 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
 
                         if (entity->y >= tile_y) {
                             if (entity->y < slope_snapped_location) {
+                                float old_y = entity->y;
                                 entity->y = slope_snapped_location;
+
+                                if (entity_intersects_any_tiles_excluding(entity, tilemap, index)) {
+                                    entity->x = old_x;
+                                    entity->y = old_y;
+                                }
 
                                 if (entity->vy < 0) {
                                     entity->vy = 0;
