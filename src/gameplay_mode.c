@@ -33,7 +33,7 @@ local void do_player_input(float dt) {
 
     player.vx = 0;
     const float MOVEMENT_THRESHOLD = 0.5;
-    const int MAX_SPEED = 4;
+    const int MAX_SPEED = 7;
 
     bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];

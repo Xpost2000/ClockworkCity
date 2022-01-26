@@ -127,23 +127,43 @@
     - [X] Write to disk
     - [X] Load from disk
     - [X] Playtest mode (might not get this one?)
+*** DONE Slopes! When I walk into an obstacle!
+    This isn't really that difficult to fix. Just kind of annoying.
+*** DONE Load different levels/tilemaps/chunks/whatever
+** <2022-01-26 Wed>
+   Hmmm, I think I'm actually free on this day!
+*** TODO Faster text rendering for the console
+*** TODO SFL console has a crash in history?
+*** TODO World/Level Transitions
+    Linked of course!
+*** TODO Backport more advanced console from blackiron
+    I never realized this was an old version of the console until earlier. Fuck.
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
     Just wanna try and simulate some fire and smoke
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
-*** DONE Slopes! When I walk into an obstacle!
-    This isn't really that difficult to fix. Just kind of annoying.
+*** TODO Switch to sparse tile storage on the level editor
+*** TODO Camera shake and Trauma
+*** TODO Player friction
+    I don't really like the grounded feel like in Hollow Knight unfortunately.
+    It feels too stiff for me.
+
+    I still want it sharp, but like sudden halting is not hot.
 *** TODO Spikes (don't die immediately, just reset to last grounded area.)
-*** TODO Load different levels/tilemaps/chunks/whatever
+*** TODO Load levels from transitions
+*** TODO Maintain a level state
+*** TODO Rectangle selection / painting!
+    This will allow us to produce "islands", when we need em!
+*** TODO Editor can remember where it loaded from! (reload)
+*** TODO Editor can remember last editing session!
+*** TODO Editor undo / redo (probably don't need...)
 *** TODO Simple radial lighting
     I could use a "light texture", but I want to do more generic tile lighting.
 
     I'm considering just using BFS bounded by a distance formula, and calling that a day.
     Pretty sure that'll look okay enough for what I need.
-** <2022-01-26 Wed>
-   Hmmm, I think I'm actually free on this day!
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.
 

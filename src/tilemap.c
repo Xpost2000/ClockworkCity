@@ -9,10 +9,12 @@ enum tile_id {
     TILE_SLOPE_BL,
     TILE_SLOPE_R,
     TILE_SLOPE_L,
+    TILE_SPIKE,
     TILE_ID_COUNT,
 };
 shared_storage char* tile_id_filestrings[] = {
     0,
+    [TILE_SPIKE] = "assets/testtiles/spikehazard.png",
     [TILE_SOLID] = "assets/testtiles/block.png",
     [TILE_SLOPE_BL] = "assets/testtiles/slope45degbl.png",
     [TILE_SLOPE_BR] = "assets/testtiles/slope45degbr.png",
@@ -21,6 +23,7 @@ shared_storage char* tile_id_filestrings[] = {
 };
 shared_storage char* tile_type_strings[] = {
     0,
+    [TILE_SPIKE] = "(hazard) spike",
     [TILE_SOLID] = "solid",
     [TILE_SLOPE_BL] = "bottom left slope(45 deg)",
     [TILE_SLOPE_BR] = "bottom right slope(45 deg)",
@@ -206,7 +209,7 @@ local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* e
     float entity_right_edge = ent->x + ent->w;
     float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
 
-    if (entity_right_edge >= t->x && entity_right_edge <= tile_right_edge) {
+    if (entity_right_edge >= t->x * TILE_TEX_SIZE && entity_right_edge <= tile_right_edge) {
         ent->x = t->x*TILE_TEX_SIZE - ent->w;
         return true;
     }
@@ -218,7 +221,7 @@ local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* 
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
 
     float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
-    if (roundf(ent->x) <= tile_right_edge && roundf(ent->x) >= t->x) {
+    if (roundf(ent->x) <= tile_right_edge && roundf(ent->x) >= t->x * TILE_TEX_SIZE) {
         ent->x = tile_right_edge;
         return true;
     }
@@ -411,6 +414,8 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                         entity->x = taller_edge_correction_position;
                     } else {
                         float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+                        float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
+                        float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
 
                         if (entity->y >= tile_y) {
                             if (entity->y < slope_snapped_location) {
@@ -452,15 +457,9 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
         float tile_w = TILE_TEX_SIZE;
         float tile_h = TILE_TEX_SIZE;
 
+        if (t->id == TILE_NONE) continue;
         if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
             switch (t->id) {
-                case TILE_SOLID: {
-                    if(!do_collision_response_tile_top_edge(t, entity)) {
-                        do_collision_response_tile_bottom_edge(t, entity);
-                    }
-
-                    entity->vy = 0;
-                } break;
                 case TILE_SLOPE_R:
                 case TILE_SLOPE_L: {
                     if (entity->vy >= 0 && roundf(entity->y) == roundf(tile_get_slope_height(t, entity->x, entity->w, entity->h))) {
@@ -479,6 +478,14 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                         entity->y = tile_y - entity->h;
                         entity->vy = 0;
                     }
+                } break;
+                default:
+                case TILE_SOLID: {
+                    if(!do_collision_response_tile_top_edge(t, entity)) {
+                        do_collision_response_tile_bottom_edge(t, entity);
+                    }
+
+                    entity->vy = 0;
                 } break;
             }
 
