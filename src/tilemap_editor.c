@@ -27,6 +27,8 @@ struct editor_state {
     bool selection_region_exists;
     /*for some reason I decide to store this in pixels. Change this later.*/
     struct rectangle selection_region;
+    /*this is memoized separately from selection_region. Only changes on resize.*/
+    struct rectangle selected_tile_region;
 
     enum tile_id placement_type;
 };
@@ -40,11 +42,13 @@ local void editor_begin_selection_region(int x, int y) {
     editor.selection_region_exists = true;
     editor.selection_region.x = floorf((float)x / TILE_TEX_SIZE) * TILE_TEX_SIZE;
     editor.selection_region.y = floorf((float)y / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+    console_printf("started region selection at (x:%d(tx: %d), y:%d(ty: %d))\n", x, (int)editor.selection_region.x, y, (int)editor.selection_region.y);
 }
 
 local void editor_end_selection_region(void) {
     editor.selection_region_exists = false;
     editor.selection_region = (struct rectangle) {};
+    editor.selected_tile_region = (struct rectangle) {};
 }
 
 local void get_mouse_location_in_camera_space(int* x, int* y) {
@@ -56,12 +60,90 @@ local void get_mouse_location_in_camera_space(int* x, int* y) {
 struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, int grid_y) {
     for (unsigned index = 0; index < tile_count; ++index) {
         struct tile* t = tiles + index;
+
+        if (t->id == TILE_NONE) continue;
         if (t->x == grid_x && t->y == grid_y) {
             return t;
         }
     }
 
     return NULL;
+}
+
+/*yes this is different.*/
+struct tile* occupied_block_at(struct tile* tiles, int tile_count, int grid_x, int grid_y) {
+    for (unsigned index = 0; index < tile_count; ++index) {
+        struct tile* t = tiles + index;
+
+        if (t->x == grid_x && t->y == grid_y) {
+            return t;
+        }
+    }
+
+    return NULL;
+}
+
+/* TODO(jerry): negatives are bad! */
+local bool editor_has_tiles_within_selection(void) {
+    struct rectangle tile_region = editor.selected_tile_region;
+
+    console_printf("region: %d, %d, %d, %d\n", (int)tile_region.x, (int)tile_region.y, (int)tile_region.w, (int)tile_region.h);
+    for (int y = (int)tile_region.y; y <= (int)tile_region.h; ++y) {
+        for (int x = (int)tile_region.x; x <= (int)tile_region.w; ++x) {
+            struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+            console_printf("%p(%d, %d)\n", t, x, y);
+            if (t) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+local void editor_move_selected_tile_region(void) {
+    struct rectangle tile_region     = editor.selected_tile_region;
+    struct rectangle selected_region = editor.selection_region;
+
+    /* rescale into grid coordinates */ {
+        selected_region.x /= TILE_TEX_SIZE;
+        selected_region.y /= TILE_TEX_SIZE;
+        selected_region.w /= TILE_TEX_SIZE;
+        selected_region.h /= TILE_TEX_SIZE;
+    }
+
+    assert(tile_region.w == selected_region.w);
+    assert(tile_region.h == selected_region.h);
+
+    /* copy into new area */ {
+        for (int y = tile_region.y; y <= tile_region.h; ++y) {
+            for (int x = tile_region.x; x <= tile_region.w; ++x) {
+                struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+
+                if (t) {
+                    /*heart surgery*/{
+                        int relative_position_of_tile_x = (x - tile_region.x);
+                        int relative_position_of_tile_y = (y - tile_region.y);
+
+                        struct tile* replace_target = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count,
+                                                                        relative_position_of_tile_x + selected_region.x,
+                                                                        relative_position_of_tile_y + selected_region.y);
+                        if (!replace_target) {
+                            replace_target = &editor.tilemap.tiles[editor.tilemap.tile_count++];
+                        }
+
+                        replace_target->id = t->id;
+                        replace_target->x =  relative_position_of_tile_x + selected_region.x;
+                        replace_target->y =  relative_position_of_tile_y + selected_region.y;
+                    }
+
+                    /*kill original block*/{
+                        t->id = TILE_NONE;
+                    }
+                }
+            }
+        }
+    }
 }
 
 local void editor_try_to_place_block(int grid_x, int grid_y) {
@@ -212,6 +294,15 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
 }
 
 local void tilemap_editor_update_render_frame(float dt) {
+    /*
+      TODO(jerry):
+      hack, cause my camera api is shitty.
+
+      I'll fix it at the end of the week so this is okay for now.
+     */
+    set_active_camera(get_global_camera());
+    camera_set_position(editor.camera_x, editor.camera_y);
+
     if (is_key_pressed(KEY_RIGHT)) {
         editor.placement_type++;
     } else if (is_key_pressed(KEY_LEFT)) {
@@ -237,8 +328,16 @@ local void tilemap_editor_update_render_frame(float dt) {
 
     /*editor rectangular region related stuff*/
     {
+
         if (is_key_pressed(KEY_ESCAPE)) {
             editor_end_selection_region();
+        }
+
+        if (is_key_pressed(KEY_RETURN)) {
+            if (editor_has_tiles_within_selection()) {
+                editor_move_selected_tile_region();
+                editor_end_selection_region();
+            }
         }
 
         if (is_key_down(KEY_CTRL)) {
@@ -246,19 +345,21 @@ local void tilemap_editor_update_render_frame(float dt) {
             get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
             editor_begin_selection_region(mouse_position[0], mouse_position[1]);
 
+            /* resize region */
             if (editor.selection_region_exists) {
                 int distance_delta_x = ((mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE) - editor.selection_region.x;
                 int distance_delta_y = ((mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE) - editor.selection_region.y;
                 editor.selection_region.w = distance_delta_x;
                 editor.selection_region.h = distance_delta_y;
+
+                editor.selected_tile_region = editor.selection_region;
+                editor.selected_tile_region.x /= TILE_TEX_SIZE;
+                editor.selected_tile_region.y /= TILE_TEX_SIZE;
+                editor.selected_tile_region.w /= TILE_TEX_SIZE;
+                editor.selected_tile_region.h /= TILE_TEX_SIZE;
             }
         } else {
-            struct rectangle region = editor.selection_region;
-
-            region.y /= TILE_TEX_SIZE;
-            region.x /= TILE_TEX_SIZE;
-            region.w /= TILE_TEX_SIZE;
-            region.h /= TILE_TEX_SIZE;
+            struct rectangle region = editor.selected_tile_region;
 
             bool should_stop = true;
             for (int y = 0; y < (int)region.h; ++y) {
@@ -297,6 +398,13 @@ local void tilemap_editor_update_render_frame(float dt) {
                 }
 
                 editor_end_selection_region();
+            }
+
+            if (is_key_down(KEY_M)) {
+                int mouse_position[2];
+                get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+                editor.selection_region.x = floorf((float)mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+                editor.selection_region.y = floorf((float)mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
             }
         }
     }
@@ -370,7 +478,28 @@ local void tilemap_editor_update_render_frame(float dt) {
 
         /* world */
         {
-            draw_tiles(editor.tilemap.tiles, editor.tilemap.tile_count);
+            struct tile* tiles = editor.tilemap.tiles;
+            for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
+                struct tile* t = &tiles[index];
+
+                /*exclude tiles in the region to avoid a copy. Would like to have a hashmap :/*/
+                if (editor.selection_region_exists) {
+                    float tile_x = t->x;
+                    float tile_y = t->y;
+                    float tile_w = 1;
+                    float tile_h = 1;
+
+                    struct rectangle region = editor.selected_tile_region;
+                    if (rectangle_intersects_v(tile_x, tile_y, tile_w, tile_h,
+                                               region.x, region.y, region.w, region.h)) {
+                        continue;
+                    }
+                }
+
+                draw_texture(tile_textures[t->id],
+                             t->x * TILE_TEX_SIZE, t->y * TILE_TEX_SIZE,
+                             TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_WHITE);
+            } 
         }
 
         /*rectangle picker */
@@ -380,13 +509,50 @@ local void tilemap_editor_update_render_frame(float dt) {
                 draw_grid(region.x, region.y,
                           roundf(region.h / TILE_TEX_SIZE), roundf(region.w / TILE_TEX_SIZE),
                           ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, COLOR4F_RED);
+
+                /* draw tiles within the region for moving regions */
+                {
+                    struct tile* tiles = editor.tilemap.tiles;
+                    for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
+                        struct tile* t = &tiles[index];
+
+                        /*exclude tiles in the region to avoid a copy. Would like to have a hashmap :/*/
+                        float tile_x = t->x;
+                        float tile_y = t->y;
+                        float tile_w = 1;
+                        float tile_h = 1;
+
+                        {
+                            struct rectangle region = editor.selected_tile_region;
+                            if (!rectangle_intersects_v(tile_x, tile_y, tile_w, tile_h,
+                                                        region.x, region.y, region.w, region.h)) {
+                                continue;
+                            }
+                        }
+
+                        {
+                            struct rectangle selected_region = editor.selected_tile_region;
+                            selected_region.x *= TILE_TEX_SIZE;
+                            selected_region.y *= TILE_TEX_SIZE;
+
+                            struct rectangle region = editor.selection_region;
+                            draw_texture(tile_textures[t->id],
+                                         t->x * TILE_TEX_SIZE + (region.x - selected_region.x),
+                                         t->y * TILE_TEX_SIZE + (region.y - selected_region.y),
+                                         TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_RED);
+                        }
+                    } 
+                }
             }
         }
     } end_graphics_frame();
 
     begin_graphics_frame();{
+        int mouse_position[2];
+        get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+
         draw_text(test_font, 0, 0, "world edit", COLOR4F_WHITE);
-        draw_text(test_font, 0, 32, format_temp("tilecount: %d", editor.tilemap.tile_count), COLOR4F_WHITE);
+        draw_text(test_font, 0, 32, format_temp("tilecount: %d\n(mx: %d, my: %d)\n", editor.tilemap.tile_count, mouse_position[0], mouse_position[1]), COLOR4F_WHITE);
 
         /*"tool" bar*/
         {
