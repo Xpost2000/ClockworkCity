@@ -50,7 +50,7 @@ void graphics_initialize(void* window_handle) {
     global_window = window_handle;
     /*hardware*/
     global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1,
-                                         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+                                         SDL_RENDERER_ACCELERATED /* | SDL_RENDERER_PRESENTVSYNC */
                                          /* SDL_RENDERER_SOFTWARE */
     );
     SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
@@ -266,7 +266,8 @@ void get_text_dimensions(font_id font, const char* cstr, int* width, int* height
     int max_height = 0;
 
     while (current_line = get_line_starting_from(cstr, &line_starting_index)) {
-        int current_width = TTF_SizeUTF8(font_object, current_line, &max_width, NULL);
+        int current_width;
+        TTF_SizeUTF8(font_object, current_line, &current_width, NULL);
         if (current_width > max_width) {
             max_width = current_width;
         }

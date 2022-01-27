@@ -9,7 +9,7 @@ struct entity player = {
 
 local void load_gameplay_resources(void) {
     DEBUG_load_all_tile_assets();
-    game_state->loaded_level = DEBUG_tilemap_from_file(&game_memory_arena, "assets/testmap.txt");
+    /* game_state->loaded_level = DEBUG_tilemap_from_file(&game_memory_arena, "assets/testmap.txt"); */
 }
 
 local void do_physics(float dt) {
@@ -24,7 +24,7 @@ local void do_physics(float dt) {
     player.vx += player.ax * dt;
     player.vx -= (player.vx * 3 * dt);
 
-    const int MAX_SPEED = 1500 * VPIXELS_PER_METER;
+    const int MAX_SPEED = 150 * VPIXELS_PER_METER;
     if (fabs(player.vx) > MAX_SPEED) {
         float sgn = float_sign(player.vx);
         player.vx = MAX_SPEED * sgn;
@@ -36,6 +36,33 @@ local void do_physics(float dt) {
 
     player.vy += (player.ay + VPIXELS_PER_METER*20) * dt;
     if (player.dash) player.vy = 0;
+
+    for (unsigned index = 0; index < tilemap->width * tilemap->height; ++index) {
+        struct tile* t = &tilemap->tiles[index];
+
+        float tile_x = t->x * TILE_TEX_SIZE;
+        float tile_y = t->y * TILE_TEX_SIZE;
+        float tile_w = TILE_TEX_SIZE;
+        float tile_h = TILE_TEX_SIZE;
+
+        if(t->id == TILE_NONE) continue;
+        if (!rectangle_overlapping_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) continue;
+
+        /*NOTE(jerry): this is slightly... different for sloped tiles.*/
+
+        if (tile_is_slope(t)) {
+            float slope_location = tile_get_slope_height(t, player.x, player.w, player.h);
+
+            if (roundf(player.y) == roundf(slope_location)) {
+                // sin 45 == cos 45
+                const float SIN45 = 0.7071067812;
+                float clamp_speed = SIN45 * MAX_SPEED;
+                float sgn = float_sign(player.vx);
+                if (fabs(player.vx) > clamp_speed) player.vx = clamp_speed * sgn;
+                break;
+            }
+        }
+    }
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
     do_moving_entity_vertical_collision_response(tilemap, &player, dt);
@@ -50,7 +77,7 @@ local void do_player_input(float dt) {
 
     player.ax = 0;
 
-    const int MAX_ACCELERATION = 30;
+    const int MAX_ACCELERATION = 25;
     if (move_right) {
         player.ax = VPIXELS_PER_METER * MAX_ACCELERATION;
         player.facing_dir = 1;
@@ -98,7 +125,19 @@ local void do_player_input(float dt) {
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
     do_player_input(dt);
-    do_physics(dt);
+
+    /*fixed physics framerate update*/ {
+        local float physics_accumulation_timer = 0;
+        const int PHYSICS_FRAMERATE = 250;
+        const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
+
+        while (physics_accumulation_timer > 0.0f) {
+            do_physics(PHYSICS_TIMESTEP);
+            physics_accumulation_timer -= PHYSICS_TIMESTEP;
+        }
+
+        physics_accumulation_timer += dt;
+    }
 
     begin_graphics_frame(); {
         /* might need to rethink camera interface. 
@@ -115,12 +154,19 @@ local void game_update_render_frame(float dt) {
     } end_graphics_frame();
 
     begin_graphics_frame(); {
+        int dimens[2];
+        get_screen_dimensions(dimens, dimens+1);
+        draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0,0,0,0.5));
+
         draw_text(test_font, 0, 0,
-                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n%f ms\n(%f) rt\n",
-                              player.onground,
-                              player.x, player.y, player.vx, player.vy, dt * 1000.0f,
-                              gamepad->triggers.right
-                  ),
+                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n%f ms (%f fps)\n",
+                              player.onground, player.x, player.y, player.vx, player.vy, dt * 1000.0f, (1.0f/dt)),
                   COLOR4F_WHITE);
+        {
+            int tdimens[2];
+            char* text = "There's a radio stuck in my brain.\nHello Sailer!";
+            get_text_dimensions(test2_font, text, tdimens, tdimens+1);
+            draw_text(test2_font, dimens[0]/2 - tdimens[0]/2, dimens[1]/2 - tdimens[1]/2, text, COLOR4F_WHITE);
+        }
     } end_graphics_frame();
 }

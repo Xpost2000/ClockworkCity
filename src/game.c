@@ -9,6 +9,7 @@ local struct game_state* game_state;
 
 local texture_id knight_twoview;
 local font_id    test_font;
+local font_id    test2_font;
 local sound_id   test_sound;
 local sound_id   test_sound2;
 
@@ -63,16 +64,24 @@ local void load_static_resources(void) {
 
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
+    /* test2_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", 64); */
+    /* test2_font      = load_font("assets/charissilbold.ttf", 64); */
+    /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */
+
+    test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", 72);
+    
+    /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
 
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 
-    game_memory_arena = allocate_memory_arena(Megabyte(8));
-
+    game_memory_arena = allocate_memory_arena(Megabyte(48));
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
 
     load_gameplay_resources();
     load_tilemap_editor_resources();
+
+    console_execute_cstr("load ts");
 }
 
 void update_render_frame(float dt) {

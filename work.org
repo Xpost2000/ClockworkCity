@@ -210,6 +210,10 @@
     
 *** TODO Resolution independent rendering.
     I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
+*** DONE Fixed framerate physics update.
+    Don't do interpolation yet. Honestly you shouldn't be very slow at running
+    this though... So pretty sure I don't have to interpolate since the game runs
+    at high framerates by default?
 *** TODO cpu "decal" system
     I don't know enough about gpu magic to do this with opengl, but calculating some random
     numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
