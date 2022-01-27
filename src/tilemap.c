@@ -357,8 +357,8 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
         if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
             if (tile_is_slope(t)) {
                 /* assume this is for right facing (left) slope first. (slope = 1) */
-                bool taller_edge_intersection = (old_x >= tile_x + tile_w);
-                bool smaller_edge_intersection = (old_x + entity->w <= tile_x);
+                bool taller_edge_intersection = (entity->x > tile_x + tile_w);
+                bool smaller_edge_intersection = (entity->x + entity->w < tile_x);
                 float taller_edge_correction_position = tile_x + tile_w;
                 float smaller_edge_correction_position = tile_x - entity->w;
 

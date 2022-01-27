@@ -78,7 +78,7 @@ local void do_player_input(float dt) {
     if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
         if (!player.dash) {
             player.vy = 0;
-            const int MAX_SPEED = 60 * VPIXELS_PER_METER;
+            const int MAX_SPEED = 90 * VPIXELS_PER_METER;
             player.vx = MAX_SPEED * player.facing_dir;
             camera_traumatize(0.0375);
             player.dash = true;

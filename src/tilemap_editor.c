@@ -117,6 +117,35 @@ local bool editor_has_tiles_within_selection(void) {
     return false;
 }
 
+local struct tile* editor_yank_selected_tile_region(struct memory_arena* arena, bool cut) {
+    struct rectangle tile_region     = editor.selected_tile_region;
+    struct rectangle selected_region = editor.selection_region;
+
+    /* rescale into grid coordinates */ {
+        selected_region.x /= TILE_TEX_SIZE;
+        selected_region.y /= TILE_TEX_SIZE;
+        selected_region.w /= TILE_TEX_SIZE;
+        selected_region.h /= TILE_TEX_SIZE;
+    }
+    
+    struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
+    /*make temporary copy of the region, also empty it out at the same time*/ {
+        zero_buffer_memory(selected_region_tiles, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
+
+        for (int y = (int)tile_region.y; y < (int)(tile_region.y+tile_region.h); ++y) {
+            for (int x = (int)tile_region.x; x < (int)(tile_region.x+tile_region.w); ++x) {
+                struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+                if (t) {
+                    selected_region_tiles[(y - (int)tile_region.y) * (int)tile_region.w + (x - (int)tile_region.x)] = *t;
+                    if (cut) t->id = TILE_NONE;
+                }
+            }
+        }
+    }
+
+    return selected_region_tiles;
+}
+
 local void editor_move_selected_tile_region(struct memory_arena* arena) {
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
@@ -131,20 +160,41 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
     assert(tile_region.w == selected_region.w);
     assert(tile_region.h == selected_region.h);
 
-    struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
-    /*make temporary copy of the region, also empty it out at the same time*/ {
-        zero_buffer_memory(selected_region_tiles, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
+    struct tile* selected_region_tiles = editor_yank_selected_tile_region(arena, true);
 
-        for (int y = (int)tile_region.y; y < (int)(tile_region.y+tile_region.h); ++y) {
-            for (int x = (int)tile_region.x; x < (int)(tile_region.x+tile_region.w); ++x) {
-                struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
-                if (t) {
-                    selected_region_tiles[(y - (int)tile_region.y) * (int)tile_region.w + (x - (int)tile_region.x)] = *t;
-                    t->id = TILE_NONE;
+    /*copy the selected_region_tiles into the right place*/ {
+        for (int y = 0; y < (int)(tile_region.h); ++y) {
+            for (int x = 0; x < (int)(tile_region.w); ++x) {
+                struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + selected_region.x, y + selected_region.y);
+
+                if (!t) {
+                    t = editor_allocate_block();
                 }
+
+                *t = selected_region_tiles[(y * (int)tile_region.w) + x];
+                t->x = x + selected_region.x;
+                t->y = y + selected_region.y;
             }
         }
     }
+}
+
+/* copy and paste */
+local void editor_copy_selected_tile_region(struct memory_arena* arena) {
+    struct rectangle tile_region     = editor.selected_tile_region;
+    struct rectangle selected_region = editor.selection_region;
+
+    /* rescale into grid coordinates */ {
+        selected_region.x /= TILE_TEX_SIZE;
+        selected_region.y /= TILE_TEX_SIZE;
+        selected_region.w /= TILE_TEX_SIZE;
+        selected_region.h /= TILE_TEX_SIZE;
+    }
+
+    assert(tile_region.w == selected_region.w);
+    assert(tile_region.h == selected_region.h);
+
+    struct tile* selected_region_tiles = editor_yank_selected_tile_region(arena, false);
 
     /*copy the selected_region_tiles into the right place*/ {
         for (int y = 0; y < (int)(tile_region.h); ++y) {
@@ -349,7 +399,11 @@ local void tilemap_editor_update_render_frame(float dt) {
 
         if (is_key_pressed(KEY_RETURN)) {
             if (editor_has_tiles_within_selection()) {
-                editor_move_selected_tile_region(&frame_arena);
+                if (is_key_down(KEY_Y)) {
+                    editor_copy_selected_tile_region(&frame_arena);
+                } else {
+                    editor_move_selected_tile_region(&frame_arena);
+                }
                 editor_end_selection_region();
             }
         }
@@ -496,7 +550,7 @@ local void tilemap_editor_update_render_frame(float dt) {
             for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
                 struct tile* t = &tiles[index];
 
-                if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1))
+                if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
                     continue;
 
                 draw_texture(tile_textures[t->id],
@@ -507,11 +561,15 @@ local void tilemap_editor_update_render_frame(float dt) {
 
         /*rectangle picker */
         {
+            union color4f grid_color = COLOR4F_RED;
+
+            if (is_key_down(KEY_Y)) grid_color = COLOR4F_GREEN;
+
             if (editor.selection_region_exists) {
                 struct rectangle region = editor.selection_region;
                 draw_grid(region.x, region.y,
                           roundf(region.h / TILE_TEX_SIZE), roundf(region.w / TILE_TEX_SIZE),
-                          ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, COLOR4F_RED);
+                          ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, grid_color);
 
                 /* draw tiles within the region for moving regions */
                 {
@@ -532,7 +590,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                             draw_texture(tile_textures[t->id],
                                          t->x * TILE_TEX_SIZE + (region.x - selected_region.x),
                                          t->y * TILE_TEX_SIZE + (region.y - selected_region.y),
-                                         TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_RED);
+                                         TILE_TEX_SIZE, TILE_TEX_SIZE, grid_color);
                         }
                     } 
                 }

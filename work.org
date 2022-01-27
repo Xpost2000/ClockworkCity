@@ -145,7 +145,8 @@
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Switch to sparse tile storage on the level editor
-*** TODO Camera shake and Trauma
+*** DONE Camera shake and Trauma
+*** TODO Camera Zoom
 *** DONE Player friction
     I don't really like the grounded feel like in Hollow Knight unfortunately.
     It feels too stiff for me.
@@ -157,6 +158,7 @@
 *** TODO Maintain a level state
 *** DONE Rectangle selection / painting!
     This will allow us to produce "islands", when we need em!
+*** TODO Editor copy region!
 *** TODO Editor can remember where it loaded from! (reload)
 *** TODO Editor can remember last editing session!
 *** TODO Editor undo / redo (probably don't need...)

@@ -16,7 +16,7 @@ local sound_id   test_sound2;
   physics "constants"
 */
 
-#define VPIXELS_PER_METER (32)
+#define VPIXELS_PER_METER (16)
 
 /*
   This might just turn into an uber struct or something.
