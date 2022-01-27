@@ -61,7 +61,13 @@ void camera_set_focus_speed(float speed) {
     active_camera->interpolation_speed[0] = active_camera->interpolation_speed[1] = speed;
 }
 
+void camera_traumatize(float amount) {
+    global_camera.trauma += amount;
+}
+
 void camera_update(float dt) {
+    global_camera.trauma = clampf(global_camera.trauma, 0.0, 1.0);
+
     /*
       this doesn't touch active camera. All cameras should be free to update
       on their own. It really shouldn't matter, and it probably looks more consistent
@@ -79,8 +85,19 @@ void camera_update(float dt) {
 
       But whatever.
      */
-    global_camera.visual_position_x = _camera_lerp(global_camera.last_position_x, global_camera.target_position_x, global_camera.interpolation_time[0]);
-    global_camera.visual_position_y = _camera_lerp(global_camera.last_position_y, global_camera.target_position_y, global_camera.interpolation_time[1]);
+
+    /*hardcoded for now*/
+    float trauma_shake_x = (300 * random_float() - 150) * global_camera.trauma;
+    float trauma_shake_y = (300 * random_float() - 150) * global_camera.trauma;
+
+    global_camera.visual_position_x =
+        _camera_lerp(global_camera.last_position_x, global_camera.target_position_x,
+                     global_camera.interpolation_time[0]) + trauma_shake_x;
+    global_camera.visual_position_y =
+        _camera_lerp(global_camera.last_position_y, global_camera.target_position_y,
+                     global_camera.interpolation_time[1]) + trauma_shake_y;
+
+    global_camera.trauma -= dt * 0.078;
 }
 
 void camera_reset_transform(void) {

@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+#include <time.h>
 
 #include <stdarg.h>
 

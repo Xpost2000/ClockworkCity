@@ -25,6 +25,7 @@ struct camera {
     /*NOTE(jerry): UNUSED*/
     /* me really wants this but this requires access to transformation matrices */
     /* which sdl2's renderer sucks at. so we needs new renderer tomorrow already! */
+    float trauma;
 #if 0
     float zoom_level;
     float rotation_radians;
@@ -34,6 +35,8 @@ struct camera {
 struct camera* get_global_camera(void);
 void set_active_camera(struct camera* camera); /*really only here to toggle camera usage*/
 
+/*normalized values from 0 - 1.0!*/
+void camera_traumatize(float amount);
 void camera_set_position(float x, float y);
 void camera_set_focus_speed(float speed);
 void camera_set_focus_speed_x(float speed);

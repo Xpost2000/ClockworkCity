@@ -24,13 +24,18 @@ local void do_physics(float dt) {
     player.vx += player.ax * dt;
     player.vx -= (player.vx * 3 * dt);
 
-    const int MAX_SPEED = 7 * VPIXELS_PER_METER;
+    const int MAX_SPEED = 1500 * VPIXELS_PER_METER;
     if (fabs(player.vx) > MAX_SPEED) {
         float sgn = float_sign(player.vx);
         player.vx = MAX_SPEED * sgn;
     }
 
+    if (fabs(player.vx) < (30 * VPIXELS_PER_METER)) {
+        player.dash = false;
+    }
+
     player.vy += (player.ay + VPIXELS_PER_METER*20) * dt;
+    if (player.dash) player.vy = 0;
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
     do_moving_entity_vertical_collision_response(tilemap, &player, dt);
@@ -40,22 +45,23 @@ local void do_physics(float dt) {
 local void do_player_input(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
 
-    const float MOVEMENT_THRESHOLD = 0.5;
-
     bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
 
     player.ax = 0;
 
-    const int MAX_ACCELERATION = 40;
+    const int MAX_ACCELERATION = 30;
     if (move_right) {
         player.ax = VPIXELS_PER_METER * MAX_ACCELERATION;
+        player.facing_dir = 1;
     } else if (move_left) {
         player.ax = VPIXELS_PER_METER * -MAX_ACCELERATION;
+        player.facing_dir = -1;
     }
 
     if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
         player.ax = VPIXELS_PER_METER * MAX_ACCELERATION * gamepad->left_stick.axes[0];
+        player.facing_dir = (int)float_sign(player.ax);
     }
 
     if (noclip) {
@@ -69,6 +75,16 @@ local void do_player_input(float dt) {
         player.jump_leniancy_timer = 0.3;
     }
 
+    if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
+        if (!player.dash) {
+            player.vy = 0;
+            const int MAX_SPEED = 60 * VPIXELS_PER_METER;
+            player.vx = MAX_SPEED * player.facing_dir;
+            camera_traumatize(0.0375);
+            player.dash = true;
+        }
+    }
+
     if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (player.onground && player.vy == 0) {
             player.vy = VPIXELS_PER_METER * -10;
@@ -80,6 +96,7 @@ local void do_player_input(float dt) {
 }
 
 local void game_update_render_frame(float dt) {
+    struct game_controller* gamepad = get_gamepad(0);
     do_player_input(dt);
     do_physics(dt);
 
@@ -99,9 +116,11 @@ local void game_update_render_frame(float dt) {
 
     begin_graphics_frame(); {
         draw_text(test_font, 0, 0,
-                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n%f ms",
+                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n%f ms\n(%f) rt\n",
                               player.onground,
-                              player.x, player.y, player.vx, player.vy, dt * 1000.0f),
+                              player.x, player.y, player.vx, player.vy, dt * 1000.0f,
+                              gamepad->triggers.right
+                  ),
                   COLOR4F_WHITE);
     } end_graphics_frame();
 }

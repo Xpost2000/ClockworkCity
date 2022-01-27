@@ -16,7 +16,7 @@ local sound_id   test_sound2;
   physics "constants"
 */
 
-#define VPIXELS_PER_METER (16)
+#define VPIXELS_PER_METER (32)
 
 /*
   This might just turn into an uber struct or something.
@@ -33,7 +33,13 @@ struct entity {
 
     float vx;
     float vy;
+
     bool onground;
+
+    /*temporary*/
+    int facing_dir;
+    bool dash;
+    /*end temporary*/
 
     /* player specific */
     float jump_leniancy_timer;
@@ -53,6 +59,8 @@ enum game_mode mode = GAME_MODE_PLAYING;
 #include "tilemap_editor.c"
 
 local void load_static_resources(void) {
+    srand(time(0));
+
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
 
