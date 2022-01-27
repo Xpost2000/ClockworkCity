@@ -87,11 +87,9 @@ struct tile* occupied_block_at(struct tile* tiles, int tile_count, int grid_x, i
 local bool editor_has_tiles_within_selection(void) {
     struct rectangle tile_region = editor.selected_tile_region;
 
-    console_printf("region: %d, %d, %d, %d\n", (int)tile_region.x, (int)tile_region.y, (int)tile_region.w, (int)tile_region.h);
-    for (int y = (int)tile_region.y; y <= (int)tile_region.h; ++y) {
-        for (int x = (int)tile_region.x; x <= (int)tile_region.w; ++x) {
+    for (int y = (int)tile_region.y; y <= (int)(tile_region.y+tile_region.h); ++y) {
+        for (int x = (int)tile_region.x; x <= (int)(tile_region.x+tile_region.w); ++x) {
             struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
-            console_printf("%p(%d, %d)\n", t, x, y);
             if (t) {
                 return true;
             }
@@ -116,8 +114,8 @@ local void editor_move_selected_tile_region(void) {
     assert(tile_region.h == selected_region.h);
 
     /* copy into new area */ {
-        for (int y = tile_region.y; y <= tile_region.h; ++y) {
-            for (int x = tile_region.x; x <= tile_region.w; ++x) {
+        for (int y = tile_region.y; y <= (int)(tile_region.y+tile_region.h); ++y) {
+            for (int x = tile_region.x; x <= (int)(tile_region.x+tile_region.w); ++x) {
                 struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
 
                 if (t) {
