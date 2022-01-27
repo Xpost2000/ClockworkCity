@@ -2,8 +2,15 @@
 #define EDITOR_TILE_MAX_COUNT (16384)
 
 /*
-  NOTE(jerry):
-  CTRL and drag for rectangular region picking!
+  We're going to need to handle growing arrays, and I don't
+  want to do std::vector style stuff, especially since I want
+  to have tilemap islands, which would make the std::vector stuff REALLY
+  messy.
+  
+  It's easier to just unlink a chain of chunks for this.
+  
+  This adds a pretty big serialization step :(, but it'll probably
+  simplify my life as I would guarantee no memory leaks doing this.
 */
 
 struct editable_tilemap {
@@ -34,6 +41,17 @@ struct editor_state {
 };
 
 local struct editor_state editor;
+
+local struct tile* editor_allocate_block(void) {
+    assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
+    return &editor.tilemap.tiles[editor.tilemap.tile_count++];
+}
+
+/*grid coordinates*/
+local bool intersects_editor_selected_tile_region(int x, int y, int w, int h) {
+    struct rectangle region = editor.selected_tile_region;
+    return rectangle_intersects_v(region.x, region.y, region.w, region.h, x, y, w, h);
+}
 
 local void editor_begin_selection_region(int x, int y) {
     if (editor.selection_region_exists)
@@ -131,11 +149,12 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
     /*copy the selected_region_tiles into the right place*/ {
         for (int y = 0; y < (int)(tile_region.h); ++y) {
             for (int x = 0; x < (int)(tile_region.w); ++x) {
-                struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+                struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + selected_region.x, y + selected_region.y);
 
                 if (!t) {
-                    t = &editor.tilemap.tiles[editor.tilemap.tile_count++];
+                    t = editor_allocate_block();
                 }
+
                 *t = selected_region_tiles[(y * (int)tile_region.w) + x];
                 t->x = x + selected_region.x;
                 t->y = y + selected_region.y;
@@ -148,11 +167,7 @@ local void editor_try_to_place_block(int grid_x, int grid_y) {
     assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
 
     struct tile* tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
-
-    if (!tile) {
-        tile = &editor.tilemap.tiles[editor.tilemap.tile_count++];
-    } else {
-    }
+    if (!tile) tile = editor_allocate_block();
 
     tile->x = grid_x;
     tile->y = grid_y;
@@ -481,19 +496,8 @@ local void tilemap_editor_update_render_frame(float dt) {
             for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
                 struct tile* t = &tiles[index];
 
-                /*exclude tiles in the region to avoid a copy. Would like to have a hashmap :/*/
-                if (editor.selection_region_exists) {
-                    float tile_x = t->x;
-                    float tile_y = t->y;
-                    float tile_w = 1;
-                    float tile_h = 1;
-
-                    struct rectangle region = editor.selected_tile_region;
-                    if (rectangle_intersects_v(tile_x, tile_y, tile_w, tile_h,
-                                               region.x, region.y, region.w, region.h)) {
-                        continue;
-                    }
-                }
+                if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1))
+                    continue;
 
                 draw_texture(tile_textures[t->id],
                              t->x * TILE_TEX_SIZE, t->y * TILE_TEX_SIZE,
@@ -516,18 +520,8 @@ local void tilemap_editor_update_render_frame(float dt) {
                         struct tile* t = &tiles[index];
 
                         /*exclude tiles in the region to avoid a copy. Would like to have a hashmap :/*/
-                        float tile_x = t->x;
-                        float tile_y = t->y;
-                        float tile_w = 1;
-                        float tile_h = 1;
-
-                        {
-                            struct rectangle region = editor.selected_tile_region;
-                            if (!rectangle_intersects_v(tile_x, tile_y, tile_w, tile_h,
-                                                        region.x, region.y, region.w, region.h)) {
-                                continue;
-                            }
-                        }
+                        if (!intersects_editor_selected_tile_region(t->x, t->y, 1, 1))
+                            continue;
 
                         {
                             struct rectangle selected_region = editor.selected_tile_region;
