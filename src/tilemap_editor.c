@@ -87,8 +87,8 @@ struct tile* occupied_block_at(struct tile* tiles, int tile_count, int grid_x, i
 local bool editor_has_tiles_within_selection(void) {
     struct rectangle tile_region = editor.selected_tile_region;
 
-    for (int y = (int)tile_region.y; y <= (int)(tile_region.y+tile_region.h); ++y) {
-        for (int x = (int)tile_region.x; x <= (int)(tile_region.x+tile_region.w); ++x) {
+    for (int y = (int)tile_region.y; y < (int)(tile_region.y+tile_region.h); ++y) {
+        for (int x = (int)tile_region.x; x < (int)(tile_region.x+tile_region.w); ++x) {
             struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
             if (t) {
                 return true;
@@ -99,7 +99,7 @@ local bool editor_has_tiles_within_selection(void) {
     return false;
 }
 
-local void editor_move_selected_tile_region(void) {
+local void editor_move_selected_tile_region(struct memory_arena* arena) {
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
@@ -113,32 +113,32 @@ local void editor_move_selected_tile_region(void) {
     assert(tile_region.w == selected_region.w);
     assert(tile_region.h == selected_region.h);
 
-    /* copy into new area */ {
-        for (int y = tile_region.y; y <= (int)(tile_region.y+tile_region.h); ++y) {
-            for (int x = tile_region.x; x <= (int)(tile_region.x+tile_region.w); ++x) {
+    struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
+    /*make temporary copy of the region, also empty it out at the same time*/ {
+        zero_buffer_memory(selected_region_tiles, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
+
+        for (int y = (int)tile_region.y; y < (int)(tile_region.y+tile_region.h); ++y) {
+            for (int x = (int)tile_region.x; x < (int)(tile_region.x+tile_region.w); ++x) {
                 struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
-
                 if (t) {
-                    /*heart surgery*/{
-                        int relative_position_of_tile_x = (x - tile_region.x);
-                        int relative_position_of_tile_y = (y - tile_region.y);
-
-                        struct tile* replace_target = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count,
-                                                                        relative_position_of_tile_x + selected_region.x,
-                                                                        relative_position_of_tile_y + selected_region.y);
-                        if (!replace_target) {
-                            replace_target = &editor.tilemap.tiles[editor.tilemap.tile_count++];
-                        }
-
-                        replace_target->id = t->id;
-                        replace_target->x =  relative_position_of_tile_x + selected_region.x;
-                        replace_target->y =  relative_position_of_tile_y + selected_region.y;
-                    }
-
-                    /*kill original block*/{
-                        t->id = TILE_NONE;
-                    }
+                    selected_region_tiles[(y - (int)tile_region.y) * (int)tile_region.w + (x - (int)tile_region.x)] = *t;
+                    t->id = TILE_NONE;
                 }
+            }
+        }
+    }
+
+    /*copy the selected_region_tiles into the right place*/ {
+        for (int y = 0; y < (int)(tile_region.h); ++y) {
+            for (int x = 0; x < (int)(tile_region.w); ++x) {
+                struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+
+                if (!t) {
+                    t = &editor.tilemap.tiles[editor.tilemap.tile_count++];
+                }
+                *t = selected_region_tiles[(y * (int)tile_region.w) + x];
+                t->x = x + selected_region.x;
+                t->y = y + selected_region.y;
             }
         }
     }
@@ -292,6 +292,7 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
 }
 
 local void tilemap_editor_update_render_frame(float dt) {
+    struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(512));
     /*
       TODO(jerry):
       hack, cause my camera api is shitty.
@@ -333,7 +334,7 @@ local void tilemap_editor_update_render_frame(float dt) {
 
         if (is_key_pressed(KEY_RETURN)) {
             if (editor_has_tiles_within_selection()) {
-                editor_move_selected_tile_region();
+                editor_move_selected_tile_region(&frame_arena);
                 editor_end_selection_region();
             }
         }
@@ -562,4 +563,6 @@ local void tilemap_editor_update_render_frame(float dt) {
             draw_text(test_font, 5 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
         }
     } end_graphics_frame();
+
+    end_temporary_memory(&frame_arena);
 }
