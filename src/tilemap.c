@@ -104,7 +104,7 @@ float tile_get_slope_height(struct tile* t, float x, float w, float h) {
             return (tile_y + slope_x_offset);
         } break;
         case TILE_SLOPE_BR: {
-            float slope_x_offset = (tile_x - x);
+            float slope_x_offset = clampf((tile_x - x), 0, tile_w);
             return ((tile_y + tile_h) + slope_x_offset);
         } break;
     }
@@ -357,10 +357,19 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
         if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
             if (tile_is_slope(t)) {
                 /* assume this is for right facing (left) slope first. (slope = 1) */
-                bool taller_edge_intersection = (entity->x > tile_x + tile_w);
-                bool smaller_edge_intersection = (entity->x + entity->w < tile_x);
+                bool taller_edge_intersection = (old_x >= tile_x + tile_w);
+                bool smaller_edge_intersection = (old_x + entity->w <= tile_x);
                 float taller_edge_correction_position = tile_x + tile_w;
                 float smaller_edge_correction_position = tile_x - entity->w;
+
+                /*
+                  this prevents getting nicked by other slope corners. This check on the other
+                  hand is required for the BR/BL slopes.
+                */
+                if (t->id == TILE_SLOPE_R || t->id == TILE_SLOPE_L) {
+                    taller_edge_intersection = (entity->x > tile_x + tile_w);
+                    smaller_edge_intersection = (entity->x + entity->w < tile_x);
+                }
 
                 if (t->id == TILE_SLOPE_R || t->id == TILE_SLOPE_BR) {
                     /*just reversed.*/
@@ -385,7 +394,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                               This is a very small bug compared to other shit I've fucked up so far
                               so I can sleep soundly at night knowing this is still here.
                             */
-                            if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= TILE_TEX_SIZE/((float)entity->h * 0.0754))) {
+                            if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)entity->h * 0.7))) {
                                 float old_y = entity->y;
                                 entity->y = slope_snapped_location;
 

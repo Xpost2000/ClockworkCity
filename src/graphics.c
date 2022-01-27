@@ -8,6 +8,9 @@
   
   TODO(jerry):
   Blend modes
+  
+  TODO(jerry):
+  batching (I mean I'm going to turn this into an opengl renderer, but we do need render commands!)
 */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -45,7 +48,11 @@ bool within_screen_bounds(int x, int y, int w, int h) {
 
 void graphics_initialize(void* window_handle) {
     global_window = window_handle;
-    global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    /*hardware*/
+    global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1,
+                                         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+                                         /* SDL_RENDERER_SOFTWARE */
+    );
     SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
     active_camera = &global_camera;
 }

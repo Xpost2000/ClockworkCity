@@ -132,6 +132,20 @@
 *** DONE Load different levels/tilemaps/chunks/whatever
 ** <2022-01-26 Wed>
    Hmmm, I think I'm actually free on this day!
+*** DONE Camera shake and Trauma
+*** DONE Player friction
+    I don't really like the grounded feel like in Hollow Knight unfortunately.
+    It feels too stiff for me.
+
+    I still want it sharp, but like sudden halting is not hot.
+*** DONE Rectangle selection / painting!
+    This will allow us to produce "islands", when we need em!
+*** DONE Editor copy region!
+** <2022-01-27 Thu>
+   RTX 3050 comes out!
+
+   I'm also free today!
+   
 *** TODO Faster text rendering for the console
 *** TODO SFL console has a crash in history?
 *** TODO World/Level Transitions
@@ -145,20 +159,11 @@
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Switch to sparse tile storage on the level editor
-*** DONE Camera shake and Trauma
 *** TODO Camera Zoom
-*** DONE Player friction
-    I don't really like the grounded feel like in Hollow Knight unfortunately.
-    It feels too stiff for me.
-
-    I still want it sharp, but like sudden halting is not hot.
 *** TODO Spikes (don't die immediately, just reset to last grounded area.)
 *** TODO Load levels from transitions
 *** TODO Editor rectangle resizing (for level trigger stuff)
 *** TODO Maintain a level state
-*** DONE Rectangle selection / painting!
-    This will allow us to produce "islands", when we need em!
-*** TODO Editor copy region!
 *** TODO Editor can remember where it loaded from! (reload)
 *** TODO Editor can remember last editing session!
 *** TODO Editor undo / redo (probably don't need...)
@@ -192,6 +197,7 @@
     Basic rope swinging should be fine.
 *** TODO Basic debug gui stuff
 *** TODO Background tiles or something
+    Support multiple tile layers. This is actually important.
 *** TODO (?)Consider thinking of the entity system
 *** TODO (?)Start OpenGL renderer as the last thing I guess.
 *** TODO Basic Menu Game State system, and a normal game state system
@@ -216,10 +222,6 @@
     Probably will perform not so great but I think the frame budget is really generous...
 
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
-** <2022-01-27 Thu>
-   RTX 3050 comes out!
-
-   I'm also free today!
 ** <2022-01-28 Fri>
    I come home VERY late today! (thanks club that I go to of my own choice.),
 
