@@ -1,6 +1,11 @@
 #include "memory_arena.h"
 #define EDITOR_TILE_MAX_COUNT (16384)
 
+/*
+  NOTE(jerry):
+  CTRL and drag for rectangular region picking!
+*/
+
 struct editable_tilemap {
     uint32_t tile_count;
     int width;
@@ -12,17 +17,25 @@ struct editor_state {
 
     float camera_x;
     float camera_y;
-
     /*
       This is a slightly different layout to the ingame format.
       This is basically a source format
     */
     struct editable_tilemap tilemap;
 
+    /*-*/
+    bool selection_region_exists;
+    struct rectangle selection_region;
+
     enum tile_id placement_type;
 };
 
 local struct editor_state editor;
+
+local void get_mouse_location_in_camera_space(int* x, int* y) {
+    get_mouse_location(x, y);
+    transform_point_into_camera_space(x, y);
+}
 
 struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, int grid_y) {
     for (unsigned index = 0; index < tile_count; ++index) {
@@ -152,24 +165,32 @@ static void editor_serialize_into_game_memory(void) {
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {
+    int direction_x = 1;
+    int direction_y = 1;
+
+    if (rows < 0) { direction_y *= -1; rows *= -1; }
+    if (cols < 0) { direction_x *= -1; cols *= -1; }
+
     if (thickness == 1) {
         /*NOTE(jerry):
           one sized filled rectangles sometimes flicker out of existance with the current renderer.
          */
         for (int y = 0; y <= rows; ++y) {
-            draw_rectangle(x_offset, y * TILE_TEX_SIZE + y_offset, cols * TILE_TEX_SIZE, 1, color);
+            draw_rectangle(x_offset, y * TILE_TEX_SIZE*(direction_y) + y_offset,
+                           direction_x * cols * TILE_TEX_SIZE, 1, color);
         }
         for (int x = 0; x <= cols; ++x) {
-            draw_rectangle(x * TILE_TEX_SIZE + x_offset, y_offset, 1, rows * TILE_TEX_SIZE, color);
+            draw_rectangle(x * TILE_TEX_SIZE*(direction_x) + x_offset, y_offset, 1,
+                           direction_y * rows * TILE_TEX_SIZE, color);
         }
     } else {
         for (int y = 0; y <= rows; ++y) {
-            draw_filled_rectangle(x_offset, y * TILE_TEX_SIZE + y_offset,
-                                  cols * TILE_TEX_SIZE, thickness, color);
+            draw_filled_rectangle(x_offset, y * TILE_TEX_SIZE * (direction_y) + y_offset,
+                                  direction_x * cols * TILE_TEX_SIZE, thickness, color);
         }
         for (int x = 0; x <= cols; ++x) {
-            draw_filled_rectangle(x * TILE_TEX_SIZE + x_offset, y_offset,
-                                  thickness, rows * TILE_TEX_SIZE, color);
+            draw_filled_rectangle(x * TILE_TEX_SIZE * (direction_x) + x_offset, y_offset,
+                                  thickness, direction_y * rows * TILE_TEX_SIZE, color);
         }
     }
 }
@@ -195,6 +216,30 @@ local void tilemap_editor_update_render_frame(float dt) {
             editor.camera_x -= dt * CAMERA_SPEED;
         } else if (is_key_down(KEY_D)) {
             editor.camera_x += dt * CAMERA_SPEED;
+        }
+    }
+
+    /*editor rectangular region related stuff*/
+    {
+        if (is_key_pressed(KEY_ESCAPE)) {
+            editor.selection_region_exists = false;
+            editor.selection_region = (struct rectangle){};
+        }
+
+        if (is_key_down(KEY_CTRL)) {
+            int mouse_position[2];
+            get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+
+            if (!editor.selection_region_exists) {
+                editor.selection_region_exists = true;
+                editor.selection_region.x = (mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+                editor.selection_region.y = (mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+            } else {
+                int distance_delta_x = ((mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE) - editor.selection_region.x;
+                int distance_delta_y = ((mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE) - editor.selection_region.y;
+                editor.selection_region.w = distance_delta_x;
+                editor.selection_region.h = distance_delta_y;
+            }
         }
     }
 
@@ -233,12 +278,9 @@ local void tilemap_editor_update_render_frame(float dt) {
         /* cursor */
         {
             int mouse_position[2];
-            get_mouse_location(mouse_position, mouse_position+1);
-
-            /*center mouse position*/
-            transform_point_into_camera_space(mouse_position, mouse_position+1);
-
             bool left_click, right_click;
+
+            get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
             get_mouse_buttons(&left_click, 0, &right_click);
 
             {
@@ -271,6 +313,16 @@ local void tilemap_editor_update_render_frame(float dt) {
         /* world */
         {
             draw_tiles(editor.tilemap.tiles, editor.tilemap.tile_count);
+        }
+
+        /*rectangle picker */
+        {
+            if (editor.selection_region_exists) {
+                struct rectangle region = editor.selection_region;
+                draw_grid(region.x, region.y,
+                          roundf(region.h / TILE_TEX_SIZE), roundf(region.w / TILE_TEX_SIZE),
+                          ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, COLOR4F_YELLOW);
+            }
         }
     } end_graphics_frame();
 

@@ -153,12 +153,18 @@
     I still want it sharp, but like sudden halting is not hot.
 *** TODO Spikes (don't die immediately, just reset to last grounded area.)
 *** TODO Load levels from transitions
+*** TODO Editor rectangle resizing (for level trigger stuff)
 *** TODO Maintain a level state
-*** TODO Rectangle selection / painting!
+*** DONE Rectangle selection / painting!
     This will allow us to produce "islands", when we need em!
 *** TODO Editor can remember where it loaded from! (reload)
 *** TODO Editor can remember last editing session!
 *** TODO Editor undo / redo (probably don't need...)
+*** TODO Consider using "vector" tiles
+    I'm wondering if this would be a good idea. Vector world with pixel art entities and props...
+
+    Don't think I'm allowed to implement this yet, but it's an idea.
+*** TODO Trails Rendering! (probably part of particles)
 *** TODO Simple radial lighting
     I could use a "light texture", but I want to do more generic tile lighting.
 
@@ -195,6 +201,7 @@
     Also I guess a basic idea of dying is okay.
     
 *** TODO Resolution independent rendering.
+    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
 *** TODO cpu "decal" system
     I don't know enough about gpu magic to do this with opengl, but calculating some random
     numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
