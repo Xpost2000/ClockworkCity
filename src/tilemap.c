@@ -339,6 +339,7 @@ local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct t
 /* maybe move to entity.c? */
 void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
     float old_x = entity->x;
+    /*technically wrong because slopes should slow you down. Whatever*/
     entity->x += entity->vx * dt;
 
     size_t total_tile_count = tilemap->height * tilemap->width;
@@ -391,13 +392,18 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 if (entity_intersects_any_tiles_excluding(entity, tilemap, index)) {
                                     entity->x = old_x;
                                     entity->y = old_y;
+                                    entity->vx = 0;
                                 }
 
+                                /*eh.*/
+                                const float SIN45 = 0.7071067812;
+                                entity->vx -= (entity->vx * SIN45 * dt);
                                 entity->vy = 0;
                             }
                         } else {
                             if (smaller_edge_intersection) {
                                 entity->x = smaller_edge_correction_position;
+                                entity->vx = 0;
                             } else {
                                 if (fabs(delta_from_foot_to_tile_bottom) < fabs(delta_from_foot_to_tile_top)) {
                                     entity->y = tile_y + tile_h;
@@ -425,6 +431,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 if (entity_intersects_any_tiles_excluding(entity, tilemap, index)) {
                                     entity->x = old_x;
                                     entity->y = old_y;
+                                    entity->vx = 0;
                                 }
 
                                 if (entity->vy < 0) {
@@ -434,17 +441,25 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                         } else {
                             if (smaller_edge_intersection) {
                                 entity->x = smaller_edge_correction_position;
+                                entity->vx = 0;
                             }
                         }
                     }
                 }
             } else {
+                bool stop_movement = false;
                 if (!do_collision_response_tile_left_edge(t, entity)) {
-                    do_collision_response_tile_right_edge(t, entity);
+                    if (do_collision_response_tile_right_edge(t, entity)) {
+                        stop_movement = true;
+                    }
+                } else {
+                    stop_movement = true;
                 }
+
+                if (stop_movement)
+                    entity->vx = 0;
             }
 
-            entity->vx = 0;
         }
     }
 }

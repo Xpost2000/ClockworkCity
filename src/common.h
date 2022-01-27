@@ -80,6 +80,13 @@ shared_storage int min_int(int a, int b) {
     return b;
 }
 
+shared_storage float float_sign(float x) {
+    if (x > 0) return 1.0f;
+    else if (x < 0) return -1.0f;
+
+    return 0.0f;
+}
+
 /*beh*/
 #define safe_assignment(x) if (x) *x 
 #define random_element(fixed_size_array) fixed_size_array[random_ranged_integer(0, array_count(fixed_size_array))]

@@ -21,7 +21,16 @@ local void do_physics(float dt) {
 
     struct tilemap* tilemap = game_state->loaded_level;
 
-    player.vy += VPIXELS_PER_METER*20 * dt;
+    player.vx += player.ax * dt;
+    player.vx -= (player.vx * 3 * dt);
+
+    const int MAX_SPEED = 7 * VPIXELS_PER_METER;
+    if (fabs(player.vx) > MAX_SPEED) {
+        float sgn = float_sign(player.vx);
+        player.vx = MAX_SPEED * sgn;
+    }
+
+    player.vy += (player.ay + VPIXELS_PER_METER*20) * dt;
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
     do_moving_entity_vertical_collision_response(tilemap, &player, dt);
@@ -31,27 +40,28 @@ local void do_physics(float dt) {
 local void do_player_input(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
 
-    player.vx = 0;
     const float MOVEMENT_THRESHOLD = 0.5;
-    const int MAX_SPEED = 7;
 
     bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
 
+    player.ax = 0;
+
+    const int MAX_ACCELERATION = 40;
     if (move_right) {
-        player.vx = VPIXELS_PER_METER * MAX_SPEED;
+        player.ax = VPIXELS_PER_METER * MAX_ACCELERATION;
     } else if (move_left) {
-        player.vx = VPIXELS_PER_METER * -MAX_SPEED;
+        player.ax = VPIXELS_PER_METER * -MAX_ACCELERATION;
     }
 
     if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
-        player.vx = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[0];
+        player.ax = VPIXELS_PER_METER * MAX_ACCELERATION * gamepad->left_stick.axes[0];
     }
 
     if (noclip) {
-        player.vy = 0;
+        player.ay = 0;
         if (fabs(gamepad->left_stick.axes[1]) >= 0.1) {
-            player.vy = VPIXELS_PER_METER * MAX_SPEED * gamepad->left_stick.axes[1];
+            player.ay = VPIXELS_PER_METER * MAX_ACCELERATION * gamepad->left_stick.axes[1];
         }
     }
 

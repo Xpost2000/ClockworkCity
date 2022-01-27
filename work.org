@@ -146,7 +146,7 @@
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Switch to sparse tile storage on the level editor
 *** TODO Camera shake and Trauma
-*** TODO Player friction
+*** DONE Player friction
     I don't really like the grounded feel like in Hollow Knight unfortunately.
     It feels too stiff for me.
 

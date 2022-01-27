@@ -28,6 +28,9 @@ struct entity {
     float h;
 
     /* only acceleration is gravity for now. Don't care about other forces atm */
+    float ax;
+    float ay;
+
     float vx;
     float vy;
     bool onground;
@@ -42,8 +45,8 @@ enum game_mode {
     GAME_MODE_COUNT,
 };
 
-enum game_mode mode = GAME_MODE_EDITOR;
-/* enum game_mode mode = GAME_MODE_PLAYING; */
+/* enum game_mode mode = GAME_MODE_EDITOR; */
+enum game_mode mode = GAME_MODE_PLAYING;
 
 #include "tilemap.c"
 #include "gameplay_mode.c"
