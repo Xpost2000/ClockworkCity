@@ -141,17 +141,26 @@
 *** DONE Rectangle selection / painting!
     This will allow us to produce "islands", when we need em!
 *** DONE Editor copy region!
-** <2022-01-27 Thu>
+** [1/1] <2022-01-27 Thu>
    RTX 3050 comes out!
 
    I'm also free today!
    
-*** TODO Faster text rendering for the console
-*** TODO SFL console has a crash in history?
-*** TODO World/Level Transitions
-    Linked of course!
-*** TODO Backport more advanced console from blackiron
-    I never realized this was an old version of the console until earlier. Fuck.
+*** DONE Fixed framerate physics update.
+    Don't do interpolation yet. Honestly you shouldn't be very slow at running
+    this though... So pretty sure I don't have to interpolate since the game runs
+    at high framerates by default?
+** <2022-01-28 Fri>
+   I come home VERY late today! (thanks club that I go to of my own choice.),
+
+   If anything I'm probably just going to try and clean stuff up. Maybe one or two more features
+** Weekend...
+   4 days off so yay.
+
+   I can likely get lots of work done during this time, though I want to take a day off or something.
+
+   It'll depend on the progress I make.
+** <2022-01-29 Sat>
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
@@ -159,24 +168,39 @@
 *** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
     Just play around with this. It can be useful for making some cool special effects!
 *** TODO Switch to sparse tile storage on the level editor
-*** TODO Camera Zoom
-*** TODO Spikes (don't die immediately, just reset to last grounded area.)
-*** TODO Load levels from transitions
-*** TODO Editor rectangle resizing (for level trigger stuff)
-*** TODO Maintain a level state
-*** TODO Editor can remember where it loaded from! (reload)
-*** TODO Editor can remember last editing session!
-*** TODO Editor undo / redo (probably don't need...)
-*** TODO Consider using "vector" tiles
-    I'm wondering if this would be a good idea. Vector world with pixel art entities and props...
+    The reasoning for this is that malloc/realloc vector style is actually more complicated to support
+    when I need to add stuff like islands.
 
-    Don't think I'm allowed to implement this yet, but it's an idea.
+    It is easier to sparsely allocate contiguous chunks, and just never free them (so I can just recycle them
+    when I need stuff.)
+
+    Then just free all the chunks immediately by clearing an entire arena, instead of some long iterative
+    memory reclaimation process.
+
+    This is only for the editor. Game runtime just loads into contiguous arrays from the binary file.
+*** TODO Design a stream api to load levels seamlessly?
+    Reduces code I write mostly.
+*** TODO Editor can remember last editing session!
+    I don't know if I wanna support the whole undo-redo debockle, I just wanna be able to load
+    the last file I was editting (session really...)
+*** TODO Editor undo / redo (probably don't need...)
 *** TODO Trails Rendering! (probably part of particles)
 *** TODO Simple radial lighting
     I could use a "light texture", but I want to do more generic tile lighting.
 
     I'm considering just using BFS bounded by a distance formula, and calling that a day.
     Pretty sure that'll look okay enough for what I need.
+*** TODO Background tiles or something
+    Support multiple tile layers. This is actually important.
+*** TODO (?)Consider thinking of the entity system
+*** TODO Resolution independent rendering.
+    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
+*** TODO Basic debug gui stuff
+*** TODO World/Level Transitions
+    Linked of course!
+*** TODO Backport more advanced console from blackiron
+    I never realized this was an old version of the console until earlier. Fuck.
+*** TODO Camera Zoom
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.
 
@@ -189,16 +213,21 @@
     But the code for what I currently have isn't so ridiculous. (slopes are the only complicated
     part honestly...)
     
+*** TODO Bloom / glow
+*** TODO Faster text rendering for the console
+*** TODO SFL console has a crash in history?
+*** TODO Spikes (don't die immediately, just reset to last grounded area.)
+*** TODO Editor rectangle resizing (for level trigger stuff)
+*** TODO Consider using "vector" tiles
+    I'm wondering if this would be a good idea. Vector world with pixel art entities and props...
+
+    Don't think I'm allowed to implement this yet, but it's an idea.
 *** TODO (animated sprite system) or something?
 *** TODO Try to build on ubuntu or something
     someone teach me how to distribute on linux, I'll provide source anyways but
     senpai pls.
 *** TODO Rope like objects 
     Basic rope swinging should be fine.
-*** TODO Basic debug gui stuff
-*** TODO Background tiles or something
-    Support multiple tile layers. This is actually important.
-*** TODO (?)Consider thinking of the entity system
 *** TODO (?)Start OpenGL renderer as the last thing I guess.
 *** TODO Basic Menu Game State system, and a normal game state system
     Main Menu, Loading a save file, Credits, Options, and Quit.
@@ -208,12 +237,6 @@
 
     Also I guess a basic idea of dying is okay.
     
-*** TODO Resolution independent rendering.
-    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
-*** DONE Fixed framerate physics update.
-    Don't do interpolation yet. Honestly you shouldn't be very slow at running
-    this though... So pretty sure I don't have to interpolate since the game runs
-    at high framerates by default?
 *** TODO cpu "decal" system
     I don't know enough about gpu magic to do this with opengl, but calculating some random
     numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
@@ -226,17 +249,7 @@
     Probably will perform not so great but I think the frame budget is really generous...
 
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
-** <2022-01-28 Fri>
-   I come home VERY late today! (thanks club that I go to of my own choice.),
-
-   If anything I'm probably just going to try and clean stuff up. Maybe one or two more features
 *** TODO Cleanup and refactor the code at the end of the week.
-** Weekend...
-   4 days off so yay.
-
-   I can likely get lots of work done during this time, though I want to take a day off or something.
-
-   It'll depend on the progress I make.
 * Jam Time <2022-02-15 Tue>
   When the jam starts put tasks here. This is game-specific stuff,
   hopefully by this time I have a plan for the game plot and obviously

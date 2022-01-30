@@ -242,7 +242,7 @@ local void editor_clear_all(void) {
 }
 
 local void load_tilemap_editor_resources(void) {
-    editor.arena = allocate_memory_arena(Megabyte(2));
+    editor.arena = allocate_memory_arena(Megabyte(4));
     editor.tilemap.tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
     size_t memusage = memory_arena_total_usage(&editor.arena);
     console_printf("Arena is using %d bytes, (%d kb) (%d mb) (%d gb)\n",

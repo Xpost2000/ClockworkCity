@@ -549,14 +549,13 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
 
         if (tile_is_slope(t)) {
             float slope_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+            bool is_bottom_facing_tile = (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL);
 
-            if (roundf(entity->y) == roundf(slope_location)) {
+            if (!is_bottom_facing_tile && roundf(entity->y) == roundf(slope_location)) {
                 entity->onground = true;
             } else {
-                if (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL) {
-                    if (entity->onground) {
-                        return;
-                    }
+                if (is_bottom_facing_tile && entity->onground) {
+                    return;
                 }
 
                 entity->onground = false;
