@@ -249,6 +249,7 @@
     Probably will perform not so great but I think the frame budget is really generous...
 
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
+*** TODO add tile variations
 *** TODO Cleanup and refactor the code at the end of the week.
 * Jam Time <2022-02-15 Tue>
   When the jam starts put tasks here. This is game-specific stuff,

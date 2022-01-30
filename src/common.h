@@ -113,6 +113,23 @@ void* system_allocate_memory(size_t amount);
 void  system_deallocate_memory(void* ptr);
 void* system_allocate_zeroed_memory(size_t amount);
 
+inline shared_storage float degrees_to_radians(float deg) {
+    return (deg * M_PI/180.0f);
+}
+
+inline shared_storage float safe_ratio(float a, float b) {
+    if (b == 0.0f) return 0.0f;
+    return (a/b);
+}
+
+inline shared_storage float degree_slope(float deg) {
+    float radians = degrees_to_radians(deg);
+    float y = sinf(radians);
+    float x = cosf(radians);
+
+    return safe_ratio(y, x);
+}
+
 uint64_t rdtsc(void);
 
 #endif
