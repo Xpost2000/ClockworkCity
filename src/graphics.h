@@ -30,6 +30,9 @@ shared_storage union color4f COLOR4F_DARKGRAY = {{0.3, 0.3, 0.3, 1}};
 union color4f color4f(float r, float g, float b, float a);
 bool within_screen_bounds(int x, int y, int w, int h);
 
+float ratio_with_screen_width(float dividend);
+float ratio_with_screen_height(float dividend);
+
 void get_texture_dimensions(texture_id texture, int* width, int* height);
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height);
 
@@ -50,6 +53,7 @@ void report_screen_dimensions(int* dimensions);
 void get_screen_dimensions(int* width, int* height);
 
 void clear_color(union color4f color);
+void set_render_scale(float scale_factor);
 
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_rectangle(float x, float y, float w, float h, union color4f color);

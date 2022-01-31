@@ -1,4 +1,4 @@
-const int TILE_TEX_SIZE = VPIXELS_PER_METER;
+const int TILE_TEX_SIZE = 1.0f;
 /*these aren't really tile ids, these are more like flags/properties*/
 /*core logic is here though, so I guess it don't matter, can worry about later.*/
 /*need to find test platformer tileset to try out some ideas...*/
@@ -382,6 +382,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                         entity->x = taller_edge_correction_position;
                     } else {
                         float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+                        console_printf("%f\n", slope_snapped_location);
                         float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
                         float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
 
@@ -492,9 +493,9 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
             switch (t->id) {
                 case TILE_SLOPE_R:
                 case TILE_SLOPE_L: {
-                    if (entity->vy >= 0 && roundf(entity->y) == roundf(tile_get_slope_height(t, entity->x, entity->w, entity->h))) {
+                    const float DISTANCE_EPSILION = 0.085;
+                    if (entity->vy >= 0 && fabs(entity->y - tile_get_slope_height(t, entity->x, entity->w, entity->h)) <= DISTANCE_EPSILION) {
                         /*HACK*/
-                        entity->y = roundf(entity->y);
                         entity->vy = 0;
                     }
                 } break;

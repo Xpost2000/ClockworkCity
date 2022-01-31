@@ -34,12 +34,26 @@ local SDL_Window*   global_window;
 
 local int screen_dimensions[2] = {};
 
+local float DEBUG_scale = 1.0;
 #include "camera.c"
 
 inline union color4f color4f(float r, float g, float b, float a) {
     return (union color4f) {
         .r = r, .g = g, .b = b, .a = a,
     };
+}
+
+float ratio_with_screen_width(float dividend) {
+    return (float)screen_dimensions[0] / dividend;
+}
+
+float ratio_with_screen_height(float dividend) {
+    return (float)screen_dimensions[1] / dividend;
+}
+
+/* separate from camera scaling mind you! */
+void set_render_scale(float scale_factor) {
+    DEBUG_scale = scale_factor;
 }
 
 bool within_screen_bounds(int x, int y, int w, int h) {
@@ -80,6 +94,7 @@ local void _set_draw_color(union color4f color) {
 void begin_graphics_frame(void) {
     /* TBD or semantic */
     set_active_camera(NULL);
+    set_render_scale(1.0);
 }
 
 void end_graphics_frame(void) {
@@ -97,12 +112,20 @@ void clear_color(union color4f color) {
 
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
+    x *= DEBUG_scale;
+    y *= DEBUG_scale;
+    w *= DEBUG_scale;
+    h *= DEBUG_scale;
     _camera_transform_v2(&x, &y);
     SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
 }
 
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
+    x *= DEBUG_scale;
+    y *= DEBUG_scale;
+    w *= DEBUG_scale;
+    h *= DEBUG_scale;
     _camera_transform_v2(&x, &y);
 
     if (within_screen_bounds(x, y, w, h)) {
@@ -120,6 +143,11 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
                             int srx, int sry, int srw, int srh, union color4f color) {
     SDL_Texture* texture_object = textures[texture.id];
 
+    x *= DEBUG_scale;
+    y *= DEBUG_scale;
+    w *= DEBUG_scale;
+    h *= DEBUG_scale;
+
     if (texture.id != 0)
         assert(texture_object && "weird... bad texture?");
 
@@ -136,15 +164,15 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
 }
 
 /* 
-   TODO(jerry): allow scaled fonts later 
-   not really a big deal though.
+   TODO(jerry):
+   We need a form of "dynamic" font, that can be used for ingame renderings.
+   IE: a scaled font.
 */
 float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr, union color4f color) {
     SDL_Texture* rendered_text;
     SDL_Surface* text_surface = TTF_RenderUTF8_Blended(font_object, cstr,
                                                        (SDL_Color) {color.r * 255, color.g * 255,
                                                            color.b * 255, color.a * 255});
-
     _camera_transform_v2(&x, &y);
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);

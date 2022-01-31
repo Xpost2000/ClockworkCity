@@ -2,7 +2,8 @@
   physics "constants"
 */
 
-#define VPIXELS_PER_METER (16)
+#define VPIXELS_PER_METER (1)
+#define TILES_PER_SCREEN (16)
 /*
   This might just turn into an uber struct or something.
 */

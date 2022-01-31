@@ -2,8 +2,8 @@ bool noclip = false;
 struct entity player = {
     // no units, prolly pixels
     .x = -VPIXELS_PER_METER/4,
-    .y = 0,
-    .w = VPIXELS_PER_METER/2,
+    .y = -5,
+    .w = VPIXELS_PER_METER/2.0f,
     .h = VPIXELS_PER_METER,
 };
 
@@ -147,6 +147,7 @@ local void game_update_render_frame(float dt) {
            I still want it to operate under one global camera, but
            obviously you don't always want the camera. */
         set_active_camera(get_global_camera());
+        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
 
         camera_set_focus_speed_x(12);
         camera_set_focus_speed_y(5);

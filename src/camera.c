@@ -25,10 +25,10 @@ local void _camera_transform_v2(float* x, float* y) {
     assert(x && y);
     assert(screen_dimensions[0] > 0 && screen_dimensions[1] > 0);
 
-    *x -= global_camera.visual_position_x;
-    *x += screen_dimensions[0] / 2.0f;
-    *y -= global_camera.visual_position_y;
-    *y += screen_dimensions[1] / 2.0f;
+    *x -= (global_camera.visual_position_x) * DEBUG_scale;
+    *x += (screen_dimensions[0] / 2.0f);
+    *y -= (global_camera.visual_position_y) * DEBUG_scale;
+    *y += (screen_dimensions[1] / 2.0f);
 
     *x = floorf(*x);
     *y = floorf(*y);

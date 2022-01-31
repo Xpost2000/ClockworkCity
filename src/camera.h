@@ -1,33 +1,29 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 /*
-  one global active camera object. Is the idea anyways,
-  but I expose the structure here incase I change my mind.
-  
-  The way this camera is setup is that it can follow things, but I've never
-  tried this with room based things.
-  
-  I'll have to see. Or I can just have one camera always? probably looks bad though
+  TODO(jerry): zoom
 */
 struct camera {
+    float visual_zoom_level;
     float visual_position_x;
     float visual_position_y;
 
     float last_position_x;
     float last_position_y;
+    float last_zoom_level;
 
     float target_position_x;
     float target_position_y;
+    float target_zoom_level;
 
-    float interpolation_time[2];
-    float interpolation_speed[2];
+    float interpolation_time[3];
+    float interpolation_speed[3];
 
     /*NOTE(jerry): UNUSED*/
     /* me really wants this but this requires access to transformation matrices */
     /* which sdl2's renderer sucks at. so we needs new renderer tomorrow already! */
     float trauma;
 #if 0
-    float zoom_level;
     float rotation_radians;
 #endif
 };
