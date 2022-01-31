@@ -31,9 +31,9 @@ shared_storage char* tile_type_strings[] = {
     [TILE_SLOPE_L] = "left slope(45 deg)",
 };
 
-texture_id tile_textures[TILE_ID_COUNT] = {};
+local texture_id tile_textures[TILE_ID_COUNT] = {};
 void DEBUG_load_all_tile_assets(void) {
-    for (unsigned i = 0; i < TILE_ID_COUNT; ++i) {
+    for (unsigned i = TILE_NONE+1; i < TILE_ID_COUNT; ++i) {
         char* fstring = tile_id_filestrings[i];
         if (fstring) {
             tile_textures[i] = load_texture(fstring);

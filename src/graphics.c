@@ -280,13 +280,17 @@ void get_text_dimensions(font_id font, const char* cstr, int* width, int* height
 }
 
 void unload_all_textures(void) {
-    for (unsigned index = 0; index < texture_count; ++index) {
+    for (unsigned index = texture_count; index != 0; --index) {
         unload_texture((texture_id){ .id = index });
     }
+
+    assert(texture_count==0);
 }
 
 void unload_all_fonts(void) {
-    for (unsigned index = 0; index < font_count; ++index) {
+    for (unsigned index = font_count; index != 0; --index) {
         unload_font((font_id){ .id = index });
     }
+
+    assert(font_count==0);
 }

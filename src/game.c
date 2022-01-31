@@ -73,6 +73,7 @@ local void load_graphics_resources(void) {
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", 72);
     /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
+    load_gameplay_resources();
 }
 
 local void load_static_resources(void) {
@@ -84,7 +85,6 @@ local void load_static_resources(void) {
     game_memory_arena = allocate_memory_arena(Megabyte(48));
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
 
-    load_gameplay_resources();
     load_tilemap_editor_resources();
 
     console_execute_cstr("load ts");
