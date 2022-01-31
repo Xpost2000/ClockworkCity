@@ -107,12 +107,18 @@ void transform_point_into_camera_space(int* x, int* y) {
     if (!active_camera) return;
 
     if (x) {
-        *x += active_camera->visual_position_x*DEBUG_scale - screen_dimensions[0]/2;
-        *x /= DEBUG_scale;
+        float x_transform = *x;
+        x_transform += active_camera->visual_position_x*DEBUG_scale - screen_dimensions[0]/2;
+        x_transform /= DEBUG_scale;
+
+        *x = floorf(x_transform);
     }
 
     if (y) {
-        *y += active_camera->visual_position_y*DEBUG_scale - screen_dimensions[1]/2;
-        *y /= DEBUG_scale;
+        float y_transform = *y;
+        y_transform += active_camera->visual_position_y*DEBUG_scale - screen_dimensions[1]/2;
+        y_transform /= DEBUG_scale;
+
+        *y = floorf(y_transform);
     }
 }
