@@ -1,6 +1,7 @@
 #include "memory_arena.h"
 #define EDITOR_TILE_MAX_COUNT (16384)
 #define EDITOR_TRANSITIONS_MAX_COUNT (32)
+#define EDITOR_PLAYER_SPAWN_MAX_COUNT (EDITOR_TRANSITIONS_MAX_COUNT)
 
 /*
   NOTE(jerry):
@@ -17,11 +18,15 @@
   I really need a UI library. Dear god.
 */
 
+/*This data structure may be different from the game runtime, which is why it's duplicated*/
 struct editable_tilemap {
     uint32_t tile_count;
     uint8_t transition_zone_count;
+    uint8_t player_spawn_link_count;
+
     int width;
     int height;
+    struct player_spawn_link* player_spawn_links;
     struct tile* tiles;
     struct transition_zone* transitions;
     struct player_spawn default_spawn;
@@ -85,15 +90,6 @@ local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, 
     start_text_edit();
 }
 
-local void editor_close_text_edit_prompt(char* prompt_name, char* target_buffer, size_t target_buffer_length) {
-    struct editor_text_edit* text_edit = &editor.text_edit;
-    text_edit->prompt_title            = prompt_name;
-    text_edit->buffer_target           = target_buffer;
-    text_edit->buffer_length           = target_buffer_length;
-    text_edit->open                    = true;
-    start_text_edit();
-}
-
 local struct tile* editor_allocate_block(void) {
     assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
     return &editor.tilemap.tiles[editor.tilemap.tile_count++];
@@ -105,6 +101,13 @@ local struct transition_zone* editor_allocate_transition(void) {
     zero_array(result->identifier);
     zero_array(result->zone_filename);
     zero_array(result->zone_link);
+    return result;
+}
+
+local struct player_spawn_link* editor_allocate_spawn(void) {
+    assert(editor.tilemap.player_spawn_link_count < EDITOR_PLAYER_SPAWN_MAX_COUNT);
+    struct player_spawn_link* result = &editor.tilemap.player_spawn_links[editor.tilemap.player_spawn_link_count++];
+    zero_array(result->identifier);
     return result;
 }
 
@@ -168,6 +171,22 @@ struct transition_zone* editor_existing_transition_at(struct transition_zone* tr
         struct transition_zone* t = transitions + index;
 
         if (rectangle_intersects_v(t->x, t->y, t->w, t->h, grid_x, grid_y, 0.5, 0.5)) {
+            return t;
+        }
+    }
+
+    return NULL;
+}
+
+struct transition_zone* editor_existing_spawn_at(struct player_spawn_link* spawns, size_t spawn_count, int grid_x, int grid_y) {
+    if (rectangle_intersects_v(editor.tilemap.default_spawn.x, editor.tilemap.default_spawn.y, 1, 2, grid_x, grid_y, 0.5, 0.5)) {
+        return &editor.tilemap.default_spawn;
+    }
+
+    for (unsigned index = 0; index < spawn_count; ++index) {
+        struct player_spawn_link* t = spawns + index;
+
+        if (rectangle_intersects_v(t->x, t->y, 1, 2, grid_x, grid_y, 0.5, 0.5)) {
             return t;
         }
     }
@@ -308,8 +327,9 @@ local void editor_clear_all(void) {
 
 local void load_tilemap_editor_resources(void) {
     editor.arena = allocate_memory_arena(Megabyte(4));
-    editor.tilemap.tiles       = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
-    editor.tilemap.transitions = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT * sizeof(*editor.tilemap.transitions));
+    editor.tilemap.tiles              = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT * sizeof(*editor.tilemap.transitions));
+    editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
     size_t memusage = memory_arena_total_usage(&editor.arena);
     console_printf("Arena is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
                    memusage, memusage / 1024,
@@ -518,6 +538,7 @@ local void tilemap_editor_update_render_frame(float dt) {
             } 
 
             draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
+            draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
             draw_player_spawn(&editor.tilemap.default_spawn);
         }
 
@@ -881,7 +902,6 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
         camera_set_position(editor.camera_x, editor.camera_y);
         set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
 
-        /* cursor */
         {
             int mouse_position[2];
             bool left_click, right_click;
@@ -889,10 +909,73 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
             get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
             get_mouse_buttons(&left_click, 0, &right_click);
 
+            struct player_spawn_link* already_selected = (struct player_spawn_link*) editor.context;
+
             if (left_click) {
-                editor.tilemap.default_spawn.x = mouse_position[0];
-                editor.tilemap.default_spawn.y = mouse_position[1] - 1;
+                if (already_selected) {
+                    if (!editor.dragging &&
+                        rectangle_overlapping_v(already_selected->x, already_selected->y, 1, 2, mouse_position[0], mouse_position[1], 1, 1)) {
+                        editor.dragging = true;
+                    } else if (editor.dragging) {
+                        already_selected->x = mouse_position[0];
+                        already_selected->y = mouse_position[1];
+                    }
+                } else {
+                    struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
+
+                    if (!spawn) {
+                        spawn = editor_allocate_spawn();
+                        spawn->x = mouse_position[0];
+                        spawn->y = mouse_position[1];
+                    }
+
+                    editor.context = spawn;
+                }
+            } else {
+                editor.dragging = false;
+            }
+
+            if (right_click) {
+                struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
+
+                if (spawn) {
+                    if (spawn != &editor.tilemap.default_spawn) {
+                        unsigned index = (spawn - editor.tilemap.player_spawn_links);
+                        editor.tilemap.player_spawn_links[index] = editor.tilemap.player_spawn_links[--editor.tilemap.player_spawn_link_count];
+                    }
+                } else {
+                    editor.context = NULL;
+                }
+            }
+
+            if (already_selected) {
+
+                if (!is_editting_text()) {
+                    if (is_key_down(KEY_1) && already_selected != &editor.tilemap.default_spawn) {
+                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+                    }
+                }
+                
+                draw_rectangle(already_selected->x, already_selected->y, 1, 2, color4f(0.2, 0.3, 1.0, 1.0));
             }
         }
     } end_graphics_frame();
+    {
+        struct player_spawn_link* already_selected = (struct player_spawn_link*) editor.context;
+
+        if (already_selected) {
+            begin_graphics_frame(); {
+                float font_height = font_size_aspect_ratio_independent(0.03);
+                int dimens[2];
+                set_render_scale(1);
+                get_screen_dimensions(dimens, dimens+1);
+
+                if (already_selected == &editor.tilemap.default_spawn) {
+                    draw_text_right_justified(test_font, 0, 0, dimens[0], format_temp("DEFAULT PLAYER SPAWN\nX: %d\nY: %d", already_selected->x, already_selected->y), COLOR4F_WHITE);
+                } else {
+                    draw_text_right_justified(test_font, 0, 0, dimens[0], format_temp("SPAWN PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d", already_selected->identifier, already_selected->x, already_selected->y), COLOR4F_WHITE);
+                }
+            } end_graphics_frame();
+        }
+    }
 }

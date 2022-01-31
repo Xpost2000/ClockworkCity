@@ -74,6 +74,7 @@ struct tile {
 struct transition_zone {
     int32_t x;
     int32_t y;
+
     int16_t w;
     int16_t h;
     char zone_filename[FILENAME_MAX_LENGTH]; /*cstr*/
@@ -86,9 +87,17 @@ struct player_spawn {
     int32_t y;
 };
 
+struct player_spawn_link {
+    int32_t x;
+    int32_t y;
+
+    char identifier[TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH];
+};
+
 /* should be "streamed" */
 /* rename to level */
 struct tilemap {
+    /* this really... Shouldn't be used frequently... */
     struct player_spawn default_spawn;
 
     uint16_t width;
@@ -96,7 +105,9 @@ struct tilemap {
     struct tile* tiles;
 
     uint8_t transition_zone_count;
+    uint8_t player_spawn_link_count;
     struct transition_zone* transitions;
+    struct player_spawn_link* link_spawns;
 };
 
 void DEBUG_load_all_tile_assets(void) {
@@ -192,6 +203,13 @@ void draw_transitions(struct transition_zone* transitions, size_t count) {
         struct transition_zone* t = &transitions[index];
         draw_rectangle(t->x, t->y, t->w, t->h, COLOR4F_RED);
     } 
+}
+
+void draw_player_spawn_links(struct player_spawn_link* spawns, size_t count) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct player_spawn_link* spawn = spawns + index;
+        draw_player_spawn(spawn);
+    }
 }
 
 void DEBUG_draw_tilemap(struct tilemap* tilemap) {
