@@ -330,7 +330,7 @@ static void editor_serialize_into_game_memory(void) {
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {
-    float scale_factor = 1;
+    float scale_factor = get_render_scale();
     int direction_x = 1;
     int direction_y = 1;
 
@@ -342,21 +342,17 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
           one sized filled rectangles sometimes flicker out of existance with the current renderer.
          */
         for (int y = 0; y <= rows; ++y) {
-            draw_rectangle(x_offset, y * scale_factor*(direction_y) + y_offset,
-                           direction_x * cols * scale_factor, 1, color);
+            draw_rectangle(x_offset, y * (direction_y) + y_offset, direction_x * cols, 1/scale_factor, color);
         }
         for (int x = 0; x <= cols; ++x) {
-            draw_rectangle(x * scale_factor*(direction_x) + x_offset, y_offset, 1,
-                           direction_y * rows * scale_factor, color);
+            draw_rectangle(x * (direction_x) + x_offset, y_offset, 1/scale_factor, direction_y * rows, color);
         }
     } else {
         for (int y = 0; y <= rows; ++y) {
-            draw_filled_rectangle(x_offset, y * scale_factor * (direction_y) + y_offset,
-                                  direction_x * cols * scale_factor, thickness, color);
+            draw_filled_rectangle(x_offset, y * (direction_y) + y_offset, direction_x * cols, thickness/scale_factor, color);
         }
         for (int x = 0; x <= cols; ++x) {
-            draw_filled_rectangle(x * scale_factor * (direction_x) + x_offset, y_offset,
-                                  thickness, direction_y * rows * scale_factor, color);
+            draw_filled_rectangle(x * (direction_x) + x_offset, y_offset, thickness / scale_factor, direction_y * rows, color);
         }
     }
 }
@@ -381,7 +377,7 @@ local void tilemap_editor_update_render_frame(float dt) {
 
     /*camera editor movement*/
     {
-        const int CAMERA_SPEED = 10;
+        const int CAMERA_SPEED = TILES_PER_SCREEN / 2;
 
         if (is_key_down(KEY_W)) {
             editor.camera_y -= dt * CAMERA_SPEED;
@@ -504,7 +500,7 @@ local void tilemap_editor_update_render_frame(float dt) {
               
               It's whatever for this.
              */
-            const int SCREENFUL_FILLS = 100;
+            const int SCREENFUL_FILLS = 50;
 
             int row_count = (screen_dimensions[1]) / scale_factor;
             int col_count = (screen_dimensions[0]) / scale_factor;
@@ -525,16 +521,11 @@ local void tilemap_editor_update_render_frame(float dt) {
             get_mouse_buttons(&left_click, 0, &right_click);
 
             {
-                mouse_position[0] = floorf((float)mouse_position[0] / scale_factor) * scale_factor;
-                mouse_position[1] = floorf((float)mouse_position[1] / scale_factor) * scale_factor;
-            }
-
-            {
                 const int SURROUNDER_VISUAL_SIZE = 5;
                 draw_grid(mouse_position[0]-(SURROUNDER_VISUAL_SIZE/2),
                           mouse_position[1]-(SURROUNDER_VISUAL_SIZE/2),
                           SURROUNDER_VISUAL_SIZE, SURROUNDER_VISUAL_SIZE,
-                          ((sinf(global_elapsed_time*4) + 1)/2.0f) * 2.0f + 0.2f, COLOR4F_BLUE);
+                          ((sinf(global_elapsed_time*4) + 1)/2.0f) * 2.f + 1.f, COLOR4F_BLUE);
             }
 
             draw_texture(tile_textures[editor.placement_type],
@@ -605,18 +596,19 @@ local void tilemap_editor_update_render_frame(float dt) {
     begin_graphics_frame();{
         int mouse_position[2];
         get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+        set_render_scale(1);
 
         draw_text(test_font, 0, 0, "world edit", COLOR4F_WHITE);
-        draw_text(test_font, 0, 32, format_temp("tilecount: %d\n(mx: %d, my: %d)\n", editor.tilemap.tile_count, mouse_position[0], mouse_position[1]), COLOR4F_WHITE);
+        draw_text(test_font, 0, 32, format_temp("tilecount: %d\n(mx: %d, my: %d)(cx: %f, cy: %f)\n", editor.tilemap.tile_count, mouse_position[0], mouse_position[1], editor.camera_x, editor.camera_y), COLOR4F_WHITE);
 
         /*"tool" bar*/
         {
             int frame_pad = 3;
-            int frame_size = scale_factor+frame_pad;
+            int frame_size = 16+frame_pad;
             int i = 0;
             draw_rectangle(i * frame_size, 16, frame_size, frame_size, COLOR4F_RED);
-            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/2, scale_factor, scale_factor, COLOR4F_BLUE);
-            draw_text(test_font, 5 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
+            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/4, frame_size, frame_size, COLOR4F_BLUE);
+            draw_text(test_font, 10 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
         }
     } end_graphics_frame();
 

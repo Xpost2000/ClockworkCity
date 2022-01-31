@@ -29,9 +29,6 @@ local void _camera_transform_v2(float* x, float* y) {
     *x += (screen_dimensions[0] / 2.0f);
     *y -= (global_camera.visual_position_y) * DEBUG_scale;
     *y += (screen_dimensions[1] / 2.0f);
-
-    *x = floorf(*x);
-    *y = floorf(*y);
 }
 
 void camera_set_position(float x, float y) {
@@ -110,10 +107,12 @@ void transform_point_into_camera_space(int* x, int* y) {
     if (!active_camera) return;
 
     if (x) {
-        *x += active_camera->visual_position_x * DEBUG_scale  - screen_dimensions[0]/2;
+        *x += active_camera->visual_position_x*DEBUG_scale - screen_dimensions[0]/2;
+        *x /= DEBUG_scale;
     }
 
     if (y) {
-        *y += active_camera->visual_position_y * DEBUG_scale - screen_dimensions[1]/2;
+        *y += active_camera->visual_position_y*DEBUG_scale - screen_dimensions[1]/2;
+        *y /= DEBUG_scale;
     }
 }

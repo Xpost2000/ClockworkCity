@@ -3,7 +3,7 @@
 */
 
 #define VPIXELS_PER_METER (1)
-#define TILES_PER_SCREEN (32)
+#define TILES_PER_SCREEN (48)
 /*
   This might just turn into an uber struct or something.
 */
