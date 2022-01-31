@@ -94,7 +94,7 @@ local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, 
     text_edit->buffer_target           = target_buffer;
     text_edit->buffer_length           = target_buffer_length;
     text_edit->open                    = true;
-    start_text_edit(target_buffer, target_buffer_length);
+    start_text_edit(target_buffer, current_length);
 }
 
 local struct tile* editor_allocate_block(void) {
@@ -345,8 +345,9 @@ local void load_tilemap_editor_resources(void) {
                    memusage / (1024 * 1024), memusage / (1024*1024*1024));
 }
 
-/*braindead code for the night
-  not thinking much of how to do it or any abstractions loololol*/
+/*
+  This seriously suffers when having to do versioned files.
+*/
 local void editor_output_to_binary_file(char* filename) {
     FILE* f = fopen(filename, "wb+");
 
@@ -360,6 +361,10 @@ local void editor_output_to_binary_file(char* filename) {
     fwrite(&width, sizeof(width), 1, f);
     fwrite(&height, sizeof(height), 1, f);
     fwrite(&editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn), 1, f);
+    fwrite(&editor.tilemap.bounds_min_x, sizeof(float), 1, f);
+    fwrite(&editor.tilemap.bounds_min_y, sizeof(float), 1, f);
+    fwrite(&editor.tilemap.bounds_max_x, sizeof(float), 1, f);
+    fwrite(&editor.tilemap.bounds_max_y, sizeof(float), 1, f);
     {
         fwrite(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
         fwrite(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
