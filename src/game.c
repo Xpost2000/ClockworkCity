@@ -63,6 +63,40 @@ local void unload_all_graphics_resources(void) {
     unload_all_fonts();
 }
 
+local int font_size_based_on_screen_height_percentage(float percentage) {
+    int height;
+    get_screen_dimensions(0, &height);
+    return floorf(height * percentage);
+}
+
+local int font_size_based_on_screen_width_percentage(float percentage) {
+    int width;
+    get_screen_dimensions(&width, 0);
+    return floorf(width * percentage);
+}
+
+/* doesn't base itself off a target aspect ratio. Just checking for approximate screen dimensions. */
+local int font_size_aspect_ratio_independent(float percentage) {
+    int dimens[2];
+    get_screen_dimensions(dimens, dimens+1);
+
+    float aspect_ratio = safe_ratio(dimens[0], dimens[1]);
+
+    if (aspect_ratio >= 1.0) {
+        /* wider aspect ratio */
+        return font_size_based_on_screen_height_percentage(percentage);
+    }
+
+    /*
+      If I actually scale purely on this... It doesn't look quite correct since the text may intersect with the
+      window.
+
+      This looks more like what I want.
+     */
+    const float SCALING_EPISILON = 0.00875;
+    return font_size_based_on_screen_width_percentage(maxf(percentage - SCALING_EPISILON, 0.0f));
+}
+
 local void load_graphics_resources(void) {
     /* can change depending on resolution maybe... */
     knight_twoview = load_texture("assets/knight_twoview.png");
@@ -71,7 +105,7 @@ local void load_graphics_resources(void) {
     /* test2_font      = load_font("assets/charissilbold.ttf", 64); */
     /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */
 
-    test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", 72);
+    test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", font_size_aspect_ratio_independent(0.07));
     /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
     load_gameplay_resources();
 }

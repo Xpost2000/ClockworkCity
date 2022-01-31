@@ -156,7 +156,7 @@ local void game_update_render_frame(float dt) {
         DEBUG_draw_tilemap(game_state->loaded_level);
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();
-#if 0
+#if 1
     begin_graphics_frame(); {
         int dimens[2];
         get_screen_dimensions(dimens, dimens+1);
