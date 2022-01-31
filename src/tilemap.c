@@ -1,4 +1,5 @@
 const int TILE_TEX_SIZE = 1.0f;
+const float PHYSICS_EPSILION = 0.0345;
 /*these aren't really tile ids, these are more like flags/properties*/
 /*core logic is here though, so I guess it don't matter, can worry about later.*/
 /*need to find test platformer tileset to try out some ideas...*/
@@ -209,8 +210,8 @@ local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* e
     float entity_right_edge = ent->x + ent->w;
     float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
 
-    if (entity_right_edge >= t->x * TILE_TEX_SIZE && entity_right_edge <= tile_right_edge) {
-        ent->x = t->x*TILE_TEX_SIZE - ent->w;
+    if (entity_right_edge > t->x * TILE_TEX_SIZE && entity_right_edge < tile_right_edge) {
+        ent->x = t->x*TILE_TEX_SIZE - (ent->w + PHYSICS_EPSILION);
         return true;
     }
 
@@ -222,8 +223,8 @@ local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* 
 
     float tile_right_edge  = (t->x + 1) * TILE_TEX_SIZE;
 
-    if (ent->x <= tile_right_edge && ent->x >= t->x * TILE_TEX_SIZE) {
-        ent->x = tile_right_edge;
+    if (ent->x < tile_right_edge && ent->x > t->x * TILE_TEX_SIZE) {
+        ent->x = tile_right_edge + PHYSICS_EPSILION;
         return true;
     }
 
@@ -358,8 +359,8 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
         if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, tile_w, tile_h)) {
             if (tile_is_slope(t)) {
                 /* assume this is for right facing (left) slope first. (slope = 1) */
-                bool taller_edge_intersection = (entity->x >= tile_x + tile_w);
-                bool smaller_edge_intersection = (entity->x + entity->w <= tile_x);
+                bool taller_edge_intersection = (entity->x > tile_x + tile_w);
+                bool smaller_edge_intersection = (entity->x + entity->w < tile_x);
                 float taller_edge_correction_position = tile_x + tile_w;
                 float smaller_edge_correction_position = tile_x - entity->w;
 
@@ -381,12 +382,13 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                 if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
                     if (taller_edge_intersection) {
                         entity->x = taller_edge_correction_position;
+                        entity->vx = 0;
                     } else {
-                        float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+                        float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
                         float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
                         float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
 
-                        if (entity->y + entity->h <= tile_y + tile_h) {
+                        if (entity->y + entity->h < tile_y + tile_h) {
                             /*
                               TODO(jerry):
                               this is the wrong condition, I need more data to properly determine
@@ -444,7 +446,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                     entity->vx = 0;
                                 }
 
-                                if (entity->vy < 0) {
+                                if (entity->vy < 0 && taller_edge_intersection) {
                                     entity->vy = 0;
                                 }
                             }
@@ -549,7 +551,7 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
         }
 
         if (tile_is_slope(t)) {
-            float slope_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+            float slope_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
             bool is_bottom_facing_tile = (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL);
 
             if (!is_bottom_facing_tile && roundf(entity->y) == roundf(slope_location)) {
