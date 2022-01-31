@@ -59,8 +59,8 @@ local void editor_begin_selection_region(int x, int y) {
         return;
 
     editor.selection_region_exists = true;
-    editor.selection_region.x = floorf((float)x / scale_factor) * scale_factor;
-    editor.selection_region.y = floorf((float)y / scale_factor) * scale_factor;
+    editor.selection_region.x = x;
+    editor.selection_region.y = y;
     console_printf("started region selection at (x:%d(tx: %d), y:%d(ty: %d))\n", x, (int)editor.selection_region.x, y, (int)editor.selection_region.y);
 }
 
@@ -123,12 +123,6 @@ local struct tile* editor_yank_selected_tile_region(struct memory_arena* arena, 
     struct rectangle selected_region = editor.selection_region;
 
     float scale_factor = get_render_scale();
-    /* rescale into grid coordinates */ {
-        selected_region.x /= scale_factor;
-        selected_region.y /= scale_factor;
-        selected_region.w /= scale_factor;
-        selected_region.h /= scale_factor;
-    }
     
     struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
     /*make temporary copy of the region, also empty it out at the same time*/ {
@@ -153,12 +147,6 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
     struct rectangle selected_region = editor.selection_region;
 
     float scale_factor = get_render_scale();
-    /* rescale into grid coordinates */ {
-        selected_region.x /= scale_factor;
-        selected_region.y /= scale_factor;
-        selected_region.w /= scale_factor;
-        selected_region.h /= scale_factor;
-    }
 
     assert(tile_region.w == selected_region.w);
     assert(tile_region.h == selected_region.h);
@@ -168,13 +156,16 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
     /*copy the selected_region_tiles into the right place*/ {
         for (int y = 0; y < (int)(tile_region.h); ++y) {
             for (int x = 0; x < (int)(tile_region.w); ++x) {
+                struct tile* block_to_copy = &selected_region_tiles[(y * (int)tile_region.w) + x];
                 struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + selected_region.x, y + selected_region.y);
+
+                if (block_to_copy->id == TILE_NONE) continue;
 
                 if (!t) {
                     t = editor_allocate_block();
                 }
 
-                *t = selected_region_tiles[(y * (int)tile_region.w) + x];
+                *t = *block_to_copy;
                 t->x = x + selected_region.x;
                 t->y = y + selected_region.y;
             }
@@ -188,12 +179,6 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
     struct rectangle selected_region = editor.selection_region;
 
     float scale_factor = get_render_scale();
-    /* rescale into grid coordinates */ {
-        selected_region.x /= scale_factor;
-        selected_region.y /= scale_factor;
-        selected_region.w /= scale_factor;
-        selected_region.h /= scale_factor;
-    }
 
     assert(tile_region.w == selected_region.w);
     assert(tile_region.h == selected_region.h);
@@ -203,7 +188,10 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
     /*copy the selected_region_tiles into the right place*/ {
         for (int y = 0; y < (int)(tile_region.h); ++y) {
             for (int x = 0; x < (int)(tile_region.w); ++x) {
+                struct tile* block_to_copy = &selected_region_tiles[(y * (int)tile_region.w) + x];
                 struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + selected_region.x, y + selected_region.y);
+
+                if (block_to_copy->id == TILE_NONE) continue;
 
                 if (!t) {
                     t = editor_allocate_block();
@@ -367,6 +355,7 @@ local void tilemap_editor_update_render_frame(float dt) {
       I'll fix it at the end of the week so this is okay for now.
      */
     set_active_camera(get_global_camera());
+    set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
     camera_set_position(editor.camera_x, editor.camera_y);
 
     if (is_key_pressed(KEY_RIGHT)) {
@@ -533,11 +522,9 @@ local void tilemap_editor_update_render_frame(float dt) {
                          color4f(1, 1, 1, 0.5 + 0.5 * ((sinf(global_elapsed_time) + 1) / 2.0f)));
 
             if (left_click) {
-                editor_try_to_place_block(mouse_position[0]/scale_factor,
-                                          mouse_position[1]/scale_factor);
+                editor_try_to_place_block(mouse_position[0], mouse_position[1]);
             } else if (right_click) {
-                editor_erase_block(mouse_position[0]/scale_factor,
-                                   mouse_position[1]/scale_factor);
+                editor_erase_block(mouse_position[0], mouse_position[1]);
             }
         }
 
