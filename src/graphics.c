@@ -145,8 +145,9 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
 
     x *= DEBUG_scale;
     y *= DEBUG_scale;
-    w *= DEBUG_scale;
-    h *= DEBUG_scale;
+    /* weird sdl rendering shenanigans. */
+    w *= DEBUG_scale+1;
+    h *= DEBUG_scale+1;
 
     if (texture.id != 0)
         assert(texture_object && "weird... bad texture?");

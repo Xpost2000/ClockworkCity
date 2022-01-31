@@ -193,14 +193,14 @@
 *** TODO Background tiles or something
     Support multiple tile layers. This is actually important.
 *** TODO (?)Consider thinking of the entity system
-*** TODO Resolution independent rendering.
+*** DONE Resolution independent rendering.
     I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
 *** TODO Basic debug gui stuff
 *** TODO World/Level Transitions
     Linked of course!
 *** TODO Backport more advanced console from blackiron
     I never realized this was an old version of the console until earlier. Fuck.
-*** TODO Camera Zoom
+*** DONE Camera Zoom
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.
 
