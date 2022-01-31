@@ -320,7 +320,9 @@ local void editor_erase_block(int grid_x, int grid_y) {
 }
 
 local void editor_clear_all(void) {
-    editor.tilemap.tile_count = 0;
+    editor.tilemap.tile_count              = 0;
+    editor.tilemap.transition_zone_count   = 0;
+    editor.tilemap.player_spawn_link_count = 0;
     editor.camera_x = 0;
     editor.camera_y = 0;
 }
@@ -341,8 +343,7 @@ local void load_tilemap_editor_resources(void) {
 local void editor_output_to_binary_file(char* filename) {
     FILE* f = fopen(filename, "wb+");
 
-    char magic[] = "LOVEYOU!";
-
+    char magic[] = "MVOIDLVL";
     fwrite(magic, 8, 1, f);
 
     int width, height;
@@ -351,8 +352,19 @@ local void editor_output_to_binary_file(char* filename) {
 
     fwrite(&width, sizeof(width), 1, f);
     fwrite(&height, sizeof(height), 1, f);
-    fwrite(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
-    fwrite(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
+    fwrite(&editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn), 1, f);
+    {
+        fwrite(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
+        fwrite(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
+    }
+    {
+        fwrite(&editor.tilemap.transition_zone_count, sizeof(editor.tilemap.transition_zone_count), 1, f);
+        fwrite(editor.tilemap.transitions, sizeof(*editor.tilemap.transitions) * editor.tilemap.transition_zone_count, 1, f);
+    }
+    {
+        fwrite(&editor.tilemap.player_spawn_link_count, sizeof(editor.tilemap.player_spawn_link_count), 1, f);
+        fwrite(editor.tilemap.player_spawn_links, sizeof(*editor.tilemap.player_spawn_links) * editor.tilemap.player_spawn_link_count, 1, f);
+    }
 
     fclose(f);
 }
@@ -455,7 +467,7 @@ local void editor_switch_tool(enum editor_tool_mode mode) {
 
 local void tilemap_editor_update_render_frame(float dt) {
     float scale_factor = get_render_scale();
-    struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(512));
+    struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(600));
     /*
       TODO(jerry):
       hack, cause my camera api is shitty.
@@ -660,9 +672,9 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
         if (is_key_pressed(KEY_RETURN)) {
             if (editor_has_tiles_within_selection()) {
                 if (is_key_down(KEY_Y)) {
-                    editor_copy_selected_tile_region(&frame_arena);
+                    editor_copy_selected_tile_region(frame_arena);
                 } else {
-                    editor_move_selected_tile_region(&frame_arena);
+                    editor_move_selected_tile_region(frame_arena);
                 }
                 editor_end_selection_region();
             }
@@ -675,16 +687,16 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
 
             /* resize region */
             if (editor.selection_region_exists) {
-                int distance_delta_x = ((mouse_position[0] / scale_factor) * scale_factor) - editor.selection_region.x;
-                int distance_delta_y = ((mouse_position[1] / scale_factor) * scale_factor) - editor.selection_region.y;
+                int distance_delta_x = (mouse_position[0]) - editor.selection_region.x;
+                int distance_delta_y = (mouse_position[1]) - editor.selection_region.y;
                 editor.selection_region.w = distance_delta_x;
                 editor.selection_region.h = distance_delta_y;
 
                 editor.selected_tile_region = editor.selection_region;
-                editor.selected_tile_region.x /= scale_factor;
-                editor.selected_tile_region.y /= scale_factor;
-                editor.selected_tile_region.w /= scale_factor;
-                editor.selected_tile_region.h /= scale_factor;
+                /* editor.selected_tile_region.x /= scale_factor; */
+                /* editor.selected_tile_region.y /= scale_factor; */
+                /* editor.selected_tile_region.w /= scale_factor; */
+                /* editor.selected_tile_region.h /= scale_factor; */
             }
         } else {
             struct rectangle region = editor.selected_tile_region;
@@ -704,11 +716,6 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
 
         if (editor.selection_region_exists) {
             struct rectangle region = editor.selection_region;
-
-            region.y /= scale_factor;
-            region.x /= scale_factor;
-            region.w /= scale_factor;
-            region.h /= scale_factor;
 
             if (is_key_pressed(KEY_F)) {
                 for (int y = 0; y < (int)region.h; ++y) {
@@ -731,8 +738,8 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
             if (is_key_down(KEY_M)) {
                 int mouse_position[2];
                 get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
-                editor.selection_region.x = floorf((float)mouse_position[0] / scale_factor) * scale_factor;
-                editor.selection_region.y = floorf((float)mouse_position[1] / scale_factor) * scale_factor;
+                editor.selection_region.x = mouse_position[0];
+                editor.selection_region.y = mouse_position[1];
             }
         }
     }
@@ -797,7 +804,6 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
 
     get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
     get_mouse_buttons(&left_click, 0, &right_click);
-
 
     begin_graphics_frame(); {
         set_active_camera(get_global_camera());
