@@ -43,6 +43,7 @@ local struct game_state* game_state;
 local texture_id knight_twoview;
 local font_id    test_font;
 local font_id    test2_font;
+local font_id    test3_font;
 local sound_id   test_sound;
 local sound_id   test_sound2;
 
@@ -98,10 +99,12 @@ local int font_size_aspect_ratio_independent(float percentage) {
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"
 
-local void load_graphics_resources(void) {
+void load_graphics_resources(void) {
     /* can change depending on resolution maybe... */
-    knight_twoview = load_texture("assets/knight_twoview.png");
-    test_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.02));
+    knight_twoview      = load_texture("assets/knight_twoview.png");
+    test_font           = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.03));
+    _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
+    test3_font          = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.04));
     /* test2_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", 64); */
     /* test2_font      = load_font("assets/charissilbold.ttf", 64); */
     /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */
@@ -112,8 +115,6 @@ local void load_graphics_resources(void) {
 }
 
 local void load_static_resources(void) {
-    load_graphics_resources();
-
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 

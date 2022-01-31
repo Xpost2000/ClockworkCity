@@ -189,6 +189,10 @@ void begin_input_frame(void);
 void end_input_frame(void);
 
 void start_text_edit(void);
-void end_text_edit(void);
+void end_text_edit(char* target, size_t amount); /*copies all text input into target buffer. Not necessarily unicode aware. whoops!*/
+
+void send_text_input(char* text, size_t text_length);
+bool is_editting_text(void);
+char* current_text_buffer(void);
 
 #endif

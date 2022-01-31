@@ -35,6 +35,12 @@ enum editor_tool_mode {
 const local char* editor_tool_mode_strings[] = {
     "Paint Tile", "Edit Transitions", "Player Spawn Placement", "?"
 };
+struct editor_text_edit {
+    bool open;
+    char* prompt_title;
+    char* buffer_target;
+    size_t buffer_length;
+};
 struct editor_state {
     struct memory_arena arena;
 
@@ -50,6 +56,7 @@ struct editor_state {
 
     enum editor_tool_mode tool;
     void* context; /*depends on mode*/
+    struct editor_text_edit text_edit;
 
     /*unused?*/
     int last_mouse_x;
@@ -68,6 +75,24 @@ struct editor_state {
 };
 
 local struct editor_state editor;
+
+local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, size_t target_buffer_length) {
+    struct editor_text_edit* text_edit = &editor.text_edit;
+    text_edit->prompt_title            = prompt_name;
+    text_edit->buffer_target           = target_buffer;
+    text_edit->buffer_length           = target_buffer_length;
+    text_edit->open                    = true;
+    start_text_edit();
+}
+
+local void editor_close_text_edit_prompt(char* prompt_name, char* target_buffer, size_t target_buffer_length) {
+    struct editor_text_edit* text_edit = &editor.text_edit;
+    text_edit->prompt_title            = prompt_name;
+    text_edit->buffer_target           = target_buffer;
+    text_edit->buffer_length           = target_buffer_length;
+    text_edit->open                    = true;
+    start_text_edit();
+}
 
 local struct tile* editor_allocate_block(void) {
     assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
@@ -421,28 +446,30 @@ local void tilemap_editor_update_render_frame(float dt) {
     set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
     camera_set_position(editor.camera_x, editor.camera_y);
 
-    if (is_key_pressed(KEY_F1)) {
-        editor_switch_tool(EDITOR_TOOL_PAINT_TILE);
-    } else if (is_key_pressed(KEY_F2)) {
-        editor_switch_tool(EDITOR_TOOL_PAINT_TRANSITION);
-    } else if (is_key_pressed(KEY_F3)) {
-        editor_switch_tool(EDITOR_TOOL_PAINT_PLAYERSPAWN);
-    }
-
-    /*camera editor movement*/
-    {
-        const int CAMERA_SPEED = TILES_PER_SCREEN / 2;
-
-        if (is_key_down(KEY_W)) {
-            editor.camera_y -= dt * CAMERA_SPEED;
-        } else if (is_key_down(KEY_S)) {
-            editor.camera_y += dt * CAMERA_SPEED;
+    if (!is_editting_text()) {
+        if (is_key_pressed(KEY_F1)) {
+            editor_switch_tool(EDITOR_TOOL_PAINT_TILE);
+        } else if (is_key_pressed(KEY_F2)) {
+            editor_switch_tool(EDITOR_TOOL_PAINT_TRANSITION);
+        } else if (is_key_pressed(KEY_F3)) {
+            editor_switch_tool(EDITOR_TOOL_PAINT_PLAYERSPAWN);
         }
 
-        if (is_key_down(KEY_A)) {
-            editor.camera_x -= dt * CAMERA_SPEED;
-        } else if (is_key_down(KEY_D)) {
-            editor.camera_x += dt * CAMERA_SPEED;
+        /*camera editor movement*/
+        {
+            const int CAMERA_SPEED = TILES_PER_SCREEN / 2;
+
+            if (is_key_down(KEY_W)) {
+                editor.camera_y -= dt * CAMERA_SPEED;
+            } else if (is_key_down(KEY_S)) {
+                editor.camera_y += dt * CAMERA_SPEED;
+            }
+
+            if (is_key_down(KEY_A)) {
+                editor.camera_x -= dt * CAMERA_SPEED;
+            } else if (is_key_down(KEY_D)) {
+                editor.camera_x += dt * CAMERA_SPEED;
+            }
         }
     }
 
@@ -564,6 +591,33 @@ local void tilemap_editor_update_render_frame(float dt) {
                 draw_text(test_font, dimens[0]/2 - tdimens[0]/2+2, 2, string, color4f(1, 0, 0, editor.editor_tool_change_fade_timer/1.5f));
             }
         } end_graphics_frame();
+    }
+
+    {
+        int dimens[2];
+        get_screen_dimensions(dimens, dimens+1);
+        if (editor.text_edit.open) {
+            draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0,0,0,0.5));
+            {
+                int tdimens[2];
+                get_text_dimensions(test3_font, editor.text_edit.prompt_title, tdimens, tdimens+1);
+                draw_text(test3_font, dimens[0]/2 - tdimens[0]/2, 0, editor.text_edit.prompt_title, COLOR4F_WHITE);
+            }
+            {
+                float font_height = font_size_aspect_ratio_independent(0.04);
+                int tdimens[2];
+                get_text_dimensions(test3_font, current_text_buffer(), tdimens, tdimens+1);
+                draw_text(test3_font, dimens[0]/2 - tdimens[0]/2, font_height, current_text_buffer(), COLOR4F_WHITE);
+            }
+
+            if (is_key_pressed(KEY_ESCAPE)) {
+                end_text_edit(0, 0);
+                editor.text_edit.open = false;
+            } else if (is_key_pressed(KEY_RETURN)) {
+                end_text_edit(editor.text_edit.buffer_target, editor.text_edit.buffer_length);
+                editor.text_edit.open = false;
+            }
+        }
     }
 
     end_temporary_memory(&frame_arena);
@@ -707,7 +761,7 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
 
         /*"tool" bar*/
         {
-            float font_height = font_size_aspect_ratio_independent(0.02);
+            float font_height = font_size_aspect_ratio_independent(0.03);
             int frame_pad = 3;
             int frame_size = font_height+frame_pad;
             draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, COLOR4F_BLUE);
@@ -781,7 +835,7 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
         struct transition_zone* already_selected = (struct transition_zone*) editor.context;
         if (already_selected)  {
             begin_graphics_frame(); {
-                float font_height = font_size_aspect_ratio_independent(0.02);
+                float font_height = font_size_aspect_ratio_independent(0.03);
                 int dimens[2];
                 set_render_scale(1);
                 get_screen_dimensions(dimens, dimens+1);
@@ -790,6 +844,18 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
                                           format_temp("TRANSITION PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\nLINKFILE: \"%s\"\nIDENTIFIER: \"%s\"\n",
                                                       already_selected->identifier, already_selected->x, already_selected->y, already_selected->w, already_selected->h, already_selected->zone_filename, already_selected->zone_link), COLOR4F_WHITE);
             } end_graphics_frame();
+
+            if (!is_editting_text()) {
+                if (is_key_down(KEY_1)) {
+                    editor_open_text_edit_prompt("SET TRANSITION ZONE NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+                }
+                if (is_key_down(KEY_2)) {
+                    editor_open_text_edit_prompt("SET TRANSITION ZONE FILENAME", already_selected->zone_filename, FILENAME_MAX_LENGTH);
+                }
+                if (is_key_down(KEY_3)) {
+                    editor_open_text_edit_prompt("SET TRANSITION ZONE LINKNAME", already_selected->zone_link, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+                }
+            }
         }
     }
 }

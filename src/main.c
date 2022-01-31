@@ -337,7 +337,7 @@ local void handle_sdl_event(SDL_Event event) {
         case SDL_TEXTINPUT: {
             char* input_text = event.text.text;
             size_t input_length = strlen(input_text);
-#if 0
+#if 1
             send_text_input(input_text, input_length);
 #endif
             console_send_character(input_text[0]);
@@ -367,8 +367,8 @@ local void initialize(void) {
 
     graphics_initialize(global_window);
     audio_initialize();
-    _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
 
+    load_graphics_resources();
     console_initialize(
         (struct console_render_procedures) {
             .context            = NULL,

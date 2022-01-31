@@ -9,6 +9,15 @@ struct {
 local struct game_controller global_controllers[4];
 
 void register_key_down(int keyid) {
+    /*
+      I literally don't know anywhere better to put this text editting specific
+      code, and I always just throw it like here.
+    */
+    if (keyid == KEY_BACKSPACE) {
+        if (global_input.current_state.editting_text) {
+            global_input.current_state.text[global_input.current_state.text_edit_cursor--] = 0;
+        }
+    }
     global_input.current_state.keys[keyid] = true;
 }
 
@@ -71,12 +80,32 @@ void end_input_frame(void) {
 }
 
 void start_text_edit(void) {
-    if (!global_input.editting_text) {
-        zero_array(global_input.text);
-        global_input.text_edit_cursor = 0;
-        global_input.editting_text = true;
+    if (!global_input.current_state.editting_text) {
+        zero_array(global_input.current_state.text);
+        global_input.current_state.text_edit_cursor = 0;
+        global_input.current_state.editting_text = true;
     }
 }
-void end_text_edit(void) {
-    global_input.editting_text = false;
+
+void end_text_edit(char* target_buffer, size_t target_buffer_size) {
+    if (target_buffer && target_buffer_size) {
+        memcpy(target_buffer, global_input.current_state.text, target_buffer_size);
+    }
+
+    zero_array(global_input.current_state.text);
+    global_input.current_state.editting_text = false;
+}
+
+void send_text_input(char* text, size_t text_length) {
+    for (size_t index = 0; index < text_length && global_input.current_state.text_edit_cursor < 1024; ++index) {
+        global_input.current_state.text[global_input.current_state.text_edit_cursor++] = text[index];
+    }
+}
+
+bool is_editting_text(void) {
+    return global_input.current_state.editting_text;
+}
+
+char* current_text_buffer(void) {
+    return global_input.current_state.text;
 }
