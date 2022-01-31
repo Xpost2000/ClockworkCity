@@ -122,8 +122,6 @@ local void load_static_resources(void) {
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
 
     load_tilemap_editor_resources();
-
-    console_execute_cstr("editor_load ts1");
     console_execute_cstr("editor");
 }
 /*
