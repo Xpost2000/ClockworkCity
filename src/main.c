@@ -26,6 +26,8 @@ local float global_elapsed_time = 0;
 local SDL_GameController* global_controller_devices[4] = {};
 bool running = true;
 
+local void reload_all_graphics_resources();
+local void unload_all_graphics_resources(void);
 local void load_static_resources(void);
 local void update_render_frame(float dt);
 local void register_console_commands();
@@ -257,6 +259,7 @@ local void handle_sdl_event(SDL_Event event) {
                     int screen_dimensions[2];
                     SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
                     report_screen_dimensions(screen_dimensions);
+                    reload_all_graphics_resources();
                 } break;
             }
         } break;
@@ -340,6 +343,8 @@ local void handle_sdl_event(SDL_Event event) {
 }
 
 local void initialize(void) {
+    srand(time(0));
+
     SDL_Init(SDL_INIT_EVERYTHING);
     Mix_Init(MIX_INIT_OGG);
     IMG_Init(IMG_INIT_PNG);

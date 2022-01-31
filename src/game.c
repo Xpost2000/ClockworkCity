@@ -58,9 +58,13 @@ enum game_mode mode = GAME_MODE_PLAYING;
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"
 
-local void load_static_resources(void) {
-    srand(time(0));
+local void unload_all_graphics_resources(void) {
+    unload_all_textures();
+    unload_all_fonts();
+}
 
+local void load_graphics_resources(void) {
+    /* can change depending on resolution maybe... */
     knight_twoview = load_texture("assets/knight_twoview.png");
     test_font      = load_font("assets/pxplusvga8.ttf", 16);
     /* test2_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", 64); */
@@ -68,8 +72,11 @@ local void load_static_resources(void) {
     /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", 72);
-    
     /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
+}
+
+local void load_static_resources(void) {
+    load_graphics_resources();
 
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
@@ -81,6 +88,13 @@ local void load_static_resources(void) {
     load_tilemap_editor_resources();
 
     console_execute_cstr("load ts");
+}
+/*
+  This is really reloading all graphical assets... But anyways.
+ */
+local void reload_all_graphics_resources(void) {
+    unload_all_graphics_resources();
+    load_graphics_resources();
 }
 
 void update_render_frame(float dt) {

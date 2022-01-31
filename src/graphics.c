@@ -23,10 +23,10 @@
 #define RENDERER_MAX_TEXTURES (2048)
 #define RENDERER_MAX_FONTS    (256)
 
-local uint16_t texture_count                         = 0;
+local uint16_t texture_count                           = 0;
 local SDL_Texture*   textures[RENDERER_MAX_TEXTURES+1] = {};
 
-local uint16_t font_count                 = 0;
+local uint16_t font_count                   = 0;
 local TTF_Font* fonts[RENDERER_MAX_FONTS+1] = {};
 
 local SDL_Renderer* global_renderer;
@@ -242,11 +242,11 @@ font_id load_font(const char* font_path, int size) {
 }
 
 void unload_font(font_id font) {
-    unimplemented();
+    fonts[font.id] = fonts[--font_count];
 }
 
 void unload_texture(texture_id texture) {
-    unimplemented();
+    textures[texture.id] = textures[--texture_count];
 }
 
 void get_texture_dimensions(texture_id texture, int* width, int* height) {
@@ -277,4 +277,16 @@ void get_text_dimensions(font_id font, const char* cstr, int* width, int* height
 
     safe_assignment(width)  = max_width;
     safe_assignment(height) = max_height;
+}
+
+void unload_all_textures(void) {
+    for (unsigned index = 0; index < texture_count; ++index) {
+        unload_texture((texture_id){ .id = index });
+    }
+}
+
+void unload_all_fonts(void) {
+    for (unsigned index = 0; index < font_count; ++index) {
+        unload_font((font_id){ .id = index });
+    }
 }

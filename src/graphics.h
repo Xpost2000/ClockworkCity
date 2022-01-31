@@ -58,4 +58,7 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
 void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union color4f color);
 
+void unload_all_textures(void);
+void unload_all_fonts(void);
+
 #endif
