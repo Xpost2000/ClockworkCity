@@ -845,6 +845,21 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
                                                       already_selected->identifier, already_selected->x, already_selected->y, already_selected->w, already_selected->h, already_selected->zone_filename, already_selected->zone_link), COLOR4F_WHITE);
             } end_graphics_frame();
 
+            if (is_key_pressed(KEY_DOWN)) {
+                already_selected->h += 1;
+            } else if (is_key_pressed(KEY_UP)) {
+                already_selected->h -= 1;
+            }
+
+            if (is_key_pressed(KEY_RIGHT)) {
+                already_selected->w += 1;
+            } else if (is_key_pressed(KEY_LEFT)) {
+                already_selected->w -= 1;
+            }
+
+            if (already_selected->w < 1) already_selected->w = 1;
+            if (already_selected->h < 1) already_selected->h = 1;
+
             if (!is_editting_text()) {
                 if (is_key_down(KEY_1)) {
                     editor_open_text_edit_prompt("SET TRANSITION ZONE NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
