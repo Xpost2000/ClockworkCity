@@ -188,7 +188,7 @@ void get_mouse_buttons(bool* left, bool* middle, bool* right);
 void begin_input_frame(void);
 void end_input_frame(void);
 
-void start_text_edit(void);
+void start_text_edit(char* target, size_t length);
 void end_text_edit(char* target, size_t amount); /*copies all text input into target buffer. Not necessarily unicode aware. whoops!*/
 
 void send_text_input(char* text, size_t text_length);

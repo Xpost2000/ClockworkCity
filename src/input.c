@@ -14,8 +14,8 @@ void register_key_down(int keyid) {
       code, and I always just throw it like here.
     */
     if (keyid == KEY_BACKSPACE) {
-        if (global_input.current_state.editting_text) {
-            global_input.current_state.text[global_input.current_state.text_edit_cursor--] = 0;
+        if (global_input.current_state.editting_text && global_input.current_state.text_edit_cursor > 0) {
+            global_input.current_state.text[--global_input.current_state.text_edit_cursor] = 0;
         }
     }
     global_input.current_state.keys[keyid] = true;
@@ -79,10 +79,11 @@ void end_input_frame(void) {
     /* zero_array(global_input.current_state.keys); */
 }
 
-void start_text_edit(void) {
+void start_text_edit(char* target, size_t length) {
     if (!global_input.current_state.editting_text) {
         zero_array(global_input.current_state.text);
-        global_input.current_state.text_edit_cursor = 0;
+        if (target) memcpy(global_input.current_state.text, target, length);
+        global_input.current_state.text_edit_cursor = length;
         global_input.current_state.editting_text = true;
     }
 }

@@ -81,13 +81,13 @@ struct editor_state {
 
 local struct editor_state editor;
 
-local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, size_t target_buffer_length) {
+local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, size_t target_buffer_length, size_t current_length) {
     struct editor_text_edit* text_edit = &editor.text_edit;
     text_edit->prompt_title            = prompt_name;
     text_edit->buffer_target           = target_buffer;
     text_edit->buffer_length           = target_buffer_length;
     text_edit->open                    = true;
-    start_text_edit();
+    start_text_edit(target_buffer, target_buffer_length);
 }
 
 local struct tile* editor_allocate_block(void) {
@@ -693,10 +693,6 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
                 editor.selection_region.h = distance_delta_y;
 
                 editor.selected_tile_region = editor.selection_region;
-                /* editor.selected_tile_region.x /= scale_factor; */
-                /* editor.selected_tile_region.y /= scale_factor; */
-                /* editor.selected_tile_region.w /= scale_factor; */
-                /* editor.selected_tile_region.h /= scale_factor; */
             }
         } else {
             struct rectangle region = editor.selected_tile_region;
@@ -889,13 +885,13 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
 
             if (!is_editting_text()) {
                 if (is_key_down(KEY_1)) {
-                    editor_open_text_edit_prompt("SET TRANSITION ZONE NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+                    editor_open_text_edit_prompt("SET TRANSITION ZONE NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->identifier));
                 }
                 if (is_key_down(KEY_2)) {
-                    editor_open_text_edit_prompt("SET TRANSITION ZONE FILENAME", already_selected->zone_filename, FILENAME_MAX_LENGTH);
+                    editor_open_text_edit_prompt("SET TRANSITION ZONE FILENAME", already_selected->zone_filename, FILENAME_MAX_LENGTH, strlen(already_selected->zone_filename));
                 }
                 if (is_key_down(KEY_3)) {
-                    editor_open_text_edit_prompt("SET TRANSITION ZONE LINKNAME", already_selected->zone_link, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+                    editor_open_text_edit_prompt("SET TRANSITION ZONE LINKNAME", already_selected->zone_link, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->zone_link));
                 }
             }
         }
@@ -958,7 +954,7 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
 
                 if (!is_editting_text()) {
                     if (is_key_down(KEY_1) && already_selected != &editor.tilemap.default_spawn) {
-                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->identifier));
                     }
                 }
                 
