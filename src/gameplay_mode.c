@@ -9,7 +9,6 @@ struct entity player = {
 
 local void load_gameplay_resources(void) {
     DEBUG_load_all_tile_assets();
-    /* game_state->loaded_level = DEBUG_tilemap_from_file(&game_memory_arena, "assets/testmap.txt"); */
 }
 
 local void do_physics(float dt) {
@@ -122,6 +121,10 @@ local void do_player_input(float dt) {
     player.jump_leniancy_timer -= dt;
 }
 
+local void DEBUG_draw_debug_stuff(void) {
+    /*add debug rendering code here*/
+}
+
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
     do_player_input(dt);
@@ -151,8 +154,9 @@ local void game_update_render_frame(float dt) {
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         DEBUG_draw_tilemap(game_state->loaded_level);
+        DEBUG_draw_debug_stuff();
     } end_graphics_frame();
-
+#if 0
     begin_graphics_frame(); {
         int dimens[2];
         get_screen_dimensions(dimens, dimens+1);
@@ -169,4 +173,5 @@ local void game_update_render_frame(float dt) {
             draw_text(test2_font, dimens[0]/2 - tdimens[0]/2, dimens[1]/2 - tdimens[1]/2, text, COLOR4F_WHITE);
         }
     } end_graphics_frame();
+#endif
 }

@@ -10,6 +10,10 @@
 #include <assert.h>
 #include <time.h>
 
+#ifndef M_PI
+#define M_PI (3.14159265358979)
+#endif
+
 #include <stdarg.h>
 
 #define unused_expression(x) (void)(x)

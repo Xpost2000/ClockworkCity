@@ -1,24 +1,8 @@
-struct game_state {
-    /*whoops this is an additional indirection. Fix this at the end of the night*/
-    struct tilemap* loaded_level;
-};
-
-/*TODO(jerry): move some game state globals into this.*/
-local struct memory_arena game_memory_arena;
-local struct game_state* game_state;
-
-local texture_id knight_twoview;
-local font_id    test_font;
-local font_id    test2_font;
-local sound_id   test_sound;
-local sound_id   test_sound2;
-
 /*
   physics "constants"
 */
 
 #define VPIXELS_PER_METER (16)
-
 /*
   This might just turn into an uber struct or something.
 */
@@ -45,6 +29,21 @@ struct entity {
     /* player specific */
     float jump_leniancy_timer;
 };
+
+struct game_state {
+    /*whoops this is an additional indirection. Fix this at the end of the night*/
+    struct tilemap* loaded_level;
+};
+
+/*TODO(jerry): move some game state globals into this.*/
+local struct memory_arena game_memory_arena;
+local struct game_state* game_state;
+
+local texture_id knight_twoview;
+local font_id    test_font;
+local font_id    test2_font;
+local sound_id   test_sound;
+local sound_id   test_sound2;
 
 enum game_mode {
     GAME_MODE_PLAYING,

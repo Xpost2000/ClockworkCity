@@ -250,11 +250,15 @@ local void update_all_controller_inputs(void) {
 
 local void handle_sdl_event(SDL_Event event) {
     switch (event.type) {
-        case SDL_WINDOWEVENT_SIZE_CHANGED:
-        case SDL_WINDOWEVENT_RESIZED: {
-            int screen_dimensions[2];
-            SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
-            report_screen_dimensions(screen_dimensions);
+        case SDL_WINDOWEVENT: {
+            switch (event.window.event) {
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                case SDL_WINDOWEVENT_RESIZED: {
+                    int screen_dimensions[2];
+                    SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
+                    report_screen_dimensions(screen_dimensions);
+                } break;
+            }
         } break;
         case SDL_QUIT: {
             running = false;
@@ -345,7 +349,7 @@ local void initialize(void) {
         WINDOW_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         DEFAULT_RESOLUTION_X, DEFAULT_RESOLUTION_Y,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
     );
     {
         int screen_dimensions[2];
