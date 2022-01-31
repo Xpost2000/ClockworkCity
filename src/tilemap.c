@@ -220,8 +220,9 @@ local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* e
 local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* ent) {
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
 
-    float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
-    if (roundf(ent->x) <= tile_right_edge && roundf(ent->x) >= t->x * TILE_TEX_SIZE) {
+    float tile_right_edge  = (t->x + 1) * TILE_TEX_SIZE;
+
+    if (ent->x <= tile_right_edge && ent->x >= t->x * TILE_TEX_SIZE) {
         ent->x = tile_right_edge;
         return true;
     }
@@ -232,7 +233,7 @@ local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* 
 local bool do_collision_response_tile_top_edge(struct tile* t, struct entity* ent) {
     assert(t->id != TILE_NONE && "uh, air tile tries collision?");
 
-    float entity_bottom_edge = roundf(ent->y) + ent->h;
+    float entity_bottom_edge = ent->y + ent->h;
     float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
 
     if (entity_bottom_edge >= t->y && entity_bottom_edge <= tile_bottom_edge) {
@@ -382,7 +383,6 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                         entity->x = taller_edge_correction_position;
                     } else {
                         float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h);
-                        console_printf("%f\n", slope_snapped_location);
                         float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
                         float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
 
@@ -395,7 +395,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                               This is a very small bug compared to other shit I've fucked up so far
                               so I can sleep soundly at night knowing this is still here.
                             */
-                            if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)entity->h * 0.7))) {
+                            if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)entity->h * 0.6))) {
                                 float old_y = entity->y;
                                 entity->y = slope_snapped_location;
 

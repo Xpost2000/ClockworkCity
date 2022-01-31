@@ -131,7 +131,7 @@ local void game_update_render_frame(float dt) {
 
     /*fixed physics framerate update*/ {
         local float physics_accumulation_timer = 0;
-        const int PHYSICS_FRAMERATE = 250;
+        const int PHYSICS_FRAMERATE = 300;
         const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
         while (physics_accumulation_timer > 0.0f) {
