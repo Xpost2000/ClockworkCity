@@ -3,7 +3,7 @@
 */
 
 #define VPIXELS_PER_METER (1)
-#define TILES_PER_SCREEN (16)
+#define TILES_PER_SCREEN (32)
 /*
   This might just turn into an uber struct or something.
 */
@@ -122,7 +122,8 @@ local void load_static_resources(void) {
 
     load_tilemap_editor_resources();
 
-    console_execute_cstr("load ts");
+    console_execute_cstr("editor_load ts1");
+    console_execute_cstr("editor");
 }
 /*
   This is really reloading all graphical assets... But anyways.

@@ -110,10 +110,10 @@ void transform_point_into_camera_space(int* x, int* y) {
     if (!active_camera) return;
 
     if (x) {
-        *x += active_camera->visual_position_x - screen_dimensions[0]/2;
+        *x += active_camera->visual_position_x * DEBUG_scale  - screen_dimensions[0]/2;
     }
 
     if (y) {
-        *y += active_camera->visual_position_y - screen_dimensions[1]/2;
+        *y += active_camera->visual_position_y * DEBUG_scale - screen_dimensions[1]/2;
     }
 }

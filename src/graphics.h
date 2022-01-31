@@ -54,6 +54,7 @@ void get_screen_dimensions(int* width, int* height);
 
 void clear_color(union color4f color);
 void set_render_scale(float scale_factor);
+float get_render_scale(void);
 
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_rectangle(float x, float y, float w, float h, union color4f color);

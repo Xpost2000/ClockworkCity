@@ -54,12 +54,13 @@ local bool intersects_editor_selected_tile_region(int x, int y, int w, int h) {
 }
 
 local void editor_begin_selection_region(int x, int y) {
+    float scale_factor = get_render_scale();
     if (editor.selection_region_exists)
         return;
 
     editor.selection_region_exists = true;
-    editor.selection_region.x = floorf((float)x / TILE_TEX_SIZE) * TILE_TEX_SIZE;
-    editor.selection_region.y = floorf((float)y / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+    editor.selection_region.x = floorf((float)x / scale_factor) * scale_factor;
+    editor.selection_region.y = floorf((float)y / scale_factor) * scale_factor;
     console_printf("started region selection at (x:%d(tx: %d), y:%d(ty: %d))\n", x, (int)editor.selection_region.x, y, (int)editor.selection_region.y);
 }
 
@@ -121,11 +122,12 @@ local struct tile* editor_yank_selected_tile_region(struct memory_arena* arena, 
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
+    float scale_factor = get_render_scale();
     /* rescale into grid coordinates */ {
-        selected_region.x /= TILE_TEX_SIZE;
-        selected_region.y /= TILE_TEX_SIZE;
-        selected_region.w /= TILE_TEX_SIZE;
-        selected_region.h /= TILE_TEX_SIZE;
+        selected_region.x /= scale_factor;
+        selected_region.y /= scale_factor;
+        selected_region.w /= scale_factor;
+        selected_region.h /= scale_factor;
     }
     
     struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
@@ -150,11 +152,12 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
+    float scale_factor = get_render_scale();
     /* rescale into grid coordinates */ {
-        selected_region.x /= TILE_TEX_SIZE;
-        selected_region.y /= TILE_TEX_SIZE;
-        selected_region.w /= TILE_TEX_SIZE;
-        selected_region.h /= TILE_TEX_SIZE;
+        selected_region.x /= scale_factor;
+        selected_region.y /= scale_factor;
+        selected_region.w /= scale_factor;
+        selected_region.h /= scale_factor;
     }
 
     assert(tile_region.w == selected_region.w);
@@ -184,11 +187,12 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
+    float scale_factor = get_render_scale();
     /* rescale into grid coordinates */ {
-        selected_region.x /= TILE_TEX_SIZE;
-        selected_region.y /= TILE_TEX_SIZE;
-        selected_region.w /= TILE_TEX_SIZE;
-        selected_region.h /= TILE_TEX_SIZE;
+        selected_region.x /= scale_factor;
+        selected_region.y /= scale_factor;
+        selected_region.w /= scale_factor;
+        selected_region.h /= scale_factor;
     }
 
     assert(tile_region.w == selected_region.w);
@@ -326,6 +330,7 @@ static void editor_serialize_into_game_memory(void) {
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {
+    float scale_factor = 1;
     int direction_x = 1;
     int direction_y = 1;
 
@@ -337,26 +342,27 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
           one sized filled rectangles sometimes flicker out of existance with the current renderer.
          */
         for (int y = 0; y <= rows; ++y) {
-            draw_rectangle(x_offset, y * TILE_TEX_SIZE*(direction_y) + y_offset,
-                           direction_x * cols * TILE_TEX_SIZE, 1, color);
+            draw_rectangle(x_offset, y * scale_factor*(direction_y) + y_offset,
+                           direction_x * cols * scale_factor, 1, color);
         }
         for (int x = 0; x <= cols; ++x) {
-            draw_rectangle(x * TILE_TEX_SIZE*(direction_x) + x_offset, y_offset, 1,
-                           direction_y * rows * TILE_TEX_SIZE, color);
+            draw_rectangle(x * scale_factor*(direction_x) + x_offset, y_offset, 1,
+                           direction_y * rows * scale_factor, color);
         }
     } else {
         for (int y = 0; y <= rows; ++y) {
-            draw_filled_rectangle(x_offset, y * TILE_TEX_SIZE * (direction_y) + y_offset,
-                                  direction_x * cols * TILE_TEX_SIZE, thickness, color);
+            draw_filled_rectangle(x_offset, y * scale_factor * (direction_y) + y_offset,
+                                  direction_x * cols * scale_factor, thickness, color);
         }
         for (int x = 0; x <= cols; ++x) {
-            draw_filled_rectangle(x * TILE_TEX_SIZE * (direction_x) + x_offset, y_offset,
-                                  thickness, direction_y * rows * TILE_TEX_SIZE, color);
+            draw_filled_rectangle(x * scale_factor * (direction_x) + x_offset, y_offset,
+                                  thickness, direction_y * rows * scale_factor, color);
         }
     }
 }
 
 local void tilemap_editor_update_render_frame(float dt) {
+    float scale_factor = get_render_scale();
     struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(512));
     /*
       TODO(jerry):
@@ -375,7 +381,7 @@ local void tilemap_editor_update_render_frame(float dt) {
 
     /*camera editor movement*/
     {
-        const int CAMERA_SPEED = 350;
+        const int CAMERA_SPEED = 10;
 
         if (is_key_down(KEY_W)) {
             editor.camera_y -= dt * CAMERA_SPEED;
@@ -415,16 +421,16 @@ local void tilemap_editor_update_render_frame(float dt) {
 
             /* resize region */
             if (editor.selection_region_exists) {
-                int distance_delta_x = ((mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE) - editor.selection_region.x;
-                int distance_delta_y = ((mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE) - editor.selection_region.y;
+                int distance_delta_x = ((mouse_position[0] / scale_factor) * scale_factor) - editor.selection_region.x;
+                int distance_delta_y = ((mouse_position[1] / scale_factor) * scale_factor) - editor.selection_region.y;
                 editor.selection_region.w = distance_delta_x;
                 editor.selection_region.h = distance_delta_y;
 
                 editor.selected_tile_region = editor.selection_region;
-                editor.selected_tile_region.x /= TILE_TEX_SIZE;
-                editor.selected_tile_region.y /= TILE_TEX_SIZE;
-                editor.selected_tile_region.w /= TILE_TEX_SIZE;
-                editor.selected_tile_region.h /= TILE_TEX_SIZE;
+                editor.selected_tile_region.x /= scale_factor;
+                editor.selected_tile_region.y /= scale_factor;
+                editor.selected_tile_region.w /= scale_factor;
+                editor.selected_tile_region.h /= scale_factor;
             }
         } else {
             struct rectangle region = editor.selected_tile_region;
@@ -445,10 +451,10 @@ local void tilemap_editor_update_render_frame(float dt) {
         if (editor.selection_region_exists) {
             struct rectangle region = editor.selection_region;
 
-            region.y /= TILE_TEX_SIZE;
-            region.x /= TILE_TEX_SIZE;
-            region.w /= TILE_TEX_SIZE;
-            region.h /= TILE_TEX_SIZE;
+            region.y /= scale_factor;
+            region.x /= scale_factor;
+            region.w /= scale_factor;
+            region.h /= scale_factor;
 
             if (is_key_pressed(KEY_F)) {
                 for (int y = 0; y < (int)region.h; ++y) {
@@ -471,8 +477,8 @@ local void tilemap_editor_update_render_frame(float dt) {
             if (is_key_down(KEY_M)) {
                 int mouse_position[2];
                 get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
-                editor.selection_region.x = floorf((float)mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
-                editor.selection_region.y = floorf((float)mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+                editor.selection_region.x = floorf((float)mouse_position[0] / scale_factor) * scale_factor;
+                editor.selection_region.y = floorf((float)mouse_position[1] / scale_factor) * scale_factor;
             }
         }
     }
@@ -482,6 +488,7 @@ local void tilemap_editor_update_render_frame(float dt) {
     begin_graphics_frame(); {
         set_active_camera(get_global_camera());
         camera_set_position(editor.camera_x, editor.camera_y);
+        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
 
         /*grid*/
         {
@@ -499,11 +506,11 @@ local void tilemap_editor_update_render_frame(float dt) {
              */
             const int SCREENFUL_FILLS = 100;
 
-            int row_count = (screen_dimensions[1]) / TILE_TEX_SIZE;
-            int col_count = (screen_dimensions[0]) / TILE_TEX_SIZE;
+            int row_count = (screen_dimensions[1]) / scale_factor;
+            int col_count = (screen_dimensions[0]) / scale_factor;
 
-            int x_offset = -SCREENFUL_FILLS/2 * (col_count * TILE_TEX_SIZE);
-            int y_offset = -SCREENFUL_FILLS/2 * (row_count * TILE_TEX_SIZE);
+            int x_offset = -SCREENFUL_FILLS/2 * (col_count * scale_factor);
+            int y_offset = -SCREENFUL_FILLS/2 * (row_count * scale_factor);
 
             draw_grid(x_offset, y_offset, row_count * SCREENFUL_FILLS,
                       col_count * SCREENFUL_FILLS, 1, COLOR4F_DARKGRAY);
@@ -518,29 +525,28 @@ local void tilemap_editor_update_render_frame(float dt) {
             get_mouse_buttons(&left_click, 0, &right_click);
 
             {
-                mouse_position[0] = floorf((float)mouse_position[0] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
-                mouse_position[1] = floorf((float)mouse_position[1] / TILE_TEX_SIZE) * TILE_TEX_SIZE;
+                mouse_position[0] = floorf((float)mouse_position[0] / scale_factor) * scale_factor;
+                mouse_position[1] = floorf((float)mouse_position[1] / scale_factor) * scale_factor;
             }
 
             {
                 const int SURROUNDER_VISUAL_SIZE = 5;
-                draw_grid(mouse_position[0]-(SURROUNDER_VISUAL_SIZE/2)*TILE_TEX_SIZE,
-                          mouse_position[1]-(SURROUNDER_VISUAL_SIZE/2)*TILE_TEX_SIZE,
+                draw_grid(mouse_position[0]-(SURROUNDER_VISUAL_SIZE/2),
+                          mouse_position[1]-(SURROUNDER_VISUAL_SIZE/2),
                           SURROUNDER_VISUAL_SIZE, SURROUNDER_VISUAL_SIZE,
                           ((sinf(global_elapsed_time*4) + 1)/2.0f) * 2.0f + 0.2f, COLOR4F_BLUE);
             }
 
             draw_texture(tile_textures[editor.placement_type],
-                         mouse_position[0], mouse_position[1],
-                         TILE_TEX_SIZE, TILE_TEX_SIZE,
+                         mouse_position[0], mouse_position[1], 1, 1,
                          color4f(1, 1, 1, 0.5 + 0.5 * ((sinf(global_elapsed_time) + 1) / 2.0f)));
 
             if (left_click) {
-                editor_try_to_place_block(mouse_position[0]/TILE_TEX_SIZE,
-                                          mouse_position[1]/TILE_TEX_SIZE);
+                editor_try_to_place_block(mouse_position[0]/scale_factor,
+                                          mouse_position[1]/scale_factor);
             } else if (right_click) {
-                editor_erase_block(mouse_position[0]/TILE_TEX_SIZE,
-                                   mouse_position[1]/TILE_TEX_SIZE);
+                editor_erase_block(mouse_position[0]/scale_factor,
+                                   mouse_position[1]/scale_factor);
             }
         }
 
@@ -553,9 +559,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                 if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
                     continue;
 
-                draw_texture(tile_textures[t->id],
-                             t->x * TILE_TEX_SIZE, t->y * TILE_TEX_SIZE,
-                             TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_WHITE);
+                draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, COLOR4F_WHITE);
             } 
         }
 
@@ -568,7 +572,7 @@ local void tilemap_editor_update_render_frame(float dt) {
             if (editor.selection_region_exists) {
                 struct rectangle region = editor.selection_region;
                 draw_grid(region.x, region.y,
-                          roundf(region.h / TILE_TEX_SIZE), roundf(region.w / TILE_TEX_SIZE),
+                          roundf(region.h / scale_factor), roundf(region.w / scale_factor),
                           ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, grid_color);
 
                 /* draw tiles within the region for moving regions */
@@ -583,14 +587,14 @@ local void tilemap_editor_update_render_frame(float dt) {
 
                         {
                             struct rectangle selected_region = editor.selected_tile_region;
-                            selected_region.x *= TILE_TEX_SIZE;
-                            selected_region.y *= TILE_TEX_SIZE;
+                            selected_region.x *= scale_factor;
+                            selected_region.y *= scale_factor;
 
                             struct rectangle region = editor.selection_region;
                             draw_texture(tile_textures[t->id],
-                                         t->x * TILE_TEX_SIZE + (region.x - selected_region.x),
-                                         t->y * TILE_TEX_SIZE + (region.y - selected_region.y),
-                                         TILE_TEX_SIZE, TILE_TEX_SIZE, grid_color);
+                                         t->x + (region.x - selected_region.x) / scale_factor,
+                                         t->y + (region.y - selected_region.y) / scale_factor,
+                                         1, 1, grid_color);
                         }
                     } 
                 }
@@ -608,10 +612,10 @@ local void tilemap_editor_update_render_frame(float dt) {
         /*"tool" bar*/
         {
             int frame_pad = 3;
-            int frame_size = TILE_TEX_SIZE+frame_pad;
+            int frame_size = scale_factor+frame_pad;
             int i = 0;
             draw_rectangle(i * frame_size, 16, frame_size, frame_size, COLOR4F_RED);
-            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/2, TILE_TEX_SIZE, TILE_TEX_SIZE, COLOR4F_BLUE);
+            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/2, scale_factor, scale_factor, COLOR4F_BLUE);
             draw_text(test_font, 5 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
         }
     } end_graphics_frame();

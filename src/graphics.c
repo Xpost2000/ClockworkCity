@@ -34,6 +34,7 @@ local SDL_Window*   global_window;
 
 local int screen_dimensions[2] = {};
 
+/* this shouldn't be called debug anymore, since this is legitmately used lol */
 local float DEBUG_scale = 1.0;
 #include "camera.c"
 
@@ -54,6 +55,10 @@ float ratio_with_screen_height(float dividend) {
 /* separate from camera scaling mind you! */
 void set_render_scale(float scale_factor) {
     DEBUG_scale = scale_factor;
+}
+
+float get_render_scale(void) {
+    return DEBUG_scale;
 }
 
 bool within_screen_bounds(int x, int y, int w, int h) {
