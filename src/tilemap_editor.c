@@ -26,6 +26,12 @@ struct editable_tilemap {
 
     int width;
     int height;
+
+    float bounds_min_x;
+    float bounds_min_y;
+    float bounds_max_x;
+    float bounds_max_y;
+
     struct player_spawn_link* player_spawn_links;
     struct tile* tiles;
     struct transition_zone* transitions;
@@ -35,10 +41,11 @@ enum editor_tool_mode {
     EDITOR_TOOL_PAINT_TILE,
     EDITOR_TOOL_PAINT_TRANSITION,
     EDITOR_TOOL_PAINT_PLAYERSPAWN,
+    EDITOR_TOOL_ESTABLISH_BOUNDS,
     EDITOR_TOOL_COUNT
 };
 const local char* editor_tool_mode_strings[] = {
-    "Paint Tile", "Edit Transitions", "Player Spawn Placement", "?"
+    "Paint Tile", "Edit Transitions", "Player Spawn Placement", "Establish Level Bounds", "?"
 };
 struct editor_text_edit {
     bool open;
@@ -454,6 +461,7 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
 local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt);
+local void tilemap_editor_handle_bounds_establishment(struct memory_arena* frame_arena, float dt);
 
 /* kill any state. */
 local void editor_switch_tool(enum editor_tool_mode mode) {
@@ -485,6 +493,8 @@ local void tilemap_editor_update_render_frame(float dt) {
             editor_switch_tool(EDITOR_TOOL_PAINT_TRANSITION);
         } else if (is_key_pressed(KEY_F3)) {
             editor_switch_tool(EDITOR_TOOL_PAINT_PLAYERSPAWN);
+        } else if (is_key_pressed(KEY_F4)) {
+            editor_switch_tool(EDITOR_TOOL_ESTABLISH_BOUNDS);
         }
 
         /*camera editor movement*/
@@ -552,10 +562,19 @@ local void tilemap_editor_update_render_frame(float dt) {
             draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
             draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
             draw_player_spawn(&editor.tilemap.default_spawn);
+
+            {
+                float bounds_width  = editor.tilemap.bounds_max_x - editor.tilemap.bounds_min_x;
+                float bounds_height = editor.tilemap.bounds_max_y - editor.tilemap.bounds_min_y;
+
+                draw_rectangle(editor.tilemap.bounds_min_x, editor.tilemap.bounds_min_y,
+                               bounds_width, bounds_height, COLOR4F_BLUE);
+            }
         }
 
         /*rectangle picker */
-        {
+        /* little hack since I reuse functionality there. Eh. */
+        if (editor.tool != EDITOR_TOOL_ESTABLISH_BOUNDS) {
             union color4f grid_color = COLOR4F_RED;
 
             if (is_key_down(KEY_Y)) grid_color = COLOR4F_GREEN;
@@ -603,6 +622,9 @@ local void tilemap_editor_update_render_frame(float dt) {
         } break;
         case EDITOR_TOOL_PAINT_PLAYERSPAWN: {
             tilemap_editor_handle_paint_playerspawn_mode(&frame_arena, dt);
+        } break;
+        case EDITOR_TOOL_ESTABLISH_BOUNDS: {
+            tilemap_editor_handle_bounds_establishment(&frame_arena, dt);
         } break;
     }
 
@@ -895,6 +917,65 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
                 }
             }
         }
+    }
+}
+
+local void tilemap_editor_handle_bounds_establishment(struct memory_arena* frame_arena, float dt) {
+    begin_graphics_frame(); {
+        set_active_camera(get_global_camera());
+        camera_set_position(editor.camera_x, editor.camera_y);
+        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
+
+        float bounds_width  = editor.tilemap.bounds_max_x - editor.tilemap.bounds_min_x;
+        float bounds_height = editor.tilemap.bounds_max_y - editor.tilemap.bounds_min_y;
+
+        draw_filled_rectangle(editor.tilemap.bounds_min_x, editor.tilemap.bounds_min_y,
+                              bounds_width, bounds_height, color4f(0, 0.2, 0.4, normalized_sinf(global_elapsed_time * 3.0) - 0.1f));
+
+        if (editor.selection_region_exists) {
+            draw_filled_rectangle(editor.selection_region.x, editor.selection_region.y,
+                                  editor.selection_region.w, editor.selection_region.h, color4f(0.5, 0.2, 0.4, normalized_sinf(global_elapsed_time * 5.0) - 0.1f));
+        }
+    } end_graphics_frame();
+
+
+    {
+        int mouse_position[2];
+        bool left_click, right_click;
+
+        get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+        get_mouse_buttons(&left_click, 0, &right_click);
+
+        if (left_click) {
+            editor_begin_selection_region(mouse_position[0], mouse_position[1]);
+
+            if (editor.selection_region_exists) {
+                int distance_delta_x = (mouse_position[0]) - editor.selection_region.x;
+                int distance_delta_y = (mouse_position[1]) - editor.selection_region.y;
+
+                editor.selection_region.w = distance_delta_x;
+                editor.selection_region.h = distance_delta_y;
+            }
+        }
+
+        /*sanity correction cause the selection_region system doesn't work with negatives*/
+        {
+            if (editor.tilemap.bounds_min_x > editor.tilemap.bounds_max_x) {
+                swap(int, editor.tilemap.bounds_min_x, editor.tilemap.bounds_max_x);
+            }
+
+            if (editor.tilemap.bounds_min_y > editor.tilemap.bounds_max_y) {
+                swap(int, editor.tilemap.bounds_min_y, editor.tilemap.bounds_max_y);
+            }
+        }
+    }
+
+    if (is_key_pressed(KEY_RETURN)) {
+        editor.tilemap.bounds_min_x = editor.selection_region.x;
+        editor.tilemap.bounds_min_y = editor.selection_region.y;
+        editor.tilemap.bounds_max_x = editor.selection_region.x + editor.selection_region.w;
+        editor.tilemap.bounds_max_y = editor.selection_region.y + editor.selection_region.h;
+        editor_end_selection_region();
     }
 }
 

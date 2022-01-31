@@ -100,8 +100,15 @@ struct tilemap {
     /* this really... Shouldn't be used frequently... */
     struct player_spawn default_spawn;
 
+    float bounds_min_x;
+    float bounds_min_y;
+    float bounds_max_x;
+    float bounds_max_y;
+
+    /*old*/
     uint16_t width;
     uint16_t height;
+    /*old*/
     struct tile* tiles;
 
     uint8_t transition_zone_count;

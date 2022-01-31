@@ -40,7 +40,10 @@ local float DEBUG_scale = 1.0;
 
 inline union color4f color4f(float r, float g, float b, float a) {
     return (union color4f) {
-        .r = r, .g = g, .b = b, .a = a,
+        .r = clampf(r, 0, 1.0),
+        .g = clampf(g, 0, 1.0),
+        .b = clampf(b, 0, 1.0),
+        .a = clampf(a, 0, 1.0),
     };
 }
 

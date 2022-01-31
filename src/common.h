@@ -53,6 +53,14 @@ bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, f
 bool rectangle_intersects(struct rectangle a, struct rectangle b);
 bool rectangle_overlapping(struct rectangle a, struct rectangle b);
 
+shared_storage float normalized_sinf(float p) {
+    return (sinf(p) + 1) / 2.0f;
+}
+
+shared_storage float normalized_cosf(float p) {
+    return (cosf(p) + 1) / 2.0f;
+}
+
 shared_storage float maxf(float a, float b) {
     if (a > b) return a;
     return b;
