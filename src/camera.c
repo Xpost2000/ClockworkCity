@@ -84,8 +84,8 @@ void camera_update(float dt) {
      */
 
     /*hardcoded for now*/
-    float trauma_shake_x = (300 * random_float() - 150) * global_camera.trauma;
-    float trauma_shake_y = (300 * random_float() - 150) * global_camera.trauma;
+    float trauma_shake_x = (8 * random_float() - 4.5) * global_camera.trauma;
+    float trauma_shake_y = (8 * random_float() - 4.5) * global_camera.trauma;
 
     global_camera.visual_position_x =
         _camera_lerp(global_camera.last_position_x, global_camera.target_position_x,

@@ -138,10 +138,22 @@ float tile_get_slope_height(struct tile* t, float x, float w, float h) {
     }
 }
 /* should be "streamed" */
+struct transition_zone {
+    float x;
+    float y;
+    float w;
+    float h;
+    char zone_filename[FILENAME_MAX_LENGTH];
+};
+
+/* rename to level */
 struct tilemap {
     uint16_t width;
     uint16_t height;
     struct tile* tiles;
+
+    uint16_t transition_zone_count;
+    struct transition_zone* transitions;
 };
 
 /* partially stupid but whatever, just something to try out tonight */
@@ -227,8 +239,16 @@ void draw_tiles(struct tile* tiles, size_t count) {
     } 
 }
 
+void draw_transitions(struct transition_zone* transitions, size_t count) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct transition_zone* t = &transitions[index];
+        draw_rectangle(t->x, t->y, t->w, t->h, COLOR4F_RED);
+    } 
+}
+
 void DEBUG_draw_tilemap(struct tilemap* tilemap) {
     draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
+    draw_transitions(tilemap->transitions, tilemap->transition_zone_count);
 }
 
 local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* ent) {
