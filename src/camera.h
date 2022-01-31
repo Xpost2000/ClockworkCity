@@ -1,7 +1,10 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 /*
-  TODO(jerry): zoom
+  This API really sucks. It's not really that hard to use so I guess
+  I'll let it pass since it's a really small aomunt of code.
+  
+  TODO(jerry): (interpolate zoom)
 */
 struct camera {
     float visual_zoom_level;
@@ -18,6 +21,11 @@ struct camera {
 
     float interpolation_time[3];
     float interpolation_speed[3];
+
+    float bounds_min_x;
+    float bounds_min_y;
+    float bounds_max_x;
+    float bounds_max_y;
 
     /*NOTE(jerry): UNUSED*/
     /* me really wants this but this requires access to transformation matrices */
@@ -40,6 +48,9 @@ void camera_set_focus_speed_y(float speed);
 void camera_set_focus_position(float x, float y);
 void camera_update(float dt);
 void camera_reset_transform(void);
+/*based on the renderer scale / game units*/
+void camera_set_bounds(float min_x, float min_y, float max_x, float max_y);
+void camera_clear_bounds(void);
 
 void transform_point_into_camera_space(int* x, int* y);
 #endif

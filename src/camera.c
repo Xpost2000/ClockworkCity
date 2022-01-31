@@ -43,6 +43,19 @@ void camera_set_focus_position(float x, float y) {
     active_camera->target_position_x = x;
     active_camera->target_position_y = y;
 
+    {
+        bool needs_clamping_on_x = ((active_camera->bounds_max_x - active_camera->bounds_min_x) != 0);
+        bool needs_clamping_on_y = ((active_camera->bounds_max_y - active_camera->bounds_min_y) != 0);
+
+        if (needs_clamping_on_x) {
+            active_camera->target_position_x = clampf(active_camera->target_position_x, active_camera->bounds_min_x, active_camera->bounds_max_x);
+        }
+
+        if (needs_clamping_on_y) {
+            active_camera->target_position_y = clampf(active_camera->target_position_y, active_camera->bounds_min_y, active_camera->bounds_max_y);
+        }
+    }
+
     active_camera->interpolation_time[0] = active_camera->interpolation_time[1] = 0.0;
 }
 
@@ -101,6 +114,18 @@ void camera_reset_transform(void) {
     global_camera = (struct camera) {
         .interpolation_speed[0] = 1.0, .interpolation_speed[1] = 1.0
     };
+}
+
+void camera_set_bounds(float min_x, float min_y, float max_x, float max_y) {
+    /*lol global_camera*/
+    global_camera.bounds_min_x = min_x;
+    global_camera.bounds_min_y = min_y;
+    global_camera.bounds_max_x = max_x;
+    global_camera.bounds_max_y = max_y;
+}
+
+void camera_clear_bounds(void) {
+    camera_set_bounds(0, 0, 0, 0);
 }
 
 void transform_point_into_camera_space(int* x, int* y) {

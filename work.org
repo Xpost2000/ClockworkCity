@@ -200,6 +200,7 @@
     Linked of course!
 *** TODO Backport more advanced console from blackiron
     I never realized this was an old version of the console until earlier. Fuck.
+*** DONE Camera Bounds 
 *** DONE Camera Zoom
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.
