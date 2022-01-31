@@ -1,3 +1,30 @@
+/*
+  TODO(jerry):
+  Yep... Slopes again!
+  
+  Technically the right answer is to use a raycast to mount onto the slope.
+  
+  basically
+
+  // in the collision code...
+ */
+#if 0
+if (tile_is_slope(t)) {
+    // extend a "ray"
+    struct rectangle entity_ray = (struct rectangle) {
+        .x = entity->x + entity->w/2,
+        .y = entity->y + entity->h,
+        .w = 0.1,
+        .h = entity->h/3,
+    };
+
+    float height = tile_get_slope_height(t, entity->x, entity->w, entity->h);
+    if (rectangle_overlapping(entity_ray, t)) {
+        if (height <= entity_ray.h + entity_ray.y) {
+            snap?
+        }
+    }
+#endif
 const int TILE_TEX_SIZE = 1.0f;
 const float PHYSICS_EPSILION = 0.0345;
 /*these aren't really tile ids, these are more like flags/properties*/
