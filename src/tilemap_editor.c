@@ -1,23 +1,29 @@
 #include "memory_arena.h"
 #define EDITOR_TILE_MAX_COUNT (16384)
+#define EDITOR_TRANSITIONS_MAX_COUNT (32)
 
 /*
-  We're going to need to handle growing arrays, and I don't
-  want to do std::vector style stuff, especially since I want
-  to have tilemap islands, which would make the std::vector stuff REALLY
-  messy.
-  
-  It's easier to just unlink a chain of chunks for this.
-  
-  This adds a pretty big serialization step :(, but it'll probably
-  simplify my life as I would guarantee no memory leaks doing this.
+  regions do not include entities???
+  TODO(jerry): modal editing.
 */
 
 struct editable_tilemap {
     uint32_t tile_count;
+    uint8_t transition_zone_count;
     int width;
     int height;
     struct tile* tiles;
+    struct transition_zone* transitions;
+    struct player_spawn default_spawn;
+};
+enum editor_tool_mode {
+    EDITOR_TOOL_PAINT_TILE,
+    EDITOR_TOOL_PAINT_TRANSITION,
+    EDITOR_TOOL_PAINT_PLAYERSPAWN,
+    EDITOR_TOOL_COUNT
+};
+const local char* editor_tool_mode_strings[] = {
+    "Paint Tile", "Edit Transitions", "Player Spawn Placement", "?"
 };
 struct editor_state {
     struct memory_arena arena;
@@ -29,6 +35,8 @@ struct editor_state {
       This is basically a source format
     */
     struct editable_tilemap tilemap;
+
+    enum editor_tool_mode tool;
 
     /*-*/
     bool selection_region_exists;
@@ -235,7 +243,8 @@ local void editor_clear_all(void) {
 
 local void load_tilemap_editor_resources(void) {
     editor.arena = allocate_memory_arena(Megabyte(4));
-    editor.tilemap.tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    editor.tilemap.tiles       = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    editor.tilemap.transitions = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT * sizeof(*editor.tilemap.transitions));
     size_t memusage = memory_arena_total_usage(&editor.arena);
     console_printf("Arena is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
                    memusage, memusage / 1024,
@@ -345,6 +354,9 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
     }
 }
 
+local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt);
+local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* frame_arena, float dt);
+local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_update_render_frame(float dt) {
     float scale_factor = get_render_scale();
     struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(512));
@@ -358,10 +370,12 @@ local void tilemap_editor_update_render_frame(float dt) {
     set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
     camera_set_position(editor.camera_x, editor.camera_y);
 
-    if (is_key_pressed(KEY_RIGHT)) {
-        editor.placement_type++;
-    } else if (is_key_pressed(KEY_LEFT)) {
-        editor.placement_type--;
+    if (is_key_pressed(KEY_F1)) {
+        editor.tool = EDITOR_TOOL_PAINT_TILE;
+    } else if (is_key_pressed(KEY_F2)) {
+        editor.tool = EDITOR_TOOL_PAINT_TRANSITION;
+    } else if (is_key_pressed(KEY_F3)) {
+        editor.tool = EDITOR_TOOL_PAINT_PLAYERSPAWN;
     }
 
     /*camera editor movement*/
@@ -381,9 +395,138 @@ local void tilemap_editor_update_render_frame(float dt) {
         }
     }
 
-    /*editor rectangular region related stuff*/
-    {
+    begin_graphics_frame(); {
+        set_active_camera(get_global_camera());
+        camera_set_position(editor.camera_x, editor.camera_y);
+        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
 
+        /*grid*/
+        {
+            int screen_dimensions[2];
+            get_screen_dimensions(screen_dimensions, screen_dimensions+1);
+
+            /*
+              TODO(jerry):
+              too lazy to do a real infinite grid tonight.
+
+              It'd just be repositioning constantly basically. But this works fine too.
+              I'm just drawing multiple screens of grids that you can expect to "see".
+              
+              It's whatever for this.
+             */
+            const int SCREENFUL_FILLS = 50;
+
+            int row_count = (screen_dimensions[1]) / scale_factor;
+            int col_count = (screen_dimensions[0]) / scale_factor;
+
+            int x_offset = -SCREENFUL_FILLS/2 * (col_count * scale_factor);
+            int y_offset = -SCREENFUL_FILLS/2 * (row_count * scale_factor);
+
+            draw_grid(x_offset, y_offset, row_count * SCREENFUL_FILLS,
+                      col_count * SCREENFUL_FILLS, 1, COLOR4F_DARKGRAY);
+        }
+
+        /* world */
+        {
+            struct tile* tiles = editor.tilemap.tiles;
+
+            for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
+                struct tile* t = &tiles[index];
+
+                if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                    continue;
+
+                draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, COLOR4F_WHITE);
+            } 
+
+            draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
+            draw_player_spawn(&editor.tilemap.default_spawn);
+        }
+
+        /*rectangle picker */
+        {
+            union color4f grid_color = COLOR4F_RED;
+
+            if (is_key_down(KEY_Y)) grid_color = COLOR4F_GREEN;
+
+            if (editor.selection_region_exists) {
+                struct rectangle region = editor.selection_region;
+                draw_grid(region.x, region.y,
+                          roundf(region.h / scale_factor), roundf(region.w / scale_factor),
+                          ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, grid_color);
+
+                /* draw tiles within the region for moving regions */
+                {
+                    struct tile* tiles = editor.tilemap.tiles;
+                    for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
+                        struct tile* t = &tiles[index];
+
+                        /*exclude tiles in the region to avoid a copy. Would like to have a hashmap :/*/
+                        if (!intersects_editor_selected_tile_region(t->x, t->y, 1, 1))
+                            continue;
+
+                        {
+                            struct rectangle selected_region = editor.selected_tile_region;
+                            selected_region.x *= scale_factor;
+                            selected_region.y *= scale_factor;
+
+                            struct rectangle region = editor.selection_region;
+                            draw_texture(tile_textures[t->id],
+                                         t->x + (region.x - selected_region.x) / scale_factor,
+                                         t->y + (region.y - selected_region.y) / scale_factor,
+                                         1, 1, grid_color);
+                        }
+                    } 
+                }
+            }
+        }
+    } end_graphics_frame();
+
+    /* these also have drawing code. That's why they're also here. */
+    switch (editor.tool) {
+        case EDITOR_TOOL_PAINT_TILE: {
+            tilemap_editor_handle_paint_tile_mode(&frame_arena, dt);
+        } break;
+        case EDITOR_TOOL_PAINT_TRANSITION: {
+            tilemap_editor_handle_paint_transition_mode(&frame_arena, dt);
+        } break;
+        case EDITOR_TOOL_PAINT_PLAYERSPAWN: {
+            tilemap_editor_handle_paint_playerspawn_mode(&frame_arena, dt);
+        } break;
+    }
+
+    begin_graphics_frame();{
+        int mouse_position[2];
+        get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+        set_render_scale(1);
+
+        draw_text(test_font, 0, 0, "world edit", COLOR4F_WHITE);
+        draw_text(test_font, 0, 32, format_temp("tilecount: %d\n(mx: %d, my: %d)(cx: %f, cy: %f)\n", editor.tilemap.tile_count, mouse_position[0], mouse_position[1], editor.camera_x, editor.camera_y), COLOR4F_WHITE);
+        draw_text(test_font, 0, 32+32, format_temp("mode: %s", editor_tool_mode_strings[editor.tool]), COLOR4F_WHITE);
+
+        /*"tool" bar*/
+        {
+            int frame_pad = 3;
+            int frame_size = 16+frame_pad;
+            int i = 0;
+            draw_rectangle(i * frame_size, 16, frame_size, frame_size, COLOR4F_RED);
+            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/4, frame_size, frame_size, COLOR4F_BLUE);
+            draw_text(test_font, 10 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
+        }
+    } end_graphics_frame();
+
+    end_temporary_memory(&frame_arena);
+}
+
+local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt) {
+    float scale_factor = get_render_scale();
+    if (is_key_pressed(KEY_RIGHT)) {
+        editor.placement_type++;
+    } else if (is_key_pressed(KEY_LEFT)) {
+        editor.placement_type--;
+    }
+
+    {
         if (is_key_pressed(KEY_ESCAPE)) {
             editor_end_selection_region();
         }
@@ -475,32 +618,6 @@ local void tilemap_editor_update_render_frame(float dt) {
         camera_set_position(editor.camera_x, editor.camera_y);
         set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
 
-        /*grid*/
-        {
-            int screen_dimensions[2];
-            get_screen_dimensions(screen_dimensions, screen_dimensions+1);
-
-            /*
-              TODO(jerry):
-              too lazy to do a real infinite grid tonight.
-
-              It'd just be repositioning constantly basically. But this works fine too.
-              I'm just drawing multiple screens of grids that you can expect to "see".
-              
-              It's whatever for this.
-             */
-            const int SCREENFUL_FILLS = 50;
-
-            int row_count = (screen_dimensions[1]) / scale_factor;
-            int col_count = (screen_dimensions[0]) / scale_factor;
-
-            int x_offset = -SCREENFUL_FILLS/2 * (col_count * scale_factor);
-            int y_offset = -SCREENFUL_FILLS/2 * (row_count * scale_factor);
-
-            draw_grid(x_offset, y_offset, row_count * SCREENFUL_FILLS,
-                      col_count * SCREENFUL_FILLS, 1, COLOR4F_DARKGRAY);
-        }
-
         /* cursor */
         {
             int mouse_position[2];
@@ -527,77 +644,31 @@ local void tilemap_editor_update_render_frame(float dt) {
                 editor_erase_block(mouse_position[0], mouse_position[1]);
             }
         }
+    } end_graphics_frame();
+}
 
-        /* world */
+local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* frame_arena, float dt) {
+    
+}
+
+local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt) {
+    begin_graphics_frame(); {
+        set_active_camera(get_global_camera());
+        camera_set_position(editor.camera_x, editor.camera_y);
+        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
+
+        /* cursor */
         {
-            struct tile* tiles = editor.tilemap.tiles;
-            for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
-                struct tile* t = &tiles[index];
+            int mouse_position[2];
+            bool left_click, right_click;
 
-                if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
-                    continue;
+            get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+            get_mouse_buttons(&left_click, 0, &right_click);
 
-                draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, COLOR4F_WHITE);
-            } 
-        }
-
-        /*rectangle picker */
-        {
-            union color4f grid_color = COLOR4F_RED;
-
-            if (is_key_down(KEY_Y)) grid_color = COLOR4F_GREEN;
-
-            if (editor.selection_region_exists) {
-                struct rectangle region = editor.selection_region;
-                draw_grid(region.x, region.y,
-                          roundf(region.h / scale_factor), roundf(region.w / scale_factor),
-                          ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, grid_color);
-
-                /* draw tiles within the region for moving regions */
-                {
-                    struct tile* tiles = editor.tilemap.tiles;
-                    for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
-                        struct tile* t = &tiles[index];
-
-                        /*exclude tiles in the region to avoid a copy. Would like to have a hashmap :/*/
-                        if (!intersects_editor_selected_tile_region(t->x, t->y, 1, 1))
-                            continue;
-
-                        {
-                            struct rectangle selected_region = editor.selected_tile_region;
-                            selected_region.x *= scale_factor;
-                            selected_region.y *= scale_factor;
-
-                            struct rectangle region = editor.selection_region;
-                            draw_texture(tile_textures[t->id],
-                                         t->x + (region.x - selected_region.x) / scale_factor,
-                                         t->y + (region.y - selected_region.y) / scale_factor,
-                                         1, 1, grid_color);
-                        }
-                    } 
-                }
+            if (left_click) {
+                editor.tilemap.default_spawn.x = mouse_position[0];
+                editor.tilemap.default_spawn.y = mouse_position[1] - 1;
             }
         }
     } end_graphics_frame();
-
-    begin_graphics_frame();{
-        int mouse_position[2];
-        get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
-        set_render_scale(1);
-
-        draw_text(test_font, 0, 0, "world edit", COLOR4F_WHITE);
-        draw_text(test_font, 0, 32, format_temp("tilecount: %d\n(mx: %d, my: %d)(cx: %f, cy: %f)\n", editor.tilemap.tile_count, mouse_position[0], mouse_position[1], editor.camera_x, editor.camera_y), COLOR4F_WHITE);
-
-        /*"tool" bar*/
-        {
-            int frame_pad = 3;
-            int frame_size = 16+frame_pad;
-            int i = 0;
-            draw_rectangle(i * frame_size, 16, frame_size, frame_size, COLOR4F_RED);
-            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/4, frame_size, frame_size, COLOR4F_BLUE);
-            draw_text(test_font, 10 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
-        }
-    } end_graphics_frame();
-
-    end_temporary_memory(&frame_arena);
 }

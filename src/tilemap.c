@@ -60,14 +60,6 @@ shared_storage char* tile_type_strings[] = {
 };
 
 local texture_id tile_textures[TILE_ID_COUNT] = {};
-void DEBUG_load_all_tile_assets(void) {
-    for (unsigned i = TILE_NONE+1; i < TILE_ID_COUNT; ++i) {
-        char* fstring = tile_id_filestrings[i];
-        if (fstring) {
-            tile_textures[i] = load_texture(fstring);
-        }
-    }
-}
 
 struct tile {
     /*tiles will store relative positions (in the case of moving tile islands)*/
@@ -77,6 +69,41 @@ struct tile {
     int32_t y;
     uint32_t id;
 };
+
+struct transition_zone {
+    float x;
+    float y;
+    float w;
+    float h;
+    char zone_filename[FILENAME_MAX_LENGTH]; /*cstr*/
+};
+
+struct player_spawn {
+    float x;
+    float y;
+};
+
+/* should be "streamed" */
+/* rename to level */
+struct tilemap {
+    struct player_spawn default_spawn;
+
+    uint16_t width;
+    uint16_t height;
+    struct tile* tiles;
+
+    uint8_t transition_zone_count;
+    struct transition_zone* transitions;
+};
+
+void DEBUG_load_all_tile_assets(void) {
+    for (unsigned i = TILE_NONE+1; i < TILE_ID_COUNT; ++i) {
+        char* fstring = tile_id_filestrings[i];
+        if (fstring) {
+            tile_textures[i] = load_texture(fstring);
+        }
+    }
+}
 
 bool tile_is_slope(struct tile* t) {
     return ((t->id == TILE_SLOPE_BL) ||
@@ -137,97 +164,15 @@ float tile_get_slope_height(struct tile* t, float x, float w, float h) {
         } break;
     }
 }
-/* should be "streamed" */
-struct transition_zone {
-    float x;
-    float y;
-    float w;
-    float h;
-    char zone_filename[FILENAME_MAX_LENGTH];
-};
 
-/* rename to level */
-struct tilemap {
-    uint16_t width;
-    uint16_t height;
-    struct tile* tiles;
+/*binary format*/
+struct tilemap* tilemap_from_file(struct memory_arena* arena, char* file) {
+    unimplemented();
+}
 
-    uint16_t transition_zone_count;
-    struct transition_zone* transitions;
-};
-
-/* partially stupid but whatever, just something to try out tonight */
-/*
-  really bad ascii format for debugging reasons, could use getline or something
-  or split into line buffers?
-
-  ehh....
-*/
-struct tilemap* DEBUG_tilemap_from_file(struct memory_arena* arena, char* file) {
-    /*
-      allocates from the top.
-      Bottom is for permenant information / persistent. Top is for levels or more temp stuff
-    */
-    memory_arena_clear_top(&game_memory_arena);
-    struct tilemap* result = memory_arena_push_top(arena, sizeof(*result));
-    char* filestring = load_entire_file(file);
-
-    {
-        result->height = count_lines_of_cstring(filestring);
-        result->width = 0;
-
-        int index = 0;
-        char* current_line;
-
-        while (current_line = get_line_starting_from(filestring, &index)){
-            int current_length = strlen(current_line);
-            if (result->width < current_length) {
-                result->width = current_length;
-            }
-        }
-    }
-
-    /* result->tiles = system_allocate_zeroed_memory(result.width * result.height * sizeof(*result.tiles)); */
-    result->tiles = memory_arena_push_top(arena, result->width * result->height * sizeof(*result->tiles));
-    printf("%d x %d\n", result->width, result->height);
-
-    {
-        int index = 0;
-        char* current_line;
-
-        for(unsigned y = 0; y < result->height; ++y) {
-            current_line = get_line_starting_from(filestring, &index);
-
-            for(unsigned x = 0; x < result->width; ++x) {
-                struct tile* t = &result->tiles[y * result->width + x];
-                t->y = y;
-                t->x = x;
-
-                switch (current_line[x]) {
-                    case '.': {
-                    } break;
-                    case '#': {
-                        t->id = TILE_SOLID;
-                    } break;
-                    case '>': {
-                        t->id = TILE_SLOPE_BR;
-                    } break;
-                    case '<': {
-                        t->id = TILE_SLOPE_BL;
-                    } break;
-                    case '/': {
-                        t->id = TILE_SLOPE_L;
-                    } break;
-                    case '\\': {
-                        t->id = TILE_SLOPE_R;
-                    } break;
-                }
-            }
-        }
-    }
-
-    system_deallocate_memory(filestring);
-    return result;
+void draw_player_spawn(struct player_spawn* spawn) {
+    draw_rectangle(spawn->x, spawn->y, 1, 2, COLOR4F_GREEN);
+    draw_filled_rectangle(spawn->x+0.5-0.125, spawn->y+2, 0.25, 0.25, COLOR4F_WHITE);
 }
 
 void draw_tiles(struct tile* tiles, size_t count) {
