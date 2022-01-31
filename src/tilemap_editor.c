@@ -3,8 +3,18 @@
 #define EDITOR_TRANSITIONS_MAX_COUNT (32)
 
 /*
+  NOTE(jerry):
+  Almost everything is expressed in tile coordinates at the moment.
+
+  The game itself uses floating point math, but all entities must snap to the tile grid except
+  for maybe like "decorative" things?
+*/
+
+/*
   regions do not include entities???
   TODO(jerry): modal editing.
+  NOTE(jerry): this suffers a lot from the lack of a real UI library lol.
+  I really need a UI library. Dear god.
 */
 
 struct editable_tilemap {
@@ -28,6 +38,8 @@ const local char* editor_tool_mode_strings[] = {
 struct editor_state {
     struct memory_arena arena;
 
+    float editor_tool_change_fade_timer;
+
     float camera_x;
     float camera_y;
     /*
@@ -37,6 +49,13 @@ struct editor_state {
     struct editable_tilemap tilemap;
 
     enum editor_tool_mode tool;
+    void* context; /*depends on mode*/
+
+    /*unused?*/
+    int last_mouse_x;
+    int last_mouse_y;
+    /*unused?*/
+    bool dragging;
 
     /*-*/
     bool selection_region_exists;
@@ -53,6 +72,15 @@ local struct editor_state editor;
 local struct tile* editor_allocate_block(void) {
     assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
     return &editor.tilemap.tiles[editor.tilemap.tile_count++];
+}
+
+local struct transition_zone* editor_allocate_transition(void) {
+    assert(editor.tilemap.transition_zone_count < EDITOR_TRANSITIONS_MAX_COUNT);
+    struct transition_zone* result = &editor.tilemap.transitions[editor.tilemap.transition_zone_count++];
+    zero_array(result->identifier);
+    zero_array(result->zone_filename);
+    zero_array(result->zone_link);
+    return result;
 }
 
 /*grid coordinates*/
@@ -103,6 +131,18 @@ struct tile* occupied_block_at(struct tile* tiles, int tile_count, int grid_x, i
         struct tile* t = tiles + index;
 
         if (t->x == grid_x && t->y == grid_y) {
+            return t;
+        }
+    }
+
+    return NULL;
+}
+
+struct transition_zone* editor_existing_transition_at(struct transition_zone* transitions, size_t transition_zone_count, int grid_x, int grid_y) {
+    for (unsigned index = 0; index < transition_zone_count; ++index) {
+        struct transition_zone* t = transitions + index;
+
+        if (rectangle_intersects_v(t->x, t->y, t->w, t->h, grid_x, grid_y, 0.5, 0.5)) {
             return t;
         }
     }
@@ -357,6 +397,17 @@ local void draw_grid(float x_offset, float y_offset, int rows, int cols, float t
 local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt);
+
+/* kill any state. */
+local void editor_switch_tool(enum editor_tool_mode mode) {
+    editor.tool = mode;
+    editor.last_mouse_y = editor.last_mouse_x = 0;
+    editor.context = NULL;
+    editor.dragging = false;
+    editor.selection_region_exists = false;
+    editor.editor_tool_change_fade_timer = 1.5f;
+}
+
 local void tilemap_editor_update_render_frame(float dt) {
     float scale_factor = get_render_scale();
     struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(512));
@@ -371,11 +422,11 @@ local void tilemap_editor_update_render_frame(float dt) {
     camera_set_position(editor.camera_x, editor.camera_y);
 
     if (is_key_pressed(KEY_F1)) {
-        editor.tool = EDITOR_TOOL_PAINT_TILE;
+        editor_switch_tool(EDITOR_TOOL_PAINT_TILE);
     } else if (is_key_pressed(KEY_F2)) {
-        editor.tool = EDITOR_TOOL_PAINT_TRANSITION;
+        editor_switch_tool(EDITOR_TOOL_PAINT_TRANSITION);
     } else if (is_key_pressed(KEY_F3)) {
-        editor.tool = EDITOR_TOOL_PAINT_PLAYERSPAWN;
+        editor_switch_tool(EDITOR_TOOL_PAINT_PLAYERSPAWN);
     }
 
     /*camera editor movement*/
@@ -495,25 +546,25 @@ local void tilemap_editor_update_render_frame(float dt) {
         } break;
     }
 
-    begin_graphics_frame();{
-        int mouse_position[2];
-        get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
-        set_render_scale(1);
+    if (editor.editor_tool_change_fade_timer > 0.0) {
+        begin_graphics_frame(); {
+            editor.editor_tool_change_fade_timer -= dt;
 
-        draw_text(test_font, 0, 0, "world edit", COLOR4F_WHITE);
-        draw_text(test_font, 0, 32, format_temp("tilecount: %d\n(mx: %d, my: %d)(cx: %f, cy: %f)\n", editor.tilemap.tile_count, mouse_position[0], mouse_position[1], editor.camera_x, editor.camera_y), COLOR4F_WHITE);
-        draw_text(test_font, 0, 32+32, format_temp("mode: %s", editor_tool_mode_strings[editor.tool]), COLOR4F_WHITE);
+            // manual center justify
+            {
+                char* string = editor_tool_mode_strings[editor.tool];
+                int dimens[2];
+                int tdimens[2];
 
-        /*"tool" bar*/
-        {
-            int frame_pad = 3;
-            int frame_size = 16+frame_pad;
-            int i = 0;
-            draw_rectangle(i * frame_size, 16, frame_size, frame_size, COLOR4F_RED);
-            draw_texture(tile_textures[editor.placement_type], i * frame_size + frame_pad/2, 16 + frame_pad/4, frame_size, frame_size, COLOR4F_BLUE);
-            draw_text(test_font, 10 + (i+1) * frame_size + frame_pad/2, 16, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
-        }
-    } end_graphics_frame();
+                get_screen_dimensions(dimens, dimens+1);
+                get_text_dimensions(test_font, string, tdimens, tdimens+1);
+
+
+                draw_text(test_font, dimens[0]/2 - tdimens[0]/2, 0, string, color4f(1, 1, 1, editor.editor_tool_change_fade_timer/1.5f));
+                draw_text(test_font, dimens[0]/2 - tdimens[0]/2+2, 2, string, color4f(1, 0, 0, editor.editor_tool_change_fade_timer/1.5f));
+            }
+        } end_graphics_frame();
+    }
 
     end_temporary_memory(&frame_arena);
 }
@@ -645,10 +696,102 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
             }
         }
     } end_graphics_frame();
+
+    begin_graphics_frame();{
+        int mouse_position[2];
+        get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+        set_render_scale(1);
+
+        draw_text(test_font, 0, 0, format_temp("tiles present: %d\n", editor.tilemap.tile_count), COLOR4F_WHITE);
+        /* draw_text(test_font, 0, 32+32, format_temp("mode: %s", editor_tool_mode_strings[editor.tool]), COLOR4F_WHITE); */
+
+        /*"tool" bar*/
+        {
+            float font_height = font_size_aspect_ratio_independent(0.02);
+            int frame_pad = 3;
+            int frame_size = font_height+frame_pad;
+            draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, COLOR4F_BLUE);
+            draw_text(test_font, frame_size * 1.5, font_height, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
+        }
+    } end_graphics_frame();
 }
 
 local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* frame_arena, float dt) {
-    
+    int mouse_position[2];
+    bool left_click, right_click;
+
+    get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+    get_mouse_buttons(&left_click, 0, &right_click);
+
+
+    begin_graphics_frame(); {
+        set_active_camera(get_global_camera());
+        camera_set_position(editor.camera_x, editor.camera_y);
+        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
+
+        /* cursor */
+        {
+            struct transition_zone* already_selected = (struct transition_zone*) editor.context;
+            if (left_click) {
+                if (already_selected) {
+                    /*handle*/
+                    if (!editor.dragging &&
+                        rectangle_overlapping_v(already_selected->x, already_selected->y, already_selected->w, already_selected->h, mouse_position[0], mouse_position[1], 1, 1)) {
+                        editor.dragging = true;
+                    } else if (editor.dragging) {
+                        already_selected->x = mouse_position[0];
+                        already_selected->y = mouse_position[1];
+                    }
+                } else {
+                    struct transition_zone* transition = editor_existing_transition_at(editor.tilemap.transitions, editor.tilemap.transition_zone_count, mouse_position[0], mouse_position[1]);
+
+                    if (!transition) {
+                        transition = editor_allocate_transition();
+                        transition->x = mouse_position[0];
+                        transition->y = mouse_position[1];
+                        transition->w = 5;
+                        transition->h = 5;
+                    }
+
+                    editor.context = transition;
+                }
+            } else {
+                editor.dragging = false;
+            }
+
+            if (right_click) {
+                /*
+                  This only works cause it's an array. And this is actually okay.
+                */
+                struct transition_zone* transition = editor_existing_transition_at(editor.tilemap.transitions, editor.tilemap.transition_zone_count, mouse_position[0], mouse_position[1]);
+                if (transition) {
+                    unsigned index = (transition - editor.tilemap.transitions);
+                    editor.tilemap.transitions[index] = editor.tilemap.transitions[--editor.tilemap.transition_zone_count];
+                } else {
+                    editor.context = NULL;
+                }
+            }
+
+            if (already_selected) draw_rectangle(already_selected->x, already_selected->y, already_selected->w, already_selected->h, color4f(0.2, 0.3, 1.0, 1.0));
+        }
+    } end_graphics_frame();
+
+    /* editor ui */
+    {
+        struct transition_zone* already_selected = (struct transition_zone*) editor.context;
+        if (already_selected)  {
+            begin_graphics_frame(); {
+                float font_height = font_size_aspect_ratio_independent(0.02);
+                int dimens[2];
+                set_render_scale(1);
+                get_screen_dimensions(dimens, dimens+1);
+
+                draw_text_right_justified(test_font, 0, 0, dimens[0],
+                                          format_temp("TRANSITION PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\nLINKFILE: \"%s\"\nIDENTIFIER: \"%s\"\n",
+                                                      already_selected->identifier, already_selected->x, already_selected->y, already_selected->w, already_selected->h, already_selected->zone_filename, already_selected->zone_link), COLOR4F_WHITE);
+            } end_graphics_frame();
+        }
+    }
 }
 
 local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt) {

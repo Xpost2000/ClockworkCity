@@ -55,10 +55,6 @@ enum game_mode {
 /* enum game_mode mode = GAME_MODE_EDITOR; */
 enum game_mode mode = GAME_MODE_PLAYING;
 
-#include "tilemap.c"
-#include "gameplay_mode.c"
-#include "tilemap_editor.c"
-
 local void unload_all_graphics_resources(void) {
     unload_all_textures();
     unload_all_fonts();
@@ -98,10 +94,14 @@ local int font_size_aspect_ratio_independent(float percentage) {
     return font_size_based_on_screen_width_percentage(maxf(percentage - SCALING_EPISILON, 0.0f));
 }
 
+#include "tilemap.c"
+#include "gameplay_mode.c"
+#include "tilemap_editor.c"
+
 local void load_graphics_resources(void) {
     /* can change depending on resolution maybe... */
     knight_twoview = load_texture("assets/knight_twoview.png");
-    test_font      = load_font("assets/pxplusvga8.ttf", 16);
+    test_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.02));
     /* test2_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", 64); */
     /* test2_font      = load_font("assets/charissilbold.ttf", 64); */
     /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */

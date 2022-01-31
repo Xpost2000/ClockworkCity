@@ -243,6 +243,12 @@ void draw_text(font_id font, float x, float y, const char* cstr, union color4f c
     }
 }
 
+void draw_text_right_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color) {
+    int width;
+    get_text_dimensions(font, cstr, &width, NULL);
+    draw_text(font, x + (w-width), y, cstr, color);
+}
+
 texture_id load_texture(const char* texture_path) {
     uint16_t free_id = 1 + texture_count++;
     texture_id result = {

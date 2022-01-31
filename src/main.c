@@ -1,5 +1,8 @@
 /*
  * sdl "platform", not that I'm going to write a win32 one lol
+ 
+ This is a really crufty metroidvania construction set basically.
+ Hack in specific game code later.
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

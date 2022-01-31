@@ -165,6 +165,10 @@ struct input_state {
     int mouse_x;
     int mouse_y;
     bool mouse_buttons[MOUSE_BUTTON_COUNT];
+
+    bool editting_text;
+    int text_edit_cursor;
+    char text[1024];
 };
 
 struct game_controller* get_gamepad(int index);
@@ -183,5 +187,8 @@ void get_mouse_buttons(bool* left, bool* middle, bool* right);
 
 void begin_input_frame(void);
 void end_input_frame(void);
+
+void start_text_edit(void);
+void end_text_edit(void);
 
 #endif

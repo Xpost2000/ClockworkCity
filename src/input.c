@@ -64,7 +64,19 @@ struct game_controller* get_gamepad(int index) {
 
 void begin_input_frame(void) {
 }
+
 void end_input_frame(void) {
     global_input.last_state = global_input.current_state;
     /* zero_array(global_input.current_state.keys); */
+}
+
+void start_text_edit(void) {
+    if (!global_input.editting_text) {
+        zero_array(global_input.text);
+        global_input.text_edit_cursor = 0;
+        global_input.editting_text = true;
+    }
+}
+void end_text_edit(void) {
+    global_input.editting_text = false;
 }

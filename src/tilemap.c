@@ -70,17 +70,20 @@ struct tile {
     uint32_t id;
 };
 
+#define TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH (16)
 struct transition_zone {
-    float x;
-    float y;
-    float w;
-    float h;
+    int32_t x;
+    int32_t y;
+    int16_t w;
+    int16_t h;
     char zone_filename[FILENAME_MAX_LENGTH]; /*cstr*/
+    char identifier[TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH];
+    char zone_link[TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH];
 };
 
 struct player_spawn {
-    float x;
-    float y;
+    int32_t x;
+    int32_t y;
 };
 
 /* should be "streamed" */
