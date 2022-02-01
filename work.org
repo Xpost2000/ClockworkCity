@@ -162,6 +162,23 @@
    It'll depend on the progress I make.
 ** <2022-01-29 Sat>
 ** <2022-01-31 Mon>
+*** DONE Resolution independent rendering.
+    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
+*** DONE World/Level Transitions
+    Linked of course!
+*** DONE Camera Bounds 
+*** DONE Camera Zoom
+*** DONE Basic Menu Game State system, and a normal game state system
+    Main Menu, Loading a save file, Credits, Options, and Quit.
+
+    This is just going to exist to have ANY menu... Game pause is also
+    a thing here.
+
+    Also I guess a basic idea of dying is okay.
+    
+    Since I'm planning on going for an incredibly simple visual style... It's entirely
+    possible I might just retain the menu system I make at the moment.
+** <2022-02-01 Tue>
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
@@ -187,23 +204,6 @@
 
     I'm considering just using BFS bounded by a distance formula, and calling that a day.
     Pretty sure that'll look okay enough for what I need.
-*** DONE Resolution independent rendering.
-    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
-*** DONE World/Level Transitions
-    Linked of course!
-*** DONE Camera Bounds 
-*** DONE Camera Zoom
-*** TODO Basic Menu Game State system, and a normal game state system
-    Main Menu, Loading a save file, Credits, Options, and Quit.
-
-    This is just going to exist to have ANY menu... Game pause is also
-    a thing here.
-
-    Also I guess a basic idea of dying is okay.
-    
-    Since I'm planning on going for an incredibly simple visual style... It's entirely
-    possible I might just retain the menu system I make at the moment.
-** <2022-02-01 Tue>
 *** TODO Editor undo / redo (probably don't need...)
 *** TODO Trails Rendering! (probably part of particles)
 *** TODO Background tiles or something
