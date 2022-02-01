@@ -118,6 +118,26 @@ local void do_player_input(float dt) {
 
 local void DEBUG_draw_debug_stuff(void) {
     /*add debug rendering code here*/
+
+    /*boundaries of the loaded world*/
+    {
+        struct tilemap* tilemap = game_state->loaded_level;
+        float bounds_width  = tilemap->bounds_max_x - tilemap->bounds_min_x;
+        float bounds_height = tilemap->bounds_max_y - tilemap->bounds_min_y;
+
+        draw_rectangle(tilemap->bounds_min_x, tilemap->bounds_min_y,
+                       bounds_width, bounds_height, COLOR4F_BLUE);
+    }
+
+    /* Camera bounds */
+    #if 0
+    {
+        struct camera* camera = get_global_camera();
+        struct rectangle bounds = camera_get_bounds(camera);
+
+        draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, COLOR4F_BLUE);
+    }
+    #endif
 }
 
 local void game_update_render_frame(float dt) {

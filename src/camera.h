@@ -53,4 +53,16 @@ void camera_set_bounds(float min_x, float min_y, float max_x, float max_y);
 void camera_clear_bounds(void);
 
 void transform_point_into_camera_space(int* x, int* y);
+
+/* 
+   this is part of the newer api style,
+   which is basically the way I made blackiron, and everything else before.
+   
+   I went overzealous with the traditional C style instead of a modern style of
+   C. Don't like it, but I'll have to dedicate a few hours to cleanup which I don't
+   wanna do right now...
+
+   Do it later.
+*/
+struct rectangle camera_get_bounds(struct camera* camera);
 #endif

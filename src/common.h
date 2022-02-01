@@ -48,6 +48,25 @@ struct rectangle {
     float h;
 };
 
+shared_storage struct rectangle rectangle(float x, float y, float w, float h) {
+    return (struct rectangle) {
+        .x = x, .y = y, .w = w, .h = h,
+    };
+}
+
+shared_storage struct rectangle rectangle_centered(float cx, float cy, float half_width, float half_height) {
+    float min_x = cx - half_width;
+    float min_y = cy - half_height;
+
+    float max_x = cx + half_width;
+    float max_y = cy + half_height;
+
+    float width  = max_x - min_x;
+    float height = max_y - min_y;
+
+    return rectangle(min_x, min_y, width, height);
+}
+
 bool rectangle_intersects_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
 bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
 bool rectangle_intersects(struct rectangle a, struct rectangle b);

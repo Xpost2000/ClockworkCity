@@ -88,18 +88,22 @@ void camera_update(float dt) {
     float trauma_shake_y = (8 * random_float() - 4.5) * global_camera.trauma;
 
     {
-        bool needs_clamping_on_x = ((global_camera.bounds_max_x - global_camera.bounds_min_x) != 0);
-        bool needs_clamping_on_y = ((global_camera.bounds_max_y - global_camera.bounds_min_y) != 0);
+        struct rectangle screen_bounds = camera_get_bounds(&global_camera);
 
-        /*This is broken*/
-        if (needs_clamping_on_x) {
-            global_camera.target_position_x = clampf(global_camera.target_position_x,
-                                                      global_camera.bounds_min_x, global_camera.bounds_max_x);
+        if ((screen_bounds.x + screen_bounds.w) > (global_camera.bounds_max_x)) {
+            global_camera.target_position_x = global_camera.bounds_max_x - (screen_bounds.w/2);
         }
 
-        if (needs_clamping_on_y) {
-            global_camera.target_position_y = clampf(global_camera.target_position_y,
-                                                    global_camera.bounds_min_y, global_camera.bounds_max_y);
+        if ((screen_bounds.x) < (global_camera.bounds_min_x)) {
+            global_camera.target_position_x = global_camera.bounds_min_x + (screen_bounds.w/2);
+        }
+
+        if ((screen_bounds.y + screen_bounds.h) > (global_camera.bounds_max_y)) {
+            global_camera.target_position_y = global_camera.bounds_max_y - (screen_bounds.h/2);
+        }
+
+        if ((screen_bounds.y) < (global_camera.bounds_min_y)) {
+            global_camera.target_position_y = global_camera.bounds_min_y + (screen_bounds.h/2);
         }
     }
 
@@ -129,6 +133,27 @@ void camera_set_bounds(float min_x, float min_y, float max_x, float max_y) {
 
 void camera_clear_bounds(void) {
     camera_set_bounds(0, 0, 0, 0);
+}
+
+/* as the full screen. Does not get actual clamped bounds, since I don't really need them? */
+struct rectangle camera_get_bounds(struct camera* camera) {
+    /* float render_scale = DEBUG_scale; */
+    /* hard code until I figure out how to restructure this. Just get it to work. */
+    float render_scale = ratio_with_screen_width(48);
+
+    int dimens[2];
+    get_screen_dimensions(dimens, dimens+1);
+
+    dimens[0] /= render_scale;
+    dimens[1] /= render_scale;
+
+    float camera_half_width  = (dimens[0]/2);
+    float camera_half_height = (dimens[1]/2);
+
+    float camera_center_x = camera->target_position_x;
+    float camera_center_y = camera->target_position_y;
+
+    return rectangle_centered(camera_center_x, camera_center_y, camera_half_width, camera_half_height);
 }
 
 void transform_point_into_camera_space(int* x, int* y) {

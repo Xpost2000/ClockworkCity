@@ -429,8 +429,8 @@ int main(int argc, char** argv) {
 
         /*NOTE(jerry): camera should operate on "game"/"graphics" time
          not IRL time ticks*/
-        camera_update(dt);
         update_render_frame(dt);
+        camera_update(dt);
 
         begin_graphics_frame();{
             console_frame(dt);
