@@ -49,7 +49,7 @@ local void do_physics(float dt) {
         if (player.last_vy >= (VPIXELS_PER_METER*20)) {
             float g_force_count = (player.last_vy / (20));
             /* camera_traumatize(0.02521 * (player.last_vy / ((VPIXELS_PER_METER*20)))); */
-            camera_traumatize(pow(0.02312, 1.15/(g_force_count)));
+            camera_traumatize(&game_camera, pow(0.02312, 1.15/(g_force_count)));
             player.last_vy = 0;
         }
     }
@@ -101,7 +101,7 @@ local void do_player_input(float dt) {
             player.vy = 0;
             const int MAX_SPEED = 90 * VPIXELS_PER_METER;
             player.vx = MAX_SPEED * player.facing_dir;
-            camera_traumatize(0.0675);
+            camera_traumatize(&game_camera, 0.0675);
             player.dash = true;
         }
     }
@@ -158,20 +158,14 @@ local void game_update_render_frame(float dt) {
         physics_accumulation_timer += dt;
     }
 
+    camera_set_focus_speed_x(&game_camera, 12);
+    camera_set_focus_speed_y(&game_camera, 5);
+    camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
+                      game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
+    camera_set_focus_position(&game_camera, player.x - player.w/2, player.y - player.h/2);
+
     /* UI is a substate, we still draw the game under the UI, so it can look nice. */
-    begin_graphics_frame(); {
-        /* might need to rethink camera interface. 
-           I still want it to operate under one global camera, but
-           obviously you don't always want the camera. */
-        set_active_camera(get_global_camera());
-        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-
-        camera_set_focus_speed_x(12);
-        camera_set_focus_speed_y(5);
-        camera_set_bounds(game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
-                          game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
-        camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
-
+    begin_graphics_frame(&game_camera); {
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_tilemap(game_state->loaded_level);
         DEBUG_draw_debug_stuff();

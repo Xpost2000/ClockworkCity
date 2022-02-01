@@ -124,7 +124,7 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
             alpha    = lerp(START_MENU_ALPHA, 0, clampf(1.0 - game_state->ingame_transition_timer[1]/INGAME_PAN_OUT_TIMER, 0, 1));
         }
 
-        begin_graphics_frame(); {
+        begin_graphics_frame(NULL); {
             draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, alpha));
             float y_cursor = GAME_UI_TITLE_FONT_SIZE * 0.1;
 
@@ -244,7 +244,7 @@ local void do_pausemenu_ui(struct game_controller* controller, float dt) {
             }
         }
 
-        begin_graphics_frame(); {
+        begin_graphics_frame(NULL); {
             draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, alpha));
             float y_cursor = GAME_UI_TITLE_FONT_SIZE * 0.1;
 

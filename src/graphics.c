@@ -23,6 +23,8 @@
 #define RENDERER_MAX_TEXTURES (2048)
 #define RENDERER_MAX_FONTS    (256)
 
+/* these would go in a renderer, but these are actually meant to be global. So that's okay. */
+
 local uint16_t texture_count                           = 0;
 local SDL_Texture*   textures[RENDERER_MAX_TEXTURES+1] = {};
 
@@ -33,9 +35,10 @@ local SDL_Renderer* global_renderer;
 local SDL_Window*   global_window;
 
 local int screen_dimensions[2] = {};
+local struct camera* _active_camera = NULL;
+local struct camera  camera_sentinel = {};
 
 /* this shouldn't be called debug anymore, since this is legitmately used lol */
-local float DEBUG_scale = 1.0;
 #include "camera.c"
 
 inline union color4f color4f(float r, float g, float b, float a) {
@@ -55,15 +58,6 @@ float ratio_with_screen_height(float dividend) {
     return (float)screen_dimensions[1] / dividend;
 }
 
-/* separate from camera scaling mind you! */
-void set_render_scale(float scale_factor) {
-    DEBUG_scale = scale_factor;
-}
-
-float get_render_scale(void) {
-    return DEBUG_scale;
-}
-
 bool within_screen_bounds(int x, int y, int w, int h) {
     return rectangle_overlapping_v(x, y, w, h, 0, 0, screen_dimensions[0], screen_dimensions[1]);
 }
@@ -76,7 +70,6 @@ void graphics_initialize(void* window_handle) {
                                          /* SDL_RENDERER_SOFTWARE */
     );
     SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
-    active_camera = &global_camera;
 }
 
 void graphics_deinitialize(void) {
@@ -98,15 +91,17 @@ local void _set_draw_color(union color4f color) {
                            color.b * 255, color.a * 255);
 }
 
-/*rename?*/
-void begin_graphics_frame(void) {
-    /* TBD or semantic */
-    set_active_camera(NULL);
-    set_render_scale(1.0);
+void begin_graphics_frame(struct camera* camera) {
+    camera_set_position(&camera_sentinel, screen_dimensions[0]/2, screen_dimensions[1]/2);
+    _active_camera = camera;
+
+    if (!_active_camera) {
+        _active_camera = &camera_sentinel;
+    }
 }
 
 void end_graphics_frame(void) {
-    /* TBD */
+    _active_camera = NULL;
 }
 
 void present_graphics_frame(void) {
@@ -120,21 +115,21 @@ void clear_color(union color4f color) {
 
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
-    x *= DEBUG_scale;
-    y *= DEBUG_scale;
-    w *= DEBUG_scale;
-    h *= DEBUG_scale;
-    _camera_transform_v2(&x, &y);
+    x *= _camera_render_scale(_active_camera);
+    y *= _camera_render_scale(_active_camera);
+    w *= _camera_render_scale(_active_camera);
+    h *= _camera_render_scale(_active_camera);
+    _camera_transform_v2(_active_camera, &x, &y);
     SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
 }
 
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
-    x *= DEBUG_scale;
-    y *= DEBUG_scale;
-    w *= DEBUG_scale;
-    h *= DEBUG_scale;
-    _camera_transform_v2(&x, &y);
+    x *= _camera_render_scale(_active_camera);
+    y *= _camera_render_scale(_active_camera);
+    w *= _camera_render_scale(_active_camera);
+    h *= _camera_render_scale(_active_camera);
+    _camera_transform_v2(_active_camera, &x, &y);
 
     if (within_screen_bounds(x, y, w, h)) {
         SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
@@ -151,12 +146,12 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
                             int srx, int sry, int srw, int srh, union color4f color) {
     SDL_Texture* texture_object = textures[texture.id];
 
-    x *= DEBUG_scale;
-    y *= DEBUG_scale;
+    x *= _camera_render_scale(_active_camera);
+    y *= _camera_render_scale(_active_camera);
     /* weird sdl rendering shenanigans. */
-    if (roundf(DEBUG_scale) != 1.0f) {
-        w *= DEBUG_scale+1;
-        h *= DEBUG_scale+1;
+    if (roundf(_camera_render_scale(_active_camera)) != 1.0f) {
+        w *= _camera_render_scale(_active_camera)+1;
+        h *= _camera_render_scale(_active_camera)+1;
     }
 
     if (texture.id != 0)
@@ -165,7 +160,7 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
     SDL_SetTextureColorMod(texture_object, color.r * 255, color.g * 255, color.b * 255);
     SDL_SetTextureAlphaMod(texture_object, color.a * 255);
 
-    _camera_transform_v2(&x, &y);
+    _camera_transform_v2(_active_camera, &x, &y);
 
     if (within_screen_bounds(x, y, w, h)) {
         SDL_RenderCopy(global_renderer, texture_object,
@@ -184,7 +179,7 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
     SDL_Surface* text_surface = TTF_RenderUTF8_Blended(font_object, cstr,
                                                        (SDL_Color) {color.r * 255, color.g * 255,
                                                            color.b * 255, color.a * 255});
-    _camera_transform_v2(&x, &y);
+    _camera_transform_v2(_active_camera, &x, &y);
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);
 
@@ -212,7 +207,7 @@ void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union co
                                                         (SDL_Color) {color.r * 255, color.g * 255,
                                                            color.b * 255, color.a * 255});
 
-    _camera_transform_v2(&x, &y);
+    _camera_transform_v2(_active_camera, &x, &y);
     /* SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); */
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);

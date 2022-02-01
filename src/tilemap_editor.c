@@ -57,9 +57,6 @@ struct editor_state {
     struct memory_arena arena;
 
     float editor_tool_change_fade_timer;
-
-    float camera_x;
-    float camera_y;
     /*
       This is a slightly different layout to the ingame format.
       This is basically a source format
@@ -125,7 +122,8 @@ local bool intersects_editor_selected_tile_region(int x, int y, int w, int h) {
 }
 
 local void editor_begin_selection_region(int x, int y) {
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
+
     if (editor.selection_region_exists)
         return;
 
@@ -143,7 +141,7 @@ local void editor_end_selection_region(void) {
 
 local void get_mouse_location_in_camera_space(int* x, int* y) {
     get_mouse_location(x, y);
-    transform_point_into_camera_space(x, y);
+    transform_point_into_camera_space(&editor_camera, x, y);
 }
 
 /*abstract this later.*/
@@ -221,7 +219,7 @@ local struct tile* editor_yank_selected_tile_region(struct memory_arena* arena, 
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
     
     struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
     /*make temporary copy of the region, also empty it out at the same time*/ {
@@ -245,7 +243,7 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
 
     assert(tile_region.w == selected_region.w);
     assert(tile_region.h == selected_region.h);
@@ -277,7 +275,7 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
     struct rectangle tile_region     = editor.selected_tile_region;
     struct rectangle selected_region = editor.selection_region;
 
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
 
     assert(tile_region.w == selected_region.w);
     assert(tile_region.h == selected_region.h);
@@ -330,8 +328,7 @@ local void editor_clear_all(void) {
     editor.tilemap.tile_count              = 0;
     editor.tilemap.transition_zone_count   = 0;
     editor.tilemap.player_spawn_link_count = 0;
-    editor.camera_x = 0;
-    editor.camera_y = 0;
+    camera_reset_transform(&editor_camera);
     editor.tilemap.bounds_min_x = 0;
     editor.tilemap.bounds_min_y = 0;
     editor.tilemap.bounds_max_x = 0;
@@ -417,8 +414,7 @@ local void editor_load_from_binary_file(char* filename) {
 
     fclose(f);
 
-    editor.camera_x = editor.tilemap.default_spawn.x;
-    editor.camera_y = editor.tilemap.default_spawn.y;
+    camera_set_position(&editor_camera, editor.tilemap.default_spawn.x, editor.tilemap.default_spawn.y);
 }
 
 #if 0
@@ -467,7 +463,7 @@ static void editor_serialize_into_game_memory(void) {
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
     int direction_x = 1;
     int direction_y = 1;
 
@@ -510,17 +506,8 @@ local void editor_switch_tool(enum editor_tool_mode mode) {
 }
 
 local void tilemap_editor_update_render_frame(float dt) {
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
     struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(600));
-    /*
-      TODO(jerry):
-      hack, cause my camera api is shitty.
-
-      I'll fix it at the end of the week so this is okay for now.
-     */
-    set_active_camera(get_global_camera());
-    set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-    camera_set_position(editor.camera_x, editor.camera_y);
 
     if (!is_editting_text()) {
         if (is_key_pressed(KEY_F1)) {
@@ -538,24 +525,20 @@ local void tilemap_editor_update_render_frame(float dt) {
             const int CAMERA_SPEED = TILES_PER_SCREEN / 2;
 
             if (is_key_down(KEY_W)) {
-                editor.camera_y -= dt * CAMERA_SPEED;
+                camera_offset_position(&editor_camera, 0, -dt * CAMERA_SPEED);
             } else if (is_key_down(KEY_S)) {
-                editor.camera_y += dt * CAMERA_SPEED;
+                camera_offset_position(&editor_camera, 0, dt * CAMERA_SPEED);
             }
 
             if (is_key_down(KEY_A)) {
-                editor.camera_x -= dt * CAMERA_SPEED;
+                camera_offset_position(&editor_camera, -dt * CAMERA_SPEED, 0);
             } else if (is_key_down(KEY_D)) {
-                editor.camera_x += dt * CAMERA_SPEED;
+                camera_offset_position(&editor_camera, dt * CAMERA_SPEED, 0);
             }
         }
     }
 
-    begin_graphics_frame(); {
-        set_active_camera(get_global_camera());
-        camera_set_position(editor.camera_x, editor.camera_y);
-        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-
+    begin_graphics_frame(&editor_camera); {
         /*grid*/
         {
             int screen_dimensions[2];
@@ -575,8 +558,8 @@ local void tilemap_editor_update_render_frame(float dt) {
             int row_count = (screen_dimensions[1]) / scale_factor;
             int col_count = (screen_dimensions[0]) / scale_factor;
 
-            int x_offset = -SCREENFUL_FILLS/2 * (col_count * scale_factor);
-            int y_offset = -SCREENFUL_FILLS/2 * (row_count * scale_factor);
+            int x_offset = -SCREENFUL_FILLS/2 * (col_count);
+            int y_offset = -SCREENFUL_FILLS/2 * (row_count);
 
             draw_grid(x_offset, y_offset, row_count * SCREENFUL_FILLS,
                       col_count * SCREENFUL_FILLS, 1, COLOR4F_DARKGRAY);
@@ -618,7 +601,7 @@ local void tilemap_editor_update_render_frame(float dt) {
             if (editor.selection_region_exists) {
                 struct rectangle region = editor.selection_region;
                 draw_grid(region.x, region.y,
-                          roundf(region.h / scale_factor), roundf(region.w / scale_factor),
+                          roundf(region.h), roundf(region.w),
                           ((sinf(global_elapsed_time*8) + 1)/2.0f) * 2.0f + 0.5f, grid_color);
 
                 /* draw tiles within the region for moving regions */
@@ -633,13 +616,11 @@ local void tilemap_editor_update_render_frame(float dt) {
 
                         {
                             struct rectangle selected_region = editor.selected_tile_region;
-                            selected_region.x *= scale_factor;
-                            selected_region.y *= scale_factor;
 
                             struct rectangle region = editor.selection_region;
                             draw_texture(tile_textures[t->id],
-                                         t->x + (region.x - selected_region.x) / scale_factor,
-                                         t->y + (region.y - selected_region.y) / scale_factor,
+                                         t->x + (region.x - selected_region.x),
+                                         t->y + (region.y - selected_region.y),
                                          1, 1, grid_color);
                         }
                     } 
@@ -665,7 +646,7 @@ local void tilemap_editor_update_render_frame(float dt) {
     }
 
     if (editor.editor_tool_change_fade_timer > 0.0) {
-        begin_graphics_frame(); {
+        begin_graphics_frame(NULL); {
             editor.editor_tool_change_fade_timer -= dt;
 
             // manual center justify
@@ -715,7 +696,7 @@ local void tilemap_editor_update_render_frame(float dt) {
 }
 
 local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt) {
-    float scale_factor = get_render_scale();
+    float scale_factor = editor_camera.render_scale;
     if (is_key_pressed(KEY_RIGHT)) {
         editor.placement_type++;
     } else if (is_key_pressed(KEY_LEFT)) {
@@ -800,11 +781,7 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
 
     editor.placement_type = clampi(editor.placement_type, TILE_SOLID, TILE_ID_COUNT-1);
 
-    begin_graphics_frame(); {
-        set_active_camera(get_global_camera());
-        camera_set_position(editor.camera_x, editor.camera_y);
-        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-
+    begin_graphics_frame(&editor_camera); {
         /* cursor */
         {
             int mouse_position[2];
@@ -833,10 +810,9 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
         }
     } end_graphics_frame();
 
-    begin_graphics_frame();{
+    begin_graphics_frame(NULL);{
         int mouse_position[2];
         get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
-        set_render_scale(1);
 
         draw_text(test_font, 0, 0, format_temp("tiles present: %d\n", editor.tilemap.tile_count), COLOR4F_WHITE);
         /* draw_text(test_font, 0, 32+32, format_temp("mode: %s", editor_tool_mode_strings[editor.tool]), COLOR4F_WHITE); */
@@ -859,11 +835,7 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
     get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
     get_mouse_buttons(&left_click, 0, &right_click);
 
-    begin_graphics_frame(); {
-        set_active_camera(get_global_camera());
-        camera_set_position(editor.camera_x, editor.camera_y);
-        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-
+    begin_graphics_frame(&editor_camera); {
         /* cursor */
         {
             struct transition_zone* already_selected = (struct transition_zone*) editor.context;
@@ -915,10 +887,9 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
     {
         struct transition_zone* already_selected = (struct transition_zone*) editor.context;
         if (already_selected)  {
-            begin_graphics_frame(); {
+            begin_graphics_frame(NULL); {
                 float font_height = font_size_aspect_ratio_independent(0.03);
                 int dimens[2];
-                set_render_scale(1);
                 get_screen_dimensions(dimens, dimens+1);
 
                 draw_text_right_justified(test_font, 0, 0, dimens[0],
@@ -957,11 +928,7 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
 }
 
 local void tilemap_editor_handle_bounds_establishment(struct memory_arena* frame_arena, float dt) {
-    begin_graphics_frame(); {
-        set_active_camera(get_global_camera());
-        camera_set_position(editor.camera_x, editor.camera_y);
-        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-
+    begin_graphics_frame(&editor_camera); {
         float bounds_width  = editor.tilemap.bounds_max_x - editor.tilemap.bounds_min_x;
         float bounds_height = editor.tilemap.bounds_max_y - editor.tilemap.bounds_min_y;
 
@@ -1016,11 +983,7 @@ local void tilemap_editor_handle_bounds_establishment(struct memory_arena* frame
 }
 
 local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt) {
-    begin_graphics_frame(); {
-        set_active_camera(get_global_camera());
-        camera_set_position(editor.camera_x, editor.camera_y);
-        set_render_scale(ratio_with_screen_width(TILES_PER_SCREEN));
-
+    begin_graphics_frame(&editor_camera); {
         {
             int mouse_position[2];
             bool left_click, right_click;
@@ -1083,10 +1046,9 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
         struct player_spawn_link* already_selected = (struct player_spawn_link*) editor.context;
 
         if (already_selected) {
-            begin_graphics_frame(); {
+            begin_graphics_frame(NULL); {
                 float font_height = font_size_aspect_ratio_independent(0.03);
                 int dimens[2];
-                set_render_scale(1);
                 get_screen_dimensions(dimens, dimens+1);
 
                 if (already_selected == &editor.tilemap.default_spawn) {

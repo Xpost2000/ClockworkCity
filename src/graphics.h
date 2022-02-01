@@ -46,7 +46,7 @@ void       unload_texture(texture_id texture);
 void graphics_initialize(void* window_handle);
 void graphics_deinitialize(void);
 
-void begin_graphics_frame(void);
+void begin_graphics_frame(struct camera* camera); /*null is okay*/
 void end_graphics_frame(void);
 
 void present_graphics_frame(void);
@@ -55,8 +55,6 @@ void report_screen_dimensions(int* dimensions);
 void get_screen_dimensions(int* width, int* height);
 
 void clear_color(union color4f color);
-void set_render_scale(float scale_factor);
-float get_render_scale(void);
 
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_rectangle(float x, float y, float w, float h, union color4f color);

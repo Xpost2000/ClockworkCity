@@ -7,6 +7,9 @@
   TODO(jerry): (interpolate zoom)
 */
 struct camera {
+    /*So cameras now dictate the rendering scale. This will probably break lots of shit.*/
+    float render_scale; 
+
     float visual_zoom_level;
     float visual_position_x;
     float visual_position_y;
@@ -19,8 +22,10 @@ struct camera {
     float target_position_y;
     float target_zoom_level;
 
-    float interpolation_time[3];
-    float interpolation_speed[3];
+#define INTERPOLATION_DIMENSIONS (3)
+    float interpolation_time[INTERPOLATION_DIMENSIONS];
+    float interpolation_speed[INTERPOLATION_DIMENSIONS];
+#undef INTERPOLATION_DIMENSIONS
 
     float bounds_min_x;
     float bounds_min_y;
@@ -36,33 +41,24 @@ struct camera {
 #endif
 };
 
-struct camera* get_global_camera(void);
-void set_active_camera(struct camera* camera); /*really only here to toggle camera usage*/
+/*
+  I mean I can still have a camera pool... But whatever.
+*/
 
 /*normalized values from 0 - 1.0!*/
-void camera_traumatize(float amount);
-void camera_set_position(float x, float y);
-void camera_set_focus_speed(float speed);
-void camera_set_focus_speed_x(float speed);
-void camera_set_focus_speed_y(float speed);
-void camera_set_focus_position(float x, float y);
-void camera_update(float dt);
-void camera_reset_transform(void);
+void camera_traumatize(struct camera* camera, float amount);
+void camera_set_position(struct camera* camera, float x, float y);
+void camera_offset_position(struct camera* camera, float x, float y);
+void camera_set_focus_speed(struct camera* camera, float speed);
+void camera_set_focus_speed_x(struct camera* camera, float speed);
+void camera_set_focus_speed_y(struct camera* camera, float speed);
+void camera_set_focus_position(struct camera* camera, float x, float y);
+void camera_update(struct camera* camera, float dt);
+void camera_reset_transform(struct camera* camera);
 /*based on the renderer scale / game units*/
-void camera_set_bounds(float min_x, float min_y, float max_x, float max_y);
-void camera_clear_bounds(void);
+void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y);
+void camera_clear_bounds(struct camera* camera);
 
-void transform_point_into_camera_space(int* x, int* y);
-
-/* 
-   this is part of the newer api style,
-   which is basically the way I made blackiron, and everything else before.
-   
-   I went overzealous with the traditional C style instead of a modern style of
-   C. Don't like it, but I'll have to dedicate a few hours to cleanup which I don't
-   wanna do right now...
-
-   Do it later.
-*/
+void transform_point_into_camera_space(struct camera* camera, int* x, int* y);
 struct rectangle camera_get_bounds(struct camera* camera);
 #endif

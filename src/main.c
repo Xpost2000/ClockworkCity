@@ -323,11 +323,19 @@ local void handle_sdl_event(SDL_Event event) {
             }
         } break;
         case SDL_QUIT: {
-            game_state->menu_mode = GAMEPLAY_UI_MAINMENU;
-            /*TODO(jerry): reduce code duplication*/
-            game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
-            game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
-            game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
+            if (mode == GAME_MODE_PLAYING) {
+                game_state->menu_mode = GAMEPLAY_UI_MAINMENU;
+                /*TODO(jerry): reduce code duplication*/
+                game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
+                game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
+                game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
+            } else {
+                /* 
+                   I need a proper transition system. I wanna do it for all modes but
+                   eh...
+                */
+                running = false;
+            }
         } break;
         case SDL_KEYUP:
         case SDL_KEYDOWN: {
@@ -430,9 +438,12 @@ int main(int argc, char** argv) {
         /*NOTE(jerry): camera should operate on "game"/"graphics" time
          not IRL time ticks*/
         update_render_frame(dt);
-        camera_update(dt);
+        {
+            camera_update(&game_camera, dt);
+            camera_update(&editor_camera, dt);
+        }
 
-        begin_graphics_frame();{
+        begin_graphics_frame(NULL);{
             console_frame(dt);
         } end_graphics_frame();
 

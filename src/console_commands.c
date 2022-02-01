@@ -55,8 +55,8 @@ Define_Console_Command(editor_playtest) {
     console_printf("loading current editor map into game... As if new spawn\n");
     editor_serialize_into_game_memory();
     mode = GAME_MODE_PLAYING;
-    player.x = editor.camera_x;
-    player.y = editor.camera_y;
+    player.x = editor_camera.visual_position_x;
+    player.y = editor_camera.visual_position_y;
 }
 
 /*TODO(jerry): STUPID, allow direct loading from the file!*/

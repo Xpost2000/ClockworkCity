@@ -1,7 +1,6 @@
 /*
   physics "constants"
 */
-
 #define VPIXELS_PER_METER (1)
 #define TILES_PER_SCREEN (48)
 /*
@@ -116,7 +115,11 @@ struct game_state {
     /*whoops this is an additional indirection. Fix this at the end of the night*/
     struct tilemap* loaded_level;
 };
+
+local struct camera game_camera   = {};
+local struct camera editor_camera = {};
 local struct game_state* game_state;
+
 enum game_mode mode = GAME_MODE_PLAYING;
 
 #include "gameplay_mode.c"
@@ -136,6 +139,10 @@ void load_graphics_resources(void) {
 
     game_title_font   = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_TITLE_FONT_SIZE);
     game_ui_menu_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_MENU_FONT_SIZE);
+
+    game_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
+    editor_camera.render_scale = ratio_with_screen_width(TILES_PER_SCREEN);
+
     /* dynamic_scale_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE)); */
     /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
     load_gameplay_resources();
@@ -235,8 +242,7 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
         player.y = game_state->loaded_level->default_spawn.y;
     }
 
-    set_active_camera(get_global_camera());
-    camera_set_position(player.x, player.y);
+    camera_set_position(&game_camera, player.x, player.y);
 }
 
 void update_render_frame(float dt) {
