@@ -1,4 +1,5 @@
 #define QUIT_FADE_TIMER (0.35)
+#define QUIT_FADE_TIMER2 (0.5)
 #define INGAME_PAN_OUT_TIMER (0.25)
 #define START_MENU_ALPHA (0.85)
 
@@ -222,7 +223,8 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
                 /* } break; */
                 case MAINMENU_UI_QUIT: {
                     game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
-                    game_state->quit_transition_timer = QUIT_FADE_TIMER;
+                    game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
+                    game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
                 } break;
             }
         }
@@ -277,12 +279,21 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
             }
 
             if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_QUIT) {
-                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer/QUIT_FADE_TIMER));
-                if (game_state->quit_transition_timer > 0) {
-                    game_state->quit_transition_timer -= dt;
+                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer[0]/QUIT_FADE_TIMER));
+                if (game_state->quit_transition_timer[0] > 0) {
+                    game_state->quit_transition_timer[0] -= dt;
                 } else {
-                    running = false;
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
+                    if (game_state->quit_transition_timer[0] > 0) {
+                        game_state->quit_transition_timer[0] -= dt;
+                    } else {
+                        if (game_state->quit_transition_timer[1] > 0) {
+                            game_state->quit_transition_timer[1] -= dt;
+                            set_window_transparency(game_state->quit_transition_timer[1] / QUIT_FADE_TIMER2);
+                        } else {
+                            running = false;
+                            game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
+                        }
+                    }
                 }
             }
 
@@ -321,7 +332,8 @@ local void do_pausemenu_ui(struct game_controller* controller, float dt) {
                 /* } break; */
                 case (MAINMENU_UI_QUIT+1): {
                     game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
-                    game_state->quit_transition_timer = QUIT_FADE_TIMER;
+                    game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
+                    game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
                 } break;
             }
         }
@@ -386,12 +398,17 @@ local void do_pausemenu_ui(struct game_controller* controller, float dt) {
             }
 
             if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_QUIT) {
-                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer/QUIT_FADE_TIMER));
-                if (game_state->quit_transition_timer > 0) {
-                    game_state->quit_transition_timer -= dt;
+                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer[0]/QUIT_FADE_TIMER));
+                if (game_state->quit_transition_timer[0] > 0) {
+                    game_state->quit_transition_timer[0] -= dt;
                 } else {
-                    running = false;
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
+                    if (game_state->quit_transition_timer[1] > 0) {
+                        game_state->quit_transition_timer[1] -= dt;
+                        set_window_transparency(game_state->quit_transition_timer[1] / QUIT_FADE_TIMER2);
+                    } else {
+                        running = false;
+                        game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
+                    }
                 }
             }
 

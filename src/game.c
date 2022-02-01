@@ -87,7 +87,7 @@ struct game_state {
 
     uint8_t menu_transition_state;
 
-    float quit_transition_timer;
+    float quit_transition_timer[2];
     float ingame_transition_timer[2];
 
     uint8_t selected_menu_option;

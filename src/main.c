@@ -345,6 +345,10 @@ local void handle_sdl_event(SDL_Event event) {
     }
 }
 
+local void set_window_transparency(float transparency) {
+    SDL_SetWindowOpacity(global_window, transparency);
+}
+
 local void initialize(void) {
     srand(time(0));
 
@@ -359,6 +363,7 @@ local void initialize(void) {
         DEFAULT_RESOLUTION_X, DEFAULT_RESOLUTION_Y,
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
     );
+
     {
         int screen_dimensions[2];
         SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
