@@ -31,6 +31,16 @@ struct entity {
     float jump_leniancy_timer;
 };
 
+bool noclip = false;
+struct entity player = {
+    // no units, prolly pixels
+    .x = -VPIXELS_PER_METER/4,
+    .y = -5,
+    .w = VPIXELS_PER_METER/2.0f,
+    .h = VPIXELS_PER_METER,
+};
+
+
 struct game_state {
     /*whoops this is an additional indirection. Fix this at the end of the night*/
     struct tilemap* loaded_level;
@@ -130,6 +140,82 @@ local void load_static_resources(void) {
 local void reload_all_graphics_resources(void) {
     unload_all_graphics_resources();
     load_graphics_resources();
+}
+
+/*binary format*/
+void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
+    memory_arena_clear_top(arena);
+    FILE* f = fopen(filename, "rb+");
+    game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
+
+    char magic[8] = {};
+    fread(magic, 8, 1, f);
+    assert(strncmp(magic, "MVOIDLVL", 8) == 0);
+
+    fread(&game_state->loaded_level->width, sizeof(game_state->loaded_level->width), 1, f);
+    fread(&game_state->loaded_level->height, sizeof(game_state->loaded_level->height), 1, f);
+    fread(&game_state->loaded_level->default_spawn, sizeof(game_state->loaded_level->default_spawn), 1, f);
+    fread(&game_state->loaded_level->bounds_min_x, sizeof(float), 1, f);
+    fread(&game_state->loaded_level->bounds_min_y, sizeof(float), 1, f);
+    fread(&game_state->loaded_level->bounds_max_x, sizeof(float), 1, f);
+    fread(&game_state->loaded_level->bounds_max_y, sizeof(float), 1, f);
+
+    {
+        uint32_t tile_count; 
+        fread(&tile_count, sizeof(tile_count), 1, f);
+        assert(tile_count > 0);
+
+        game_state->loaded_level->tiles = memory_arena_push_top(arena, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));;
+        {
+            struct temporary_arena temp = begin_temporary_memory(arena, tile_count);
+            struct tile* tiles = memory_arena_push(&temp, sizeof(*tiles) * tile_count);
+            fread(tiles, sizeof(*tiles) * tile_count, 1, f);
+
+
+            zero_buffer_memory(game_state->loaded_level->tiles, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));
+
+            int min_x, min_y;
+            int a, b;
+            get_bounding_rectangle_for_tiles(tiles, tile_count, &min_x, &min_y, &a, &b);
+
+            for (size_t index = 0; index < tile_count; ++index) {
+                struct tile* t = tiles + index;
+                int index_y = ((t->y) - (min_y));
+                int index_x = ((t->x) - (min_x));
+                assert(index_y >= 0 && index_x >= 0);
+                int index_mapped = index_y * game_state->loaded_level->width + index_x;
+                assert(index_mapped >= 0 && index_mapped < game_state->loaded_level->width * game_state->loaded_level->height);
+                game_state->loaded_level->tiles[index_mapped] = *t;
+            }
+
+            end_temporary_memory(&temp);
+        }
+    }
+    {
+        fread(&game_state->loaded_level->transition_zone_count, sizeof(game_state->loaded_level->transition_zone_count), 1, f);
+        game_state->loaded_level->transitions = memory_arena_push_top(arena, game_state->loaded_level->transition_zone_count * sizeof(*game_state->loaded_level->transitions));;
+        fread(game_state->loaded_level->transitions, sizeof(*game_state->loaded_level->transitions) * game_state->loaded_level->transition_zone_count, 1, f);
+    }
+    {
+        fread(&game_state->loaded_level->player_spawn_link_count, sizeof(game_state->loaded_level->player_spawn_link_count), 1, f);
+        game_state->loaded_level->link_spawns = memory_arena_push_top(arena, game_state->loaded_level->player_spawn_link_count * sizeof(*game_state->loaded_level->link_spawns));
+        fread(game_state->loaded_level->link_spawns, sizeof(*game_state->loaded_level->link_spawns) * game_state->loaded_level->player_spawn_link_count, 1, f);
+    }
+
+    /*level is loaded, now setup player spawns*/
+    if (transition_link_to_spawn_at) {
+        for (unsigned index = 0; index < game_state->loaded_level->player_spawn_link_count; ++index) {
+            struct player_spawn_link* spawn = game_state->loaded_level->link_spawns + index;
+            if (strncmp(spawn->identifier, transition_link_to_spawn_at, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH) == 0) {
+                player.x = spawn->x;
+                player.y = spawn->y;
+                break;
+            }
+        }
+    } else {
+        player.x = game_state->loaded_level->default_spawn.x;
+        player.y = game_state->loaded_level->default_spawn.y;
+    }
 }
 
 void update_render_frame(float dt) {

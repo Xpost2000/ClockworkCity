@@ -24,8 +24,8 @@ struct editable_tilemap {
     uint8_t transition_zone_count;
     uint8_t player_spawn_link_count;
 
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
 
     float bounds_min_x;
     float bounds_min_y;
@@ -332,6 +332,10 @@ local void editor_clear_all(void) {
     editor.tilemap.player_spawn_link_count = 0;
     editor.camera_x = 0;
     editor.camera_y = 0;
+    editor.tilemap.bounds_min_x = 0;
+    editor.tilemap.bounds_min_y = 0;
+    editor.tilemap.bounds_max_x = 0;
+    editor.tilemap.bounds_max_y = 0;
 }
 
 local void load_tilemap_editor_resources(void) {
@@ -389,19 +393,46 @@ local void editor_load_from_binary_file(char* filename) {
     char magic[8] = {};
 
     fread(magic, 8, 1, f);
-    assert(strncmp(magic, "LOVEYOU!", 8) == 0);
+    assert(strncmp(magic, "MVOIDLVL", 8) == 0);
 
     fread(&editor.tilemap.width, sizeof(editor.tilemap.width), 1, f);
     fread(&editor.tilemap.height, sizeof(editor.tilemap.height), 1, f);
-    fread(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
-    fread(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
+    fread(&editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn), 1, f);
+    fread(&editor.tilemap.bounds_min_x, sizeof(float), 1, f);
+    fread(&editor.tilemap.bounds_min_y, sizeof(float), 1, f);
+    fread(&editor.tilemap.bounds_max_x, sizeof(float), 1, f);
+    fread(&editor.tilemap.bounds_max_y, sizeof(float), 1, f);
+    {
+        fread(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
+        fread(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
+    }
+    {
+        fread(&editor.tilemap.transition_zone_count, sizeof(editor.tilemap.transition_zone_count), 1, f);
+        fread(editor.tilemap.transitions, sizeof(*editor.tilemap.transitions) * editor.tilemap.transition_zone_count, 1, f);
+    }
+    {
+        fread(&editor.tilemap.player_spawn_link_count, sizeof(editor.tilemap.player_spawn_link_count), 1, f);
+        fread(editor.tilemap.player_spawn_links, sizeof(*editor.tilemap.player_spawn_links) * editor.tilemap.player_spawn_link_count, 1, f);
+    }
 
     fclose(f);
 
-    editor.camera_x = 0;
-    editor.camera_y = 0;
+    editor.camera_x = editor.tilemap.default_spawn.x;
+    editor.camera_y = editor.tilemap.default_spawn.y;
 }
 
+#if 0
+/*think of a BinarySerialization implementation so that way it can literally just be
+  something like this anyways.*/
+void editor_serialize_into_game_memory(void) {
+    struct binary_serializer cereal = write_binary_serializer();
+    struct memory_buffer buffer = editor_serialize(&cereal);
+
+    /*this is possibly a security hole but whatever for a singleplayer game*/
+    struct binary_serializer cereal2 = read_binary_serializer(buffer);
+    game_serialize_serialize(&cereal2);
+}
+#endif
 static void editor_serialize_into_game_memory(void) {
     int min_x;
     int min_y;

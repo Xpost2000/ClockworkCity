@@ -1,12 +1,3 @@
-bool noclip = false;
-struct entity player = {
-    // no units, prolly pixels
-    .x = -VPIXELS_PER_METER/4,
-    .y = -5,
-    .w = VPIXELS_PER_METER/2.0f,
-    .h = VPIXELS_PER_METER,
-};
-
 local void load_gameplay_resources(void) {
     DEBUG_load_all_tile_assets();
 }

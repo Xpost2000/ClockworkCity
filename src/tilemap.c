@@ -106,8 +106,8 @@ struct tilemap {
     float bounds_max_y;
 
     /*old*/
-    uint16_t width;
-    uint16_t height;
+    uint32_t width;
+    uint32_t height;
     /*old*/
     struct tile* tiles;
 
@@ -184,11 +184,6 @@ float tile_get_slope_height(struct tile* t, float x, float w, float h) {
             return ((tile_y + tile_h) + slope_x_offset);
         } break;
     }
-}
-
-/*binary format*/
-struct tilemap* tilemap_from_file(struct memory_arena* arena, char* file) {
-    unimplemented();
 }
 
 void draw_player_spawn(struct player_spawn* spawn) {

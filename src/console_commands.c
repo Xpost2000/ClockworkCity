@@ -73,8 +73,9 @@ Define_Console_Command(load) {
     }
 
     char* command_string = csmode.string;
-    editor_load_from_binary_file(command_string);
-    editor_serialize_into_game_memory();
+    game_load_level(&game_memory_arena, command_string, 0);
+    /* editor_load_from_binary_file(command_string); */
+    /* editor_serialize_into_game_memory(); */
     mode = GAME_MODE_PLAYING;
 }
 
