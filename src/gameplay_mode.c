@@ -180,11 +180,12 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
 }
 
 /* nice fancy little immediate mode UI I guess. */
+#define QUIT_FADE_TIMER (0.35)
 local void do_mainmenu_ui(struct game_controller* controller, float dt) {
     int dimens[2];
     get_screen_dimensions(dimens, dimens+1);
 
-    {
+    if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_NONE) {
         bool previous_option = !controller->last_buttons[DPAD_UP] && controller->buttons[DPAD_UP] || controller->left_stick.axes[0] <= -0.3 || is_key_pressed(KEY_UP);
         bool next_option = !controller->last_buttons[DPAD_DOWN] && controller->buttons[DPAD_DOWN] || controller->left_stick.axes[0] >= 0.3 || is_key_pressed(KEY_DOWN);
         bool select_option = !controller->last_buttons[BUTTON_A] && controller->buttons[BUTTON_A] || is_key_pressed(KEY_RETURN);
@@ -200,14 +201,15 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
                 case MAINMENU_UI_PLAY_GAME: {
                     game_state->menu_mode = GAMEPLAY_UI_INGAME;
                 } break;
-                case MAINMENU_UI_LOAD_GAME: {
-                    game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE;
-                } break;
-                case MAINMENU_UI_OPTIONS: {
-                    game_state->menu_mode = GAMEPLAY_UI_OPTIONS;
-                } break;
+                /* case MAINMENU_UI_LOAD_GAME: { */
+                /*     game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE; */
+                /* } break; */
+                /* case MAINMENU_UI_OPTIONS: { */
+                /*     game_state->menu_mode = GAMEPLAY_UI_OPTIONS; */
+                /* } break; */
                 case MAINMENU_UI_QUIT: {
-                    running = false;
+                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
+                    game_state->quit_transition_timer = QUIT_FADE_TIMER;
                 } break;
             }
         }
@@ -237,6 +239,16 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
                 draw_text(game_ui_menu_font, 0, y_cursor, menu_option_strings[index], color);
                 y_cursor += GAME_UI_MENU_FONT_SIZE * 1.1;
             }
+
+            if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_QUIT) {
+                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer/QUIT_FADE_TIMER));
+                if (game_state->quit_transition_timer > 0) {
+                    game_state->quit_transition_timer -= dt;
+                } else {
+                    running = false;
+                }
+            }
+
         } end_graphics_frame();
     }
 }

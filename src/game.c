@@ -69,26 +69,38 @@ enum gameplay_ui_mode {
     GAMEPLAY_UI_INGAME,
     GAMEPLAY_UI_LOAD_SAVE,
     GAMEPLAY_UI_OPTIONS,
+
+    GAMEPLAY_UI_MODE_COUNT,
 };
 
+/* crufty animations */
+enum gameplay_ui_transition {
+    GAMEPLAY_UI_TRANSITION_NONE,
+    GAMEPLAY_UI_TRANSITION_TO_QUIT,
+};
 
 struct game_state {
     /*whoops this is an additional indirection. Fix this at the end of the night*/
     uint8_t menu_mode;
+
+    uint8_t menu_transition_state;
+
+    float quit_transition_timer;
+
     uint8_t selected_menu_option;
     struct tilemap* loaded_level;
 };
 
 enum {
     MAINMENU_UI_PLAY_GAME,
-    MAINMENU_UI_LOAD_GAME,
-    MAINMENU_UI_OPTIONS,
+    /* MAINMENU_UI_LOAD_GAME, */
+    /* MAINMENU_UI_OPTIONS, */
     MAINMENU_UI_QUIT,
 };
 char* menu_option_strings[] = {
     "Play Game",
-    "Load Game",
-    "Options",
+    /* "Load Game", */
+    /* "Options", */
     "Quit",
 };
 
@@ -166,7 +178,7 @@ local void load_static_resources(void) {
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
 
     load_tilemap_editor_resources();
-    console_execute_cstr("editor");
+    console_execute_cstr("load 1.lvl");
 }
 /*
   This is really reloading all graphical assets... But anyways.
