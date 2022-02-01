@@ -253,6 +253,62 @@ local void update_all_controller_inputs(void) {
     }
 }
 
+local void set_window_transparency(float transparency) {
+    SDL_SetWindowOpacity(global_window, transparency);
+}
+
+local void initialize(void) {
+    srand(time(0));
+
+    SDL_Init(SDL_INIT_EVERYTHING);
+    Mix_Init(MIX_INIT_OGG);
+    IMG_Init(IMG_INIT_PNG);
+    TTF_Init();
+
+    global_window = SDL_CreateWindow(
+        WINDOW_NAME,
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        DEFAULT_RESOLUTION_X, DEFAULT_RESOLUTION_Y,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
+    );
+
+    {
+        int screen_dimensions[2];
+        SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
+        report_screen_dimensions(screen_dimensions);
+    }
+
+    graphics_initialize(global_window);
+    audio_initialize();
+
+    load_graphics_resources();
+    console_initialize(
+        (struct console_render_procedures) {
+            .context            = NULL,
+            .draw_codepoint     = _console_draw_codepoint,
+            .draw_quad          = _console_draw_rectangle,
+            .set_scissor_region = _console_set_scissor_region,
+            .get_screen_metrics = _console_get_screen_metrics,
+            .measure_text       = _console_measure_text,
+        });
+    console_printf("Welcome to xvania\na C metroidvania game engine thing for\nMetroidvania Jam 15.\n");
+    register_console_commands();
+    load_static_resources();
+}
+
+local void deinitialize(void) {
+    close_all_controllers();
+    audio_deinitialize();
+    graphics_deinitialize();
+    SDL_DestroyWindow(global_window);
+    Mix_Quit();
+    TTF_Quit();
+    IMG_Quit();
+    SDL_Quit();
+}
+
+#include "game.c"
+
 local void handle_sdl_event(SDL_Event event) {
     switch (event.type) {
         case SDL_WINDOWEVENT: {
@@ -267,7 +323,11 @@ local void handle_sdl_event(SDL_Event event) {
             }
         } break;
         case SDL_QUIT: {
-            running = false;
+            game_state->menu_mode = GAMEPLAY_UI_MAINMENU;
+            /*TODO(jerry): reduce code duplication*/
+            game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
+            game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
+            game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
         } break;
         case SDL_KEYUP:
         case SDL_KEYDOWN: {
@@ -344,62 +404,6 @@ local void handle_sdl_event(SDL_Event event) {
         } break;
     }
 }
-
-local void set_window_transparency(float transparency) {
-    SDL_SetWindowOpacity(global_window, transparency);
-}
-
-local void initialize(void) {
-    srand(time(0));
-
-    SDL_Init(SDL_INIT_EVERYTHING);
-    Mix_Init(MIX_INIT_OGG);
-    IMG_Init(IMG_INIT_PNG);
-    TTF_Init();
-
-    global_window = SDL_CreateWindow(
-        WINDOW_NAME,
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        DEFAULT_RESOLUTION_X, DEFAULT_RESOLUTION_Y,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
-    );
-
-    {
-        int screen_dimensions[2];
-        SDL_GL_GetDrawableSize(global_window, screen_dimensions, screen_dimensions+1);
-        report_screen_dimensions(screen_dimensions);
-    }
-
-    graphics_initialize(global_window);
-    audio_initialize();
-
-    load_graphics_resources();
-    console_initialize(
-        (struct console_render_procedures) {
-            .context            = NULL,
-            .draw_codepoint     = _console_draw_codepoint,
-            .draw_quad          = _console_draw_rectangle,
-            .set_scissor_region = _console_set_scissor_region,
-            .get_screen_metrics = _console_get_screen_metrics,
-            .measure_text       = _console_measure_text,
-        });
-    console_printf("Welcome to xvania\na C metroidvania game engine thing for\nMetroidvania Jam 15.\n");
-    register_console_commands();
-    load_static_resources();
-}
-
-local void deinitialize(void) {
-    close_all_controllers();
-    audio_deinitialize();
-    graphics_deinitialize();
-    SDL_DestroyWindow(global_window);
-    Mix_Quit();
-    TTF_Quit();
-    IMG_Quit();
-    SDL_Quit();
-}
-
-#include "game.c"
 
 int main(int argc, char** argv) {
     unused_expression(argc);

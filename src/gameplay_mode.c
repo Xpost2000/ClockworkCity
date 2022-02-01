@@ -1,7 +1,4 @@
-#define QUIT_FADE_TIMER (0.35)
-#define QUIT_FADE_TIMER2 (0.5)
-#define INGAME_PAN_OUT_TIMER (0.25)
-#define START_MENU_ALPHA (0.85)
+#include "game_menus.c"
 
 local void load_gameplay_resources(void) {
     load_all_tile_assets();
@@ -45,6 +42,15 @@ local void do_physics(float dt) {
                 game_load_level(&game_memory_arena, t.zone_filename, t.zone_link);
                 break;
             }
+        }
+    }
+
+    if (player.last_vy > 0) {
+        if (player.last_vy >= (VPIXELS_PER_METER*20)) {
+            float g_force_count = (player.last_vy / (20));
+            /* camera_traumatize(0.02521 * (player.last_vy / ((VPIXELS_PER_METER*20)))); */
+            camera_traumatize(pow(0.02312, 1.15/(g_force_count)));
+            player.last_vy = 0;
         }
     }
 }
@@ -95,7 +101,7 @@ local void do_player_input(float dt) {
             player.vy = 0;
             const int MAX_SPEED = 90 * VPIXELS_PER_METER;
             player.vx = MAX_SPEED * player.facing_dir;
-            camera_traumatize(0.0375);
+            camera_traumatize(0.0675);
             player.dash = true;
         }
     }
@@ -114,9 +120,6 @@ local void DEBUG_draw_debug_stuff(void) {
     /*add debug rendering code here*/
 }
 
-local void do_gameplay_ui(struct game_controller* controller, float dt);
-local void do_mainmenu_ui(struct game_controller* controller, float dt);
-local void do_pausemenu_ui(struct game_controller* controller, float dt);
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
 
@@ -186,232 +189,4 @@ local void game_update_render_frame(float dt) {
         }
     } end_graphics_frame();
 #endif
-}
-
-local void do_gameplay_ui(struct game_controller* controller, float dt) {
-    
-}
-
-/* nice fancy little immediate mode UI I guess. */
-local void do_mainmenu_ui(struct game_controller* controller, float dt) {
-    int dimens[2];
-    get_screen_dimensions(dimens, dimens+1);
-
-    if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_NONE) {
-        bool previous_option = !controller->last_buttons[DPAD_UP] && controller->buttons[DPAD_UP] || controller->left_stick.axes[0] <= -0.3 || is_key_pressed(KEY_UP);
-        bool next_option = !controller->last_buttons[DPAD_DOWN] && controller->buttons[DPAD_DOWN] || controller->left_stick.axes[0] >= 0.3 || is_key_pressed(KEY_DOWN);
-        bool select_option = !controller->last_buttons[BUTTON_A] && controller->buttons[BUTTON_A] || is_key_pressed(KEY_RETURN);
-
-        if (next_option) {
-            game_state->selected_menu_option++;
-        } else if (previous_option) {
-            game_state->selected_menu_option--;
-        }
-
-        if (select_option) {
-            switch (game_state->selected_menu_option) {
-                case MAINMENU_UI_PLAY_GAME: {
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_INGAME;
-                    game_state->ingame_transition_timer[0] = INGAME_PAN_OUT_TIMER;
-                    game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
-                } break;
-                /* case MAINMENU_UI_LOAD_GAME: { */
-                /*     game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE; */
-                /* } break; */
-                /* case MAINMENU_UI_OPTIONS: { */
-                /*     game_state->menu_mode = GAMEPLAY_UI_OPTIONS; */
-                /* } break; */
-                case MAINMENU_UI_QUIT: {
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
-                    game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
-                    game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
-                } break;
-            }
-        }
-    }
-
-    if (game_state->selected_menu_option > array_count(menu_option_strings)-1) {
-        game_state->selected_menu_option = array_count(menu_option_strings)-1;
-    } else if (game_state->selected_menu_option < 0) {
-        game_state->selected_menu_option = 0;
-    }
-
-    {
-        float font_height = font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE);
-        float x_cursor = 0;
-        float alpha = START_MENU_ALPHA;
-
-        if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_INGAME) {
-            /* stage 1 */
-            if (game_state->ingame_transition_timer[0] > 0) {
-                game_state->ingame_transition_timer[0] -= dt;
-            } else {
-                if (game_state->ingame_transition_timer[1] > 0) {
-                    game_state->ingame_transition_timer[1] -= dt;
-                } else {
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
-                    game_state->menu_mode = GAMEPLAY_UI_INGAME;
-                }
-            }
-
-            x_cursor = lerp(0, -dimens[0], 1.0 - game_state->ingame_transition_timer[0]/INGAME_PAN_OUT_TIMER);
-            alpha = lerp(START_MENU_ALPHA, 0, 1.0 - game_state->ingame_transition_timer[1]/INGAME_PAN_OUT_TIMER);
-        }
-
-        begin_graphics_frame(); {
-            draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, alpha));
-            float y_cursor = GAME_UI_TITLE_FONT_SIZE * 0.1;
-
-            /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
-               pass as a basic menu system.*/
-            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", COLOR4F_WHITE);
-            y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
-
-            for (unsigned index = 0; index < array_count(menu_option_strings); ++index) {
-                union color4f color = COLOR4F_WHITE;
-
-                if (index == game_state->selected_menu_option) {
-                    color = color4f(127/255.0f, 255/255.0f, 212/255.0f, 1.0f);
-                }
-
-                draw_text(game_ui_menu_font, x_cursor, y_cursor, menu_option_strings[index], color);
-                y_cursor += GAME_UI_MENU_FONT_SIZE * 1.1;
-            }
-
-            if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_QUIT) {
-                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer[0]/QUIT_FADE_TIMER));
-                if (game_state->quit_transition_timer[0] > 0) {
-                    game_state->quit_transition_timer[0] -= dt;
-                } else {
-                    if (game_state->quit_transition_timer[0] > 0) {
-                        game_state->quit_transition_timer[0] -= dt;
-                    } else {
-                        if (game_state->quit_transition_timer[1] > 0) {
-                            game_state->quit_transition_timer[1] -= dt;
-                            set_window_transparency(game_state->quit_transition_timer[1] / QUIT_FADE_TIMER2);
-                        } else {
-                            running = false;
-                            game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
-                        }
-                    }
-                }
-            }
-
-        } end_graphics_frame();
-    }
-}
-
-/* TODO(jerry): make unique */
-local void do_pausemenu_ui(struct game_controller* controller, float dt) {
-    int dimens[2];
-    get_screen_dimensions(dimens, dimens+1);
-
-    if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_NONE) {
-        bool previous_option = !controller->last_buttons[DPAD_UP] && controller->buttons[DPAD_UP] || controller->left_stick.axes[0] <= -0.3 || is_key_pressed(KEY_UP);
-        bool next_option = !controller->last_buttons[DPAD_DOWN] && controller->buttons[DPAD_DOWN] || controller->left_stick.axes[0] >= 0.3 || is_key_pressed(KEY_DOWN);
-        bool select_option = !controller->last_buttons[BUTTON_A] && controller->buttons[BUTTON_A] || is_key_pressed(KEY_RETURN);
-
-        if (next_option) {
-            game_state->selected_menu_option++;
-        } else if (previous_option) {
-            game_state->selected_menu_option--;
-        }
-
-        if (select_option) {
-            switch (game_state->selected_menu_option) {
-                case MAINMENU_UI_PLAY_GAME: {
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_INGAME;
-                    game_state->ingame_transition_timer[0] = INGAME_PAN_OUT_TIMER;
-                    game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
-                } break;
-                /* case MAINMENU_UI_LOAD_GAME: { */
-                /*     game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE; */
-                /* } break; */
-                /* case MAINMENU_UI_OPTIONS: { */
-                /*     game_state->menu_mode = GAMEPLAY_UI_OPTIONS; */
-                /* } break; */
-                case (MAINMENU_UI_QUIT+1): {
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
-                    game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
-                    game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
-                } break;
-            }
-        }
-    }
-
-    if (game_state->selected_menu_option > array_count(menu_pause_option_strings)-1) {
-        game_state->selected_menu_option = array_count(menu_pause_option_strings)-1;
-    } else if (game_state->selected_menu_option < 0) {
-        game_state->selected_menu_option = 0;
-    }
-
-    {
-        float font_height = font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE);
-        float x_cursor = 0;
-        float alpha = START_MENU_ALPHA;
-
-        if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_INGAME ||
-            game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_PAUSE) {
-            /* stage 1 */
-            if (game_state->ingame_transition_timer[0] > 0) {
-                game_state->ingame_transition_timer[0] -= dt;
-            } else {
-                if (game_state->ingame_transition_timer[1] > 0) {
-                    game_state->ingame_transition_timer[1] -= dt;
-                } else {
-                    if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_INGAME) {
-                        game_state->menu_mode = GAMEPLAY_UI_INGAME;
-                        return;
-                    }
-
-                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
-                }
-            }
-
-            if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_INGAME) {
-                x_cursor = lerp(0, -dimens[0], 1.0 - game_state->ingame_transition_timer[0]/INGAME_PAN_OUT_TIMER);
-                alpha = lerp(START_MENU_ALPHA, 0, 1.0 - game_state->ingame_transition_timer[1]/INGAME_PAN_OUT_TIMER);
-            } else {
-                x_cursor = lerp(-dimens[0], 0, 1.0 - game_state->ingame_transition_timer[0]/INGAME_PAN_OUT_TIMER);
-                alpha = lerp(0, START_MENU_ALPHA, 1.0 - game_state->ingame_transition_timer[1]/INGAME_PAN_OUT_TIMER);
-            }
-        }
-
-        begin_graphics_frame(); {
-            draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, alpha));
-            float y_cursor = GAME_UI_TITLE_FONT_SIZE * 0.1;
-
-            /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
-               pass as a basic menu system.*/
-            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", COLOR4F_WHITE);
-            y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
-
-            for (unsigned index = 0; index < array_count(menu_pause_option_strings); ++index) {
-                union color4f color = COLOR4F_WHITE;
-
-                if (index == game_state->selected_menu_option) {
-                    color = color4f(127/255.0f, 255/255.0f, 212/255.0f, 1.0f);
-                }
-
-                draw_text(game_ui_menu_font, x_cursor, y_cursor, menu_pause_option_strings[index], color);
-                y_cursor += GAME_UI_MENU_FONT_SIZE * 1.1;
-            }
-
-            if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_QUIT) {
-                draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 1.0 - game_state->quit_transition_timer[0]/QUIT_FADE_TIMER));
-                if (game_state->quit_transition_timer[0] > 0) {
-                    game_state->quit_transition_timer[0] -= dt;
-                } else {
-                    if (game_state->quit_transition_timer[1] > 0) {
-                        game_state->quit_transition_timer[1] -= dt;
-                        set_window_transparency(game_state->quit_transition_timer[1] / QUIT_FADE_TIMER2);
-                    } else {
-                        running = false;
-                        game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
-                    }
-                }
-            }
-
-        } end_graphics_frame();
-    }
 }

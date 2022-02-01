@@ -355,6 +355,7 @@ local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct t
 /* maybe move to entity.c? */
 void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
     float old_x = entity->x;
+    float old_vy = entity->vy;
     /*technically wrong because slopes should slow you down. Whatever*/
     entity->x += entity->vx * dt;
 
@@ -424,6 +425,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 /*eh.*/
                                 const float SIN45 = 0.7071067812;
                                 entity->vx -= (entity->vx * SIN45 * dt);
+                                entity->last_vy = old_vy;
                                 entity->vy = 0;
                             }
                         } else {
@@ -437,6 +439,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                     entity->y = slope_snapped_location;
                                 }
 
+                                entity->last_vy = old_vy;
                                 entity->vy = 0;
                             }
                         }
@@ -461,6 +464,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 }
 
                                 if (entity->vy < 0 && taller_edge_intersection) {
+                                    entity->last_vy = old_vy;
                                     entity->vy = 0;
                                 }
                             }
@@ -491,6 +495,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
 }
 
 void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
+    float old_vy = entity->vy;
     float old_y = entity->y;
     entity->y += entity->vy * dt;
 
@@ -512,6 +517,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                     const float DISTANCE_EPSILION = 0.085;
                     if (entity->vy >= 0 && fabs(entity->y - tile_get_slope_height(t, entity->x, entity->w, entity->h)) <= DISTANCE_EPSILION) {
                         /*HACK*/
+                        entity->last_vy = old_vy;
                         entity->vy = 0;
                     }
                 } break;
@@ -523,6 +529,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
 
                     if (fabs(delta_from_foot_to_tile_top) < fabs(delta_from_foot_to_slope_location)) {
                         entity->y = tile_y - entity->h;
+                        entity->last_vy = old_vy;
                         entity->vy = 0;
                     }
                 } break;
@@ -532,6 +539,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                         do_collision_response_tile_bottom_edge(t, entity);
                     }
 
+                    entity->last_vy = old_vy;
                     entity->vy = 0;
                 } break;
             }

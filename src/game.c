@@ -4,9 +4,6 @@
 
 #define VPIXELS_PER_METER (1)
 #define TILES_PER_SCREEN (48)
-#define DYNAMIC_FONT_SIZE (0.5) /* big so it scales okayly? */
-#define GAME_UI_TITLE_FONT_SIZE (font_size_aspect_ratio_independent(0.15))
-#define GAME_UI_MENU_FONT_SIZE (font_size_aspect_ratio_independent(0.075))
 /*
   This might just turn into an uber struct or something.
 */
@@ -22,6 +19,9 @@ struct entity {
 
     float vx;
     float vy;
+
+    /* for falling reasons */
+    float last_vy;
 
     bool onground;
 
@@ -63,62 +63,6 @@ enum game_mode {
     GAME_MODE_COUNT,
 };
 
-enum gameplay_ui_mode {
-    GAMEPLAY_UI_MAINMENU,
-    GAMEPLAY_UI_PAUSEMENU,
-    GAMEPLAY_UI_INGAME,
-    GAMEPLAY_UI_LOAD_SAVE,
-    GAMEPLAY_UI_OPTIONS,
-
-    GAMEPLAY_UI_MODE_COUNT,
-};
-
-/* crufty animations */
-enum gameplay_ui_transition {
-    GAMEPLAY_UI_TRANSITION_NONE,
-    GAMEPLAY_UI_TRANSITION_TO_QUIT,
-    GAMEPLAY_UI_TRANSITION_TO_INGAME,
-    GAMEPLAY_UI_TRANSITION_TO_PAUSE,
-};
-
-struct game_state {
-    /*whoops this is an additional indirection. Fix this at the end of the night*/
-    uint8_t menu_mode;
-
-    uint8_t menu_transition_state;
-
-    float quit_transition_timer[2];
-    float ingame_transition_timer[2];
-
-    uint8_t selected_menu_option;
-    struct tilemap* loaded_level;
-};
-
-enum {
-    MAINMENU_UI_PLAY_GAME,
-    /* MAINMENU_UI_LOAD_GAME, */
-    /* MAINMENU_UI_OPTIONS, */
-    MAINMENU_UI_QUIT,
-};
-char* menu_option_strings[] = {
-    "Play Game",
-    /* "Load Game", */
-    /* "Options", */
-    "Quit",
-};
-
-char* menu_pause_option_strings[] = {
-    "Resume Game",
-    /* "Load Game", */
-    /* "Options", */
-    "Return To Main Menu",
-    "Quit To Desktop",
-};
-
-local struct game_state* game_state;
-/* enum game_mode mode = GAME_MODE_EDITOR; */
-enum game_mode mode = GAME_MODE_PLAYING;
-
 local void unload_all_graphics_resources(void) {
     unload_all_textures();
     unload_all_fonts();
@@ -159,6 +103,22 @@ local int font_size_aspect_ratio_independent(float percentage) {
 }
 
 #include "tilemap.c"
+
+struct game_state {
+    uint8_t menu_mode;
+    uint8_t menu_transition_state;
+
+    float quit_transition_timer[2];
+    float ingame_transition_timer[2];
+
+    uint8_t selected_menu_option;
+
+    /*whoops this is an additional indirection. Fix this at the end of the night*/
+    struct tilemap* loaded_level;
+};
+local struct game_state* game_state;
+enum game_mode mode = GAME_MODE_PLAYING;
+
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"
 

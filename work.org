@@ -179,6 +179,18 @@
     Since I'm planning on going for an incredibly simple visual style... It's entirely
     possible I might just retain the menu system I make at the moment.
 ** <2022-02-01 Tue>
+*** TODO Mousable UI
+    ... I don't actually want to program a full GUI Library, but I would
+    be lying if I didn't think a proper UI system... Might help a lot.
+
+    I'll see tonight about making a simple UI system, that I semantically
+    describe "widgets", and decide how to program myself I suppose.
+
+    The layout system for it is probably going to be dead simple, as in
+    the entire screen will be assumed as a canvas... IDK. I'll see if it's
+    actually simpler to just reduce the procedure instead of making a real
+    UI system first.
+
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
