@@ -43,19 +43,6 @@ void camera_set_focus_position(float x, float y) {
     active_camera->target_position_x = x;
     active_camera->target_position_y = y;
 
-    {
-        bool needs_clamping_on_x = ((active_camera->bounds_max_x - active_camera->bounds_min_x) != 0);
-        bool needs_clamping_on_y = ((active_camera->bounds_max_y - active_camera->bounds_min_y) != 0);
-
-        if (needs_clamping_on_x) {
-            active_camera->target_position_x = clampf(active_camera->target_position_x, active_camera->bounds_min_x, active_camera->bounds_max_x);
-        }
-
-        if (needs_clamping_on_y) {
-            active_camera->target_position_y = clampf(active_camera->target_position_y, active_camera->bounds_min_y, active_camera->bounds_max_y);
-        }
-    }
-
     active_camera->interpolation_time[0] = active_camera->interpolation_time[1] = 0.0;
 }
 
@@ -99,6 +86,19 @@ void camera_update(float dt) {
     /*hardcoded for now*/
     float trauma_shake_x = (8 * random_float() - 4.5) * global_camera.trauma;
     float trauma_shake_y = (8 * random_float() - 4.5) * global_camera.trauma;
+
+    {
+        bool needs_clamping_on_x = ((active_camera->bounds_max_x - active_camera->bounds_min_x) != 0);
+        bool needs_clamping_on_y = ((active_camera->bounds_max_y - active_camera->bounds_min_y) != 0);
+
+        if (needs_clamping_on_x) {
+            active_camera->target_position_x = clampf(active_camera->target_position_x, active_camera->bounds_min_x, active_camera->bounds_max_x);
+        }
+
+        if (needs_clamping_on_y) {
+            active_camera->target_position_y = clampf(active_camera->target_position_y, active_camera->bounds_min_y, active_camera->bounds_max_y);
+        }
+    }
 
     global_camera.visual_position_x =
         _camera_lerp(global_camera.last_position_x, global_camera.target_position_x,

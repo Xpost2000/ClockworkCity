@@ -117,7 +117,7 @@ struct tilemap {
     struct player_spawn_link* link_spawns;
 };
 
-void DEBUG_load_all_tile_assets(void) {
+void load_all_tile_assets(void) {
     for (unsigned i = TILE_NONE+1; i < TILE_ID_COUNT; ++i) {
         char* fstring = tile_id_filestrings[i];
         if (fstring) {
@@ -214,7 +214,7 @@ void draw_player_spawn_links(struct player_spawn_link* spawns, size_t count) {
     }
 }
 
-void DEBUG_draw_tilemap(struct tilemap* tilemap) {
+void draw_tilemap(struct tilemap* tilemap) {
     draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
     draw_transitions(tilemap->transitions, tilemap->transition_zone_count);
 }

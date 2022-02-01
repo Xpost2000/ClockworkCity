@@ -1,5 +1,5 @@
 local void load_gameplay_resources(void) {
-    DEBUG_load_all_tile_assets();
+    load_all_tile_assets();
 }
 
 local void do_physics(float dt) {
@@ -27,36 +27,21 @@ local void do_physics(float dt) {
     player.vy += (player.ay + VPIXELS_PER_METER*20) * dt;
     if (player.dash) player.vy = 0;
 
-    for (unsigned index = 0; index < tilemap->width * tilemap->height; ++index) {
-        struct tile* t = &tilemap->tiles[index];
+    do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
+    do_moving_entity_vertical_collision_response(tilemap, &player, dt);
+    evaluate_moving_entity_grounded_status(tilemap, &player, dt);
 
-        float tile_x = t->x * TILE_TEX_SIZE;
-        float tile_y = t->y * TILE_TEX_SIZE;
-        float tile_w = TILE_TEX_SIZE;
-        float tile_h = TILE_TEX_SIZE;
-
-        if(t->id == TILE_NONE) continue;
-        if (!rectangle_overlapping_v(player.x, player.y, player.w, player.h, tile_x, tile_y, tile_w, tile_h)) continue;
-
-        /*NOTE(jerry): this is slightly... different for sloped tiles.*/
-
-        if (tile_is_slope(t)) {
-            float slope_location = tile_get_slope_height(t, player.x, player.w, player.h);
-
-            if (roundf(player.y) == roundf(slope_location)) {
-                // sin 45 == cos 45
-                const float SIN45 = 0.7071067812;
-                float clamp_speed = SIN45 * MAX_SPEED;
-                float sgn = float_sign(player.vx);
-                if (fabs(player.vx) > clamp_speed) player.vx = clamp_speed * sgn;
+    /* game collisions, not physics */
+    /* check if I hit transition then change level */
+    {
+        for (unsigned index = 0; index < tilemap->transition_zone_count; ++index) {
+            struct transition_zone t = (tilemap->transitions[index]);
+            if (rectangle_intersects_v(player.x, player.y, player.w, player.h, t.x, t.y, t.w, t.h)) {
+                game_load_level(&game_memory_arena, t.zone_filename, t.zone_link);
                 break;
             }
         }
     }
-
-    do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
-    do_moving_entity_vertical_collision_response(tilemap, &player, dt);
-    evaluate_moving_entity_grounded_status(tilemap, &player, dt);
 }
 
 local void do_player_input(float dt) {
@@ -142,10 +127,16 @@ local void game_update_render_frame(float dt) {
 
         camera_set_focus_speed_x(12);
         camera_set_focus_speed_y(5);
+        camera_set_bounds(game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
+                          game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
+/*         printf("%f, %f, %f, %f vs:\n", */
+/* game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, */
+/*                           game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y */
+/*         ); */
         camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
-        DEBUG_draw_tilemap(game_state->loaded_level);
+        draw_tilemap(game_state->loaded_level);
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();
 #if 1

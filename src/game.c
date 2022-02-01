@@ -206,6 +206,7 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
     if (transition_link_to_spawn_at) {
         for (unsigned index = 0; index < game_state->loaded_level->player_spawn_link_count; ++index) {
             struct player_spawn_link* spawn = game_state->loaded_level->link_spawns + index;
+            console_printf("%s vs %s\n", transition_link_to_spawn_at, spawn->identifier);
             if (strncmp(spawn->identifier, transition_link_to_spawn_at, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH) == 0) {
                 player.x = spawn->x;
                 player.y = spawn->y;
@@ -216,6 +217,9 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
         player.x = game_state->loaded_level->default_spawn.x;
         player.y = game_state->loaded_level->default_spawn.y;
     }
+
+    set_active_camera(get_global_camera());
+    camera_set_position(player.x, player.y);
 }
 
 void update_render_frame(float dt) {
