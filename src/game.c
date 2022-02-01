@@ -78,6 +78,7 @@ enum gameplay_ui_transition {
     GAMEPLAY_UI_TRANSITION_NONE,
     GAMEPLAY_UI_TRANSITION_TO_QUIT,
     GAMEPLAY_UI_TRANSITION_TO_INGAME,
+    GAMEPLAY_UI_TRANSITION_TO_PAUSE,
 };
 
 struct game_state {
@@ -104,6 +105,14 @@ char* menu_option_strings[] = {
     /* "Load Game", */
     /* "Options", */
     "Quit",
+};
+
+char* menu_pause_option_strings[] = {
+    "Resume Game",
+    /* "Load Game", */
+    /* "Options", */
+    "Return To Main Menu",
+    "Quit To Desktop",
 };
 
 local struct game_state* game_state;
