@@ -53,6 +53,10 @@ bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, f
 bool rectangle_intersects(struct rectangle a, struct rectangle b);
 bool rectangle_overlapping(struct rectangle a, struct rectangle b);
 
+local float lerp(float a, float b, float t) {
+    return (1.0 - t) * a + (b * t);
+}
+
 shared_storage float normalized_sinf(float p) {
     return (sinf(p) + 1) / 2.0f;
 }

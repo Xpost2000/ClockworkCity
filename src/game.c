@@ -77,6 +77,7 @@ enum gameplay_ui_mode {
 enum gameplay_ui_transition {
     GAMEPLAY_UI_TRANSITION_NONE,
     GAMEPLAY_UI_TRANSITION_TO_QUIT,
+    GAMEPLAY_UI_TRANSITION_TO_INGAME,
 };
 
 struct game_state {
@@ -86,6 +87,7 @@ struct game_state {
     uint8_t menu_transition_state;
 
     float quit_transition_timer;
+    float ingame_transition_timer[2];
 
     uint8_t selected_menu_option;
     struct tilemap* loaded_level;

@@ -181,6 +181,8 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
 
 /* nice fancy little immediate mode UI I guess. */
 #define QUIT_FADE_TIMER (0.35)
+#define INGAME_PAN_OUT_TIMER (1)
+#define START_MENU_ALPHA (0.85)
 local void do_mainmenu_ui(struct game_controller* controller, float dt) {
     int dimens[2];
     get_screen_dimensions(dimens, dimens+1);
@@ -199,7 +201,9 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
         if (select_option) {
             switch (game_state->selected_menu_option) {
                 case MAINMENU_UI_PLAY_GAME: {
-                    game_state->menu_mode = GAMEPLAY_UI_INGAME;
+                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_INGAME;
+                    game_state->ingame_transition_timer[0] = INGAME_PAN_OUT_TIMER;
+                    game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
                 } break;
                 /* case MAINMENU_UI_LOAD_GAME: { */
                 /*     game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE; */
@@ -223,10 +227,33 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
 
     {
         float font_height = font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE);
+        float x_cursor = 0;
+        float alpha = START_MENU_ALPHA;
+
+        if (game_state->menu_transition_state == GAMEPLAY_UI_TRANSITION_TO_INGAME) {
+            /* stage 1 */
+            if (game_state->ingame_transition_timer[0] > 0) {
+                game_state->ingame_transition_timer[0] -= dt;
+            } else {
+                if (game_state->ingame_transition_timer[1] > 0) {
+                    game_state->ingame_transition_timer[1] -= dt;
+                } else {
+                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
+                    game_state->menu_mode = GAMEPLAY_UI_INGAME;
+                }
+            }
+
+            x_cursor = lerp(0, -dimens[0], 1.0 - game_state->ingame_transition_timer[0]/INGAME_PAN_OUT_TIMER);
+            alpha = lerp(START_MENU_ALPHA, 0, 1.0 - game_state->ingame_transition_timer[1]/INGAME_PAN_OUT_TIMER);
+        }
+
         begin_graphics_frame(); {
-            draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 0.7));
+            draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, alpha));
             float y_cursor = GAME_UI_TITLE_FONT_SIZE * 0.1;
-            draw_text(game_title_font, 0, y_cursor, "Mplusplus", COLOR4F_WHITE);
+
+            /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
+               pass as a basic menu system.*/
+            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", COLOR4F_WHITE);
             y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
 
             for (unsigned index = 0; index < array_count(menu_option_strings); ++index) {
@@ -236,7 +263,7 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
                     color = color4f(127/255.0f, 255/255.0f, 212/255.0f, 1.0f);
                 }
 
-                draw_text(game_ui_menu_font, 0, y_cursor, menu_option_strings[index], color);
+                draw_text(game_ui_menu_font, x_cursor, y_cursor, menu_option_strings[index], color);
                 y_cursor += GAME_UI_MENU_FONT_SIZE * 1.1;
             }
 
@@ -246,6 +273,7 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
                     game_state->quit_transition_timer -= dt;
                 } else {
                     running = false;
+                    game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_NONE;
                 }
             }
 
