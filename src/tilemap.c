@@ -216,7 +216,6 @@ void draw_player_spawn_links(struct player_spawn_link* spawns, size_t count) {
 
 void draw_tilemap(struct tilemap* tilemap) {
     draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
-    draw_transitions(tilemap->transitions, tilemap->transition_zone_count);
 }
 
 local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* ent) {

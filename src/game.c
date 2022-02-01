@@ -4,6 +4,9 @@
 
 #define VPIXELS_PER_METER (1)
 #define TILES_PER_SCREEN (48)
+#define DYNAMIC_FONT_SIZE (0.5) /* big so it scales okayly? */
+#define GAME_UI_TITLE_FONT_SIZE (font_size_aspect_ratio_independent(0.15))
+#define GAME_UI_MENU_FONT_SIZE (font_size_aspect_ratio_independent(0.075))
 /*
   This might just turn into an uber struct or something.
 */
@@ -40,18 +43,15 @@ struct entity player = {
     .h = VPIXELS_PER_METER,
 };
 
-
-struct game_state {
-    /*whoops this is an additional indirection. Fix this at the end of the night*/
-    struct tilemap* loaded_level;
-};
-
 /*TODO(jerry): move some game state globals into this.*/
 local struct memory_arena game_memory_arena;
-local struct game_state* game_state;
 
 local texture_id knight_twoview;
+local font_id    dynamic_scale_font;
 local font_id    test_font;
+local font_id    game_title_font;
+local font_id    game_ui_menu_font;
+
 local font_id    test2_font;
 local font_id    test3_font;
 local sound_id   test_sound;
@@ -63,6 +63,36 @@ enum game_mode {
     GAME_MODE_COUNT,
 };
 
+enum gameplay_ui_mode {
+    GAMEPLAY_UI_MAINMENU,
+    GAMEPLAY_UI_PAUSEMENU,
+    GAMEPLAY_UI_INGAME,
+    GAMEPLAY_UI_LOAD_SAVE,
+    GAMEPLAY_UI_OPTIONS,
+};
+
+
+struct game_state {
+    /*whoops this is an additional indirection. Fix this at the end of the night*/
+    uint8_t menu_mode;
+    uint8_t selected_menu_option;
+    struct tilemap* loaded_level;
+};
+
+enum {
+    MAINMENU_UI_PLAY_GAME,
+    MAINMENU_UI_LOAD_GAME,
+    MAINMENU_UI_OPTIONS,
+    MAINMENU_UI_QUIT,
+};
+char* menu_option_strings[] = {
+    "Play Game",
+    "Load Game",
+    "Options",
+    "Quit",
+};
+
+local struct game_state* game_state;
 /* enum game_mode mode = GAME_MODE_EDITOR; */
 enum game_mode mode = GAME_MODE_PLAYING;
 
@@ -120,6 +150,10 @@ void load_graphics_resources(void) {
     /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", font_size_aspect_ratio_independent(0.07));
+
+    game_title_font   = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_TITLE_FONT_SIZE);
+    game_ui_menu_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_MENU_FONT_SIZE);
+    /* dynamic_scale_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE)); */
     /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
     load_gameplay_resources();
 }

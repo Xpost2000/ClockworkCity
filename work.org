@@ -161,12 +161,11 @@
 
    It'll depend on the progress I make.
 ** <2022-01-29 Sat>
+** <2022-01-31 Mon>
 *** TODO (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
     Just wanna try and simulate some fire and smoke
-*** TODO (fun stuff after I get a good amount of tilemap progress) Fun particle system stuff, pixel collision, mess around!
-    Just play around with this. It can be useful for making some cool special effects!
 *** TODO Switch to sparse tile storage on the level editor
     The reasoning for this is that malloc/realloc vector style is actually more complicated to support
     when I need to add stuff like islands.
@@ -183,25 +182,33 @@
 *** TODO Editor can remember last editing session!
     I don't know if I wanna support the whole undo-redo debockle, I just wanna be able to load
     the last file I was editting (session really...)
-*** TODO Editor undo / redo (probably don't need...)
-*** TODO Trails Rendering! (probably part of particles)
 *** TODO Simple radial lighting
     I could use a "light texture", but I want to do more generic tile lighting.
 
     I'm considering just using BFS bounded by a distance formula, and calling that a day.
     Pretty sure that'll look okay enough for what I need.
+*** DONE Resolution independent rendering.
+    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
+*** DONE World/Level Transitions
+    Linked of course!
+*** DONE Camera Bounds 
+*** DONE Camera Zoom
+*** TODO Basic Menu Game State system, and a normal game state system
+    Main Menu, Loading a save file, Credits, Options, and Quit.
+
+    This is just going to exist to have ANY menu... Game pause is also
+    a thing here.
+
+    Also I guess a basic idea of dying is okay.
+    
+    Since I'm planning on going for an incredibly simple visual style... It's entirely
+    possible I might just retain the menu system I make at the moment.
+** <2022-02-01 Tue>
+*** TODO Editor undo / redo (probably don't need...)
+*** TODO Trails Rendering! (probably part of particles)
 *** TODO Background tiles or something
     Support multiple tile layers. This is actually important.
 *** TODO (?)Consider thinking of the entity system
-*** DONE Resolution independent rendering.
-    I don't need aspect ratio scaling like I usually require. I can settle for simple "horizontal" scaling.
-*** TODO Basic debug gui stuff
-*** DONE World/Level Transitions
-    Linked of course!
-*** TODO Backport more advanced console from blackiron
-    I never realized this was an old version of the console until earlier. Fuck.
-*** DONE Camera Bounds 
-*** DONE Camera Zoom
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.
 
@@ -217,8 +224,6 @@
 *** TODO Bloom / glow
 *** TODO Faster text rendering for the console
 *** TODO SFL console has a crash in history?
-*** TODO Spikes (don't die immediately, just reset to last grounded area.)
-*** TODO Editor rectangle resizing (for level trigger stuff)
 *** TODO Consider using "vector" tiles
     I'm wondering if this would be a good idea. Vector world with pixel art entities and props...
 
@@ -230,14 +235,6 @@
 *** TODO Rope like objects 
     Basic rope swinging should be fine.
 *** TODO (?)Start OpenGL renderer as the last thing I guess.
-*** TODO Basic Menu Game State system, and a normal game state system
-    Main Menu, Loading a save file, Credits, Options, and Quit.
-
-    This is just going to exist to have ANY menu... Game pause is also
-    a thing here.
-
-    Also I guess a basic idea of dying is okay.
-    
 *** TODO cpu "decal" system
     I don't know enough about gpu magic to do this with opengl, but calculating some random
     numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
@@ -251,8 +248,10 @@
 
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
 *** TODO add tile variations
-*** TODO Editor flare or something
 *** TODO Cleanup and refactor the code at the end of the week.
+** <2022-02-09 Wed> Soft stop day
+  I'm going to stop with whatever progress I've made to rest. Basic engine
+  capacities should be done.
 * Jam Time <2022-02-15 Tue>
   When the jam starts put tasks here. This is game-specific stuff,
   hopefully by this time I have a plan for the game plot and obviously

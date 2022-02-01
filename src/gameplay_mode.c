@@ -101,11 +101,15 @@ local void DEBUG_draw_debug_stuff(void) {
     /*add debug rendering code here*/
 }
 
+local void do_gameplay_ui(struct game_controller* controller, float dt);
+local void do_mainmenu_ui(struct game_controller* controller, float dt);
+local void do_pausemenu_ui(struct game_controller* controller, float dt);
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
-    do_player_input(dt);
 
-    /*fixed physics framerate update*/ {
+    if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
+        do_player_input(dt);
+
         local float physics_accumulation_timer = 0;
         const int PHYSICS_FRAMERATE = 300;
         const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
@@ -118,6 +122,7 @@ local void game_update_render_frame(float dt) {
         physics_accumulation_timer += dt;
     }
 
+    /* UI is a substate, we still draw the game under the UI, so it can look nice. */
     begin_graphics_frame(); {
         /* might need to rethink camera interface. 
            I still want it to operate under one global camera, but
@@ -129,17 +134,28 @@ local void game_update_render_frame(float dt) {
         camera_set_focus_speed_y(5);
         camera_set_bounds(game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
                           game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
-/*         printf("%f, %f, %f, %f vs:\n", */
-/* game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, */
-/*                           game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y */
-/*         ); */
         camera_set_focus_position(player.x - player.w/2, player.y - player.h/2);
 
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_tilemap(game_state->loaded_level);
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();
-#if 1
+
+    /* draw and update UI */
+    {
+        switch (game_state->menu_mode) {
+            case GAMEPLAY_UI_INGAME: {
+                do_gameplay_ui(gamepad, dt);
+            } break;
+            case GAMEPLAY_UI_MAINMENU: {
+                do_mainmenu_ui(gamepad, dt);
+            } break;
+            case GAMEPLAY_UI_PAUSEMENU: {
+                do_pausemenu_ui(gamepad, dt);
+            } break;
+        }
+    }
+#if 0
     begin_graphics_frame(); {
         int dimens[2];
         get_screen_dimensions(dimens, dimens+1);
@@ -157,4 +173,74 @@ local void game_update_render_frame(float dt) {
         }
     } end_graphics_frame();
 #endif
+}
+
+local void do_gameplay_ui(struct game_controller* controller, float dt) {
+    
+}
+
+/* nice fancy little immediate mode UI I guess. */
+local void do_mainmenu_ui(struct game_controller* controller, float dt) {
+    int dimens[2];
+    get_screen_dimensions(dimens, dimens+1);
+
+    {
+        bool previous_option = !controller->last_buttons[DPAD_UP] && controller->buttons[DPAD_UP] || controller->left_stick.axes[0] <= -0.3 || is_key_pressed(KEY_UP);
+        bool next_option = !controller->last_buttons[DPAD_DOWN] && controller->buttons[DPAD_DOWN] || controller->left_stick.axes[0] >= 0.3 || is_key_pressed(KEY_DOWN);
+        bool select_option = !controller->last_buttons[BUTTON_A] && controller->buttons[BUTTON_A] || is_key_pressed(KEY_RETURN);
+
+        if (next_option) {
+            game_state->selected_menu_option++;
+        } else if (previous_option) {
+            game_state->selected_menu_option--;
+        }
+
+        if (select_option) {
+            switch (game_state->selected_menu_option) {
+                case MAINMENU_UI_PLAY_GAME: {
+                    game_state->menu_mode = GAMEPLAY_UI_INGAME;
+                } break;
+                case MAINMENU_UI_LOAD_GAME: {
+                    game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE;
+                } break;
+                case MAINMENU_UI_OPTIONS: {
+                    game_state->menu_mode = GAMEPLAY_UI_OPTIONS;
+                } break;
+                case MAINMENU_UI_QUIT: {
+                    running = false;
+                } break;
+            }
+        }
+    }
+
+    if (game_state->selected_menu_option > array_count(menu_option_strings)-1) {
+        game_state->selected_menu_option = array_count(menu_option_strings)-1;
+    } else if (game_state->selected_menu_option < 0) {
+        game_state->selected_menu_option = 0;
+    }
+
+    {
+        float font_height = font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE);
+        begin_graphics_frame(); {
+            draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0, 0, 0, 0.7));
+            float y_cursor = GAME_UI_TITLE_FONT_SIZE * 0.1;
+            draw_text(game_title_font, 0, y_cursor, "Mplusplus", COLOR4F_WHITE);
+            y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
+
+            for (unsigned index = 0; index < array_count(menu_option_strings); ++index) {
+                union color4f color = COLOR4F_WHITE;
+
+                if (index == game_state->selected_menu_option) {
+                    color = color4f(127/255.0f, 255/255.0f, 212/255.0f, 1.0f);
+                }
+
+                draw_text(game_ui_menu_font, 0, y_cursor, menu_option_strings[index], color);
+                y_cursor += GAME_UI_MENU_FONT_SIZE * 1.1;
+            }
+        } end_graphics_frame();
+    }
+}
+
+local void do_pausemenu_ui(struct game_controller* controller, float dt) {
+    
 }

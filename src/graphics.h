@@ -34,7 +34,9 @@ float ratio_with_screen_width(float dividend);
 float ratio_with_screen_height(float dividend);
 
 void get_texture_dimensions(texture_id texture, int* width, int* height);
-void get_text_dimensions(font_id font, const char* cstr, int* width, int* height);
+
+/*no _scaled version, you can just scale afterwards yourself.*/
+void get_text_dimensions(font_id font, const char* cstr, int* width, int* height); 
 
 font_id    load_font(const char* font_path, int size);
 texture_id load_texture(const char* texture_path);
@@ -62,6 +64,9 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color);
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
 void draw_text_right_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color);
+/*don't need scaled*/
+void draw_text_scaled(font_id font, float x, float y, const char* cstr, float scale, union color4f color);
+
 void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union color4f color);
 
 void unload_all_textures(void);

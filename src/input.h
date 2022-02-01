@@ -73,6 +73,7 @@ struct game_controller_joystick {
 struct game_controller {
     struct game_controller_triggers triggers;
     uint8_t buttons[BUTTON_COUNT];
+    uint8_t last_buttons[BUTTON_COUNT];
     struct game_controller_joystick left_stick;
     struct game_controller_joystick right_stick;
 };

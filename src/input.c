@@ -76,6 +76,11 @@ void begin_input_frame(void) {
 
 void end_input_frame(void) {
     global_input.last_state = global_input.current_state;
+
+    for (unsigned index = 0; index < array_count(global_controllers); ++index) {
+        struct game_controller* controller = global_controllers + index;
+        memcpy(controller->last_buttons, controller->buttons, sizeof(controller->buttons));
+    }
     /* zero_array(global_input.current_state.keys); */
 }
 

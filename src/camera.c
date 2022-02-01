@@ -94,14 +94,12 @@ void camera_update(float dt) {
         /*This is broken*/
         if (needs_clamping_on_x) {
             global_camera.target_position_x = clampf(global_camera.target_position_x,
-                                                      global_camera.bounds_min_x + ((1 * screen_dimensions[0]/2) * (float)DEBUG_scale),
-                                                      global_camera.bounds_max_x - ((1 * screen_dimensions[0]/2) * (float)DEBUG_scale));
+                                                      global_camera.bounds_min_x, global_camera.bounds_max_x);
         }
 
         if (needs_clamping_on_y) {
             global_camera.target_position_y = clampf(global_camera.target_position_y,
-                                                    global_camera.bounds_min_y,
-                                                    global_camera.bounds_max_y);
+                                                    global_camera.bounds_min_y, global_camera.bounds_max_y);
         }
     }
 

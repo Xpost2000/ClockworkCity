@@ -179,7 +179,7 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
    We need a form of "dynamic" font, that can be used for ingame renderings.
    IE: a scaled font.
 */
-float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr, union color4f color) {
+float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr, float scale, union color4f color) {
     SDL_Texture* rendered_text;
     SDL_Surface* text_surface = TTF_RenderUTF8_Blended(font_object, cstr,
                                                        (SDL_Color) {color.r * 255, color.g * 255,
@@ -194,7 +194,7 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
 
         if (within_screen_bounds(x, y, dimensions[0], dimensions[1])) {
             SDL_RenderCopy(global_renderer, rendered_text,
-                           NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
+                           NULL, &(SDL_Rect){x, y, dimensions[0] * scale, dimensions[1] * scale});
         }
     }
 
@@ -213,6 +213,7 @@ void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union co
                                                            color.b * 255, color.a * 255});
 
     _camera_transform_v2(&x, &y);
+    /* SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); */
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);
 
@@ -227,6 +228,10 @@ void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union co
 }
 
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
+    draw_text_scaled(font, x, y, cstr, 1, color);
+}
+
+void draw_text_scaled(font_id font, float x, float y, const char* cstr, float scale, union color4f color) {
     TTF_Font* font_object = fonts[font.id];
 
     if (font.id != 0)
@@ -241,7 +246,7 @@ void draw_text(font_id font, float x, float y, const char* cstr, union color4f c
 
     float y_cursor = 0;
     while (current_line = get_line_starting_from(cstr, &line_starting_index)) {
-        float line_offset = _draw_text_line(font_object, x, y + y_cursor, current_line, color);
+        float line_offset = _draw_text_line(font_object, x, y + y_cursor, current_line, scale, color);
         y_cursor += line_offset;
     }
 }
@@ -263,6 +268,7 @@ texture_id load_texture(const char* texture_path) {
     assert(texture_count < RENDERER_MAX_TEXTURES && "too many textures");
     assert(image_surface && "bad image");
 
+    /* SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest"); */
     textures[free_id] =
         SDL_CreateTextureFromSurface(global_renderer, image_surface);
 
