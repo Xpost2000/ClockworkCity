@@ -276,6 +276,16 @@ void draw_text_right_justified(font_id font, float x, float y, float w, const ch
     draw_text(font, x + (w-width), y, cstr, color);
 }
 
+struct image_buffer get_texture_buffer(texture_id id) {
+    struct texture* texture_object = &textures[id.id];
+
+    return (struct image_buffer) {
+        .width  = texture_object->width,
+        .height = texture_object->height,
+        .pixels = texture_object->pixels 
+    };
+};
+
 texture_id load_texture(const char* texture_path) {
     uint16_t free_id = 1 + texture_count++;
     texture_id result = {

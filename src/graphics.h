@@ -30,6 +30,13 @@ union color4f {
     float rgba[4];
 };
 
+/* implicitly rgba32 */
+struct image_buffer {
+    uint32_t width;
+    uint32_t height;
+    uint8_t* pixels;
+};
+
 shared_storage union color4f COLOR4F_BLACK    = {{0, 0, 0, 1}};
 shared_storage union color4f COLOR4F_RED      = {{1, 0, 0, 1}};
 shared_storage union color4f COLOR4F_GREEN    = {{0, 1, 0, 1}};
@@ -55,6 +62,8 @@ font_id    load_font(const char* font_path, int size);
 texture_id load_texture(const char* texture_path);
 void       unload_font(font_id font);
 void       unload_texture(texture_id texture);
+
+struct image_buffer get_texture_buffer(texture_id texture);
 
 void graphics_initialize(void* window_handle);
 void graphics_deinitialize(void);
