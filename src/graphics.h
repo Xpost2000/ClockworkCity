@@ -9,6 +9,17 @@ typedef struct {
     uint16_t id;
 } font_id;
 
+union color4u8 {
+    struct {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+    };
+    uint32_t rgba;
+    uint8_t  rgba_bytes[4];
+};
+
 union color4f {
     struct {
         float r;
@@ -28,6 +39,8 @@ shared_storage union color4f COLOR4F_YELLOW   = {{1, 1, 0.6235, 1}};
 shared_storage union color4f COLOR4F_DARKGRAY = {{0.3, 0.3, 0.3, 1}};
 
 union color4f color4f(float r, float g, float b, float a);
+union color4u8 color4u8(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+union color4u8 color4u8_from_color4f(union color4f color);
 bool within_screen_bounds(int x, int y, int w, int h);
 
 float ratio_with_screen_width(float dividend);

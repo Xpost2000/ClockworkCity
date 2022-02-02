@@ -220,6 +220,7 @@
 *** TODO Trails Rendering! (probably part of particles)
 *** TODO Background tiles or something
     Support multiple tile layers. This is actually important.
+*** TODO Background Sprites?
 *** TODO (?)Consider thinking of the entity system
 *** TODO Moveable tilemap "islands" / platforms
     Editor support for these... Is going to be a bitch probably.

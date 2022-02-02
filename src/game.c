@@ -48,10 +48,10 @@ struct entity {
 bool noclip = false;
 struct entity player = {
     // no units, prolly pixels
-    .x = -VPIXELS_PER_METER/4,
+    .x = -4,
     .y = -5,
-    .w = VPIXELS_PER_METER/2.0f,
-    .h = VPIXELS_PER_METER,
+    .w = 1/2.0f,
+    .h = 1,
 };
 
 /*TODO(jerry): move some game state globals into this.*/
@@ -167,7 +167,7 @@ local void load_static_resources(void) {
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 
-    game_memory_arena = allocate_memory_arena(Megabyte(64));
+    game_memory_arena = allocate_memory_arena(Megabyte(128));
     game_memory_arena.name = "Game Arena";
 
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));

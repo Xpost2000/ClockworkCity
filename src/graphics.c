@@ -41,13 +41,29 @@ local struct camera  camera_sentinel = {};
 /* this shouldn't be called debug anymore, since this is legitmately used lol */
 #include "camera.c"
 
-inline union color4f color4f(float r, float g, float b, float a) {
+union color4f color4f(float r, float g, float b, float a) {
     return (union color4f) {
         .r = clampf(r, 0, 1.0),
         .g = clampf(g, 0, 1.0),
         .b = clampf(b, 0, 1.0),
         .a = clampf(a, 0, 1.0),
     };
+}
+
+union color4u8 color4u8(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return (union color4u8) {
+        .r = r,
+        .g = g,
+        .b = b,
+        .a = a,
+    };
+}
+
+union color4u8 color4u8_from_color4f(union color4f color) {
+    return color4u8(clampf(color.r, 0, 1.0) * 255,
+                    clampf(color.g, 0, 1.0) * 255,
+                    clampf(color.b, 0, 1.0) * 255,
+                    clampf(color.a, 0, 1.0) * 255);
 }
 
 float ratio_with_screen_width(float dividend) {
@@ -66,8 +82,8 @@ void graphics_initialize(void* window_handle) {
     global_window = window_handle;
     /*hardware*/
     global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1,
-                                         /* SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC */
-                                         SDL_RENDERER_SOFTWARE
+                                         SDL_RENDERER_ACCELERATED /* | SDL_RENDERER_PRESENTVSYNC */
+                                         /* SDL_RENDERER_SOFTWARE */
     );
     SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
 }

@@ -8,9 +8,36 @@
   
   I want to do particles from images, but I don't know what the conversion is for unit to pixel unfortunately. I mean I guess
   it is actually just 
+  
+  NOTE(jerry):
+  Since particle emitters "own" their particles, I don't variably size them like I do for
+  the tilemap or anything else. This is game "permenant state". There is a slated maximum for particle
+  emitters because emitters end up using lots of memory.
+  
+  There will be "emitter entities", which will be limited to the amount of particle emitters in the engine?
 */
-#define MAX_PARTICLES_PER_EMITTER (1024)
-#define MAX_PARTICLE_EMITTER_COUNT (512)
+
+/*
+  I can circumvent this limited amount by making the particle storage sparse, and just making
+  all particles store a reference to the particle emitter they came from (which can now be safely stored
+  as a variably sized array inside of a level technically, since now only the engine owns the particle storage but not necessarily
+  the particle emitters), and that can work?
+  
+  That's more complicated although it's more robust (since now particles can theoretically just use as many particles as they want (upto the
+  still fixed particle limit, which is dependent on how much memory I chomp up still.))
+*/
+#define MAX_PARTICLES_PER_EMITTER (1024) /* 32x32 filled(all non transparent) sprite. Which is incredibly unlikely since who the fuck just makes a 32x32 white square. Also I can't draw 32x32 tilesets :) */
+
+/*
+  May bump this number up, although I can reasonably assume this number shouldn't be reached often...
+  
+  15 enemies per level, say they each use like 2 or 3 particle systems for some reason, that's like 45 particle emitters
+  the player has a special effect so that's another emitter, (46).
+  
+  That leaves like a good 50/60 for level design placement, because some particle systems can spawn spontaneously (like getting hit
+  or landing really hard on the ground, but those particle emitters tend to die incredibly fast...)
+ */
+#define MAX_PARTICLE_EMITTER_COUNT (128) /*Most levels will probably never reach this number?*/
 
 struct particle {
     /* shared with struct entity intentionally to allow pointer cast reuse */
@@ -36,9 +63,7 @@ struct particle {
     float lifetime;
     float lifetime_max;
 
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    union color4u8 color;
 };
 
 struct particle_emitter {
@@ -104,9 +129,9 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
         struct particle* particle = emitter->particles + index;
         /* just draw a square I suppose */
         draw_filled_rectangle(particle->x, particle->y, particle->w, particle->h,
-                              color4f((float)particle->r / 256.0f,
-                                      (float)particle->g / 256.0f,
-                                      (float)particle->b / 256.0f,
+                              color4f((float)particle->color.r / 256.0f,
+                                      (float)particle->color.g / 256.0f,
+                                      (float)particle->color.b / 256.0f,
                                       particle->lifetime / particle->lifetime_max
                                       /* 1.0 */
                               ));
@@ -123,12 +148,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, float dt) {
                 emitted_particle->x = lerp(emitter->x, emitter->x1, random_float());
                 emitted_particle->y = lerp(emitter->y, emitter->y1, random_float());
             }
-
-            {
-                emitted_particle->r = (uint8_t)(emitter->particle_color.r * 255.0f);
-                emitted_particle->g = (uint8_t)(emitter->particle_color.g * 255.0f);
-                emitted_particle->b = (uint8_t)(emitter->particle_color.b * 255.0f);
-            }
+            
+            emitted_particle->color = color4u8_from_color4f(emitter->particle_color);
             
             emitted_particle->h = emitted_particle->w = 0.1 + random_float() * 0.1;
             emitted_particle->vx = (random_float() * 5) - 3;
