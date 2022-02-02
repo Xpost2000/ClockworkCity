@@ -32,7 +32,7 @@
 
 #define array_count(x) (sizeof(x) / sizeof(*x))
 #define zero_buffer_memory(x, l) memset(x, 0, l)
-#define zero_array(x) zero_buffer_memory(x, array_count(x))
+#define zero_array(x) zero_buffer_memory(x, array_count(x) * sizeof(*x))
 
 #define swap(t, a, b)                           \
     do {                                        \
@@ -74,6 +74,37 @@ bool rectangle_overlapping(struct rectangle a, struct rectangle b);
 
 local float lerp(float a, float b, float t) {
     return (1.0 - t) * a + (b * t);
+}
+
+/* old stuff
+   format =
+
+   min, range, max_time, time
+ */
+local float cubic_ease_in(float b, float c, float d, float t){
+    t /= d;
+
+    return c * t * t * t + b;
+}
+
+local float cubic_ease_out(float b, float c, float d, float t){
+    t /= d;
+
+    t--;
+
+    return c * ( t * t * t + 1 ) + b;
+}
+
+local float quadratic_ease_in(float b, float c, float d, float t){
+    t /= d;
+
+    return c * t * t + b;
+}
+
+local float quadratic_ease_out(float b, float c, float d, float t){
+    t /= d;
+
+    return (-c) * t * (t - 2) + b;
 }
 
 shared_storage float normalized_sinf(float p) {

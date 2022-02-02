@@ -88,7 +88,9 @@ struct particle_emitter* particle_emitter_allocate(void) {
 
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
+
         if (!emitter->alive && emitter->count == 0) {
+            zero_buffer_memory(emitter, sizeof(*emitter));
             emitter->alive = true;
             return emitter;
         }

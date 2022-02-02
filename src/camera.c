@@ -1,7 +1,3 @@
-local float _camera_lerp(float a, float b, float t) {
-    return (1.0 - t) * a + (b * t);
-}
-
 local float _camera_render_scale(struct camera* camera) {
     if (camera->render_scale == 0) {
         camera->render_scale = 1;
@@ -35,9 +31,9 @@ void camera_set_position(struct camera* camera, float x, float y) {
 
 void camera_set_focus_position(struct camera* camera, float x, float y) {
     camera->last_position_x = camera->visual_position_x;
-    camera->last_position_y = camera->visual_position_y;
-
     camera->target_position_x = x;
+
+    camera->last_position_y = camera->visual_position_y;
     camera->target_position_y = y;
 
     zero_array(camera->interpolation_time);
@@ -78,24 +74,27 @@ void camera_update(struct camera* camera, float dt) {
     /* think of some better metrics on small levels */
     {
         struct rectangle screen_bounds = camera_get_bounds(camera);
+        float area = ((camera->bounds_max_x - camera->bounds_min_x) * (camera->bounds_max_y - camera->bounds_min_y));
 
-        if ((screen_bounds.x + screen_bounds.w) > (camera->bounds_max_x)) {
-            camera->target_position_x = camera->bounds_max_x - (screen_bounds.w/2);
-            camera->interpolation_time[0] = 0;
-        }
-        if ((screen_bounds.x) < (camera->bounds_min_x)) {
-            camera->target_position_x = camera->bounds_min_x + (screen_bounds.w/2);
-            camera->interpolation_time[0] = 0;
-        }
+        if (area > 0) {
+            if ((screen_bounds.x + screen_bounds.w) > (camera->bounds_max_x)) {
+                camera->target_position_x = camera->bounds_max_x - (screen_bounds.w/2);
+                camera->interpolation_time[0] = 0;
+            }
+            if ((screen_bounds.x) < (camera->bounds_min_x)) {
+                camera->target_position_x = camera->bounds_min_x + (screen_bounds.w/2);
+                camera->interpolation_time[0] = 0;
+            }
 
-        if ((screen_bounds.y + screen_bounds.h) > (camera->bounds_max_y)) {
-            camera->target_position_y = camera->bounds_max_y - (screen_bounds.h/2);
-            camera->interpolation_time[1] = 0;
-        }
+            if ((screen_bounds.y + screen_bounds.h) > (camera->bounds_max_y)) {
+                camera->target_position_y = camera->bounds_max_y - (screen_bounds.h/2);
+                camera->interpolation_time[1] = 0;
+            }
         
-        if ((screen_bounds.y) < (camera->bounds_min_y)) {
-            camera->target_position_y = camera->bounds_min_y + (screen_bounds.h/2);
-            camera->interpolation_time[1] = 0;
+            if ((screen_bounds.y) < (camera->bounds_min_y)) {
+                camera->target_position_y = camera->bounds_min_y + (screen_bounds.h/2);
+                camera->interpolation_time[1] = 0;
+            }
         }
     }
 
@@ -106,11 +105,11 @@ void camera_update(struct camera* camera, float dt) {
     }
 
     camera->visual_position_x =
-        _camera_lerp(camera->last_position_x, camera->target_position_x,
-                     camera->interpolation_time[0]) + trauma_shake_x;
+        lerp(camera->last_position_x, camera->target_position_x,
+             clampf(camera->interpolation_time[0], 0, 1)) + trauma_shake_x;
     camera->visual_position_y =
-        _camera_lerp(camera->last_position_y, camera->target_position_y,
-                     camera->interpolation_time[1]) + trauma_shake_y;
+        lerp(camera->last_position_y, camera->target_position_y,
+             clampf(camera->interpolation_time[1], 0, 1)) + trauma_shake_y;
 
     camera->trauma -= dt * 0.078;
 }
@@ -122,6 +121,7 @@ void camera_reset_transform(struct camera* camera) {
 }
 
 void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y) {
+
     camera->bounds_min_x = min_x;
     camera->bounds_min_y = min_y;
     camera->bounds_max_x = max_x;

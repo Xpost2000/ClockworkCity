@@ -78,15 +78,18 @@ local void do_physics(float dt) {
 
     if (player.last_vy > 0) {
         if (player.last_vy >= (VPIXELS_PER_METER*20)) {
-            float g_force_count = (player.last_vy / (20));
+            float g_force_count = (player.last_vy / (GRAVITY_CONSTANT));
             /* camera_traumatize(0.02521 * (player.last_vy / ((VPIXELS_PER_METER*20)))); */
-            camera_traumatize(&game_camera, pow(0.02312, 1.15/(g_force_count)));
+            float shake_factor = pow(0.02356, 1.10 / (g_force_count));
+
+            camera_traumatize(&game_camera, shake_factor);
             {
                 struct particle_emitter* splatter = particle_emitter_allocate();
+                console_printf("%p\n", splatter);
                 splatter->x = splatter->x1 = player.x;
                 splatter->y = splatter->y1 = player.y + player.h;
                 splatter->emission_rate = 0;
-                splatter->emission_count = 32;
+                splatter->emission_count = ceilf(128 * shake_factor);
                 splatter->max_emissions = 1;
                 splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
                 splatter->particle_max_lifetime = 1;
@@ -210,8 +213,8 @@ local void game_update_render_frame(float dt) {
         test_emitter->y = test_emitter->y1 = player.y;
     }
 
-    camera_set_focus_speed_x(&game_camera, 12);
-    camera_set_focus_speed_y(&game_camera, 5);
+    camera_set_focus_speed_x(&game_camera, 3);
+    camera_set_focus_speed_y(&game_camera, 2);
     camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
                       game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
     camera_set_focus_position(&game_camera, player.x - player.w/2, player.y - player.h/2);
