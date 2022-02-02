@@ -11,13 +11,27 @@ local void gameplay_initialize(void) {
     test_emitter  = particle_emitter_allocate();
     test_emitter2 = particle_emitter_allocate();
 
-    test_emitter->emission_rate = 0.025;
-    test_emitter->emission_count = 4;
+    {
+        test_emitter->emission_rate = 0.025;
+        test_emitter->emission_count = 16;
+        test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
+        test_emitter2->particle_max_lifetime = 0.2;
+    }
 
-    test_emitter2->emission_rate = 0.015;
-    test_emitter2->emission_count = 1;
-    test_emitter2->x = 0;
-    test_emitter2->y = 0;
+    {
+        test_emitter2->emission_rate = 0.01;
+        test_emitter2->emission_count = 1;
+        test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
+        test_emitter2->particle_max_lifetime = 8;
+
+        int a = 0;
+        int b = -8;
+        test_emitter2->x = a;
+        test_emitter2->y = b;
+
+        test_emitter2->x1 = a + 30;
+        test_emitter2->y1 = b;
+    }
     /* test_emitter2->gravity_active = true; */
 }
 
@@ -43,7 +57,7 @@ local void do_physics(float dt) {
         player.dash = false;
     }
 
-    player.vy += (player.ay + VPIXELS_PER_METER*20) * dt;
+    player.vy += (player.ay + GRAVITY_CONSTANT) * dt;
     if (player.dash) player.vy = 0;
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
@@ -67,6 +81,16 @@ local void do_physics(float dt) {
             float g_force_count = (player.last_vy / (20));
             /* camera_traumatize(0.02521 * (player.last_vy / ((VPIXELS_PER_METER*20)))); */
             camera_traumatize(&game_camera, pow(0.02312, 1.15/(g_force_count)));
+            {
+                struct particle_emitter* splatter = particle_emitter_allocate();
+                splatter->x = splatter->x1 = player.x;
+                splatter->y = splatter->y1 = player.y + player.h;
+                splatter->emission_rate = 0;
+                splatter->emission_count = 32;
+                splatter->max_emissions = 1;
+                splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
+                splatter->particle_max_lifetime = 1;
+            }
             player.last_vy = 0;
         }
     }
@@ -182,8 +206,8 @@ local void game_update_render_frame(float dt) {
     }
 
     {
-        test_emitter->x = player.x;
-        test_emitter->y = player.y;
+        test_emitter->x = test_emitter->x1 = player.x;
+        test_emitter->y = test_emitter->y1 = player.y;
     }
 
     camera_set_focus_speed_x(&game_camera, 12);
