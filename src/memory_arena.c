@@ -5,10 +5,20 @@ void* memory_arena_push(struct memory_arena* arena, size_t amount) {
     return memory_arena_push_bottom(arena, amount);
 }
 
+local void _arena_diagonistic(struct memory_arena* arena) {
+    {
+        size_t memusage = memory_arena_total_usage(arena);
+        console_printf("(memory arena \"%s\") is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
+                       arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024));
+    }
+}
+
 void* memory_arena_push_top(struct memory_arena* arena, size_t amount) {
     assert(arena->used+arena->top_used <= arena->capacity && "Out of arena memory (does not grow!)");
     arena->top_used += amount;
     void* result = (arena->memory + arena->capacity) - arena->top_used;
+
+    _arena_diagonistic(arena);
     return result;
 }
 
@@ -16,6 +26,8 @@ void* memory_arena_push_bottom(struct memory_arena* arena, size_t amount) {
     assert(arena->used+arena->top_used <= arena->capacity && "Out of arena memory (does not grow!)");
     void* result = arena->memory + arena->used;
     arena->used += amount;
+
+    _arena_diagonistic(arena);
     return result;
 }
 

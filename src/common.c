@@ -19,6 +19,11 @@ int random_ranged_integer(int min, int max) {
     return (rand() % (max - min)) + min;
 }
 
+float random_ranged_float(float min, float max) {
+    float range = (max - min);
+    return (random_float() * range) + min;
+}
+
 bool rectangle_intersects_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
     float x1min = x1;
     float x1max = x1 + w1;

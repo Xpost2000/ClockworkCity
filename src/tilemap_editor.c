@@ -337,13 +337,11 @@ local void editor_clear_all(void) {
 
 local void load_tilemap_editor_resources(void) {
     editor.arena = allocate_memory_arena(Megabyte(4));
+    editor.arena.name = "Editor Arena";
+
     editor.tilemap.tiles              = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
     editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT * sizeof(*editor.tilemap.transitions));
     editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
-    size_t memusage = memory_arena_total_usage(&editor.arena);
-    console_printf("Arena is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
-                   memusage, memusage / 1024,
-                   memusage / (1024 * 1024), memusage / (1024*1024*1024));
 }
 
 /*

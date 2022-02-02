@@ -9,19 +9,19 @@
 struct entity {
     float x;
     float y;
+    
     float w;
     float h;
 
     /* only acceleration is gravity for now. Don't care about other forces atm */
-    float ax;
-    float ay;
-
     float vx;
     float vy;
 
+    float ax;
+    float ay;
+
     /* for falling reasons */
     float last_vy;
-
     bool onground;
 
     /*temporary*/
@@ -102,6 +102,7 @@ local int font_size_aspect_ratio_independent(float percentage) {
 }
 
 #include "tilemap.c"
+#include "particle_systems.c"
 
 struct game_state {
     uint8_t menu_mode;
@@ -152,10 +153,14 @@ local void load_static_resources(void) {
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 
-    game_memory_arena = allocate_memory_arena(Megabyte(48));
+    game_memory_arena = allocate_memory_arena(Megabyte(64));
+    game_memory_arena.name = "Game Arena";
+
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
+    initialize_particle_emitter_pool(&game_memory_arena, MAX_PARTICLE_EMITTER_COUNT);
 
     load_tilemap_editor_resources();
+    gameplay_initialize();
     console_execute_cstr("load 1.lvl");
 }
 /*

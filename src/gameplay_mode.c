@@ -1,7 +1,24 @@
 #include "game_menus.c"
 
+local struct particle_emitter* test_emitter = 0x12345;
+local struct particle_emitter* test_emitter2 = 0x12345;
+
 local void load_gameplay_resources(void) {
     load_all_tile_assets();
+}
+
+local void gameplay_initialize(void) {
+    test_emitter  = particle_emitter_allocate();
+    test_emitter2 = particle_emitter_allocate();
+
+    test_emitter->emission_rate = 0.025;
+    test_emitter->emission_count = 4;
+
+    test_emitter2->emission_rate = 0.015;
+    test_emitter2->emission_count = 1;
+    test_emitter2->x = 0;
+    test_emitter2->y = 0;
+    /* test_emitter2->gravity_active = true; */
 }
 
 local void do_physics(float dt) {
@@ -146,16 +163,27 @@ local void game_update_render_frame(float dt) {
     if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
         do_player_input(dt);
 
-        local float physics_accumulation_timer = 0;
-        const int PHYSICS_FRAMERATE = 300;
-        const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
+        {
+            local float physics_accumulation_timer = 0;
+            const int PHYSICS_FRAMERATE = 300;
+            const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
-        while (physics_accumulation_timer > 0.0f) {
-            do_physics(PHYSICS_TIMESTEP);
-            physics_accumulation_timer -= PHYSICS_TIMESTEP;
+            while (physics_accumulation_timer > 0.0f) {
+                do_physics(PHYSICS_TIMESTEP);
+                physics_accumulation_timer -= PHYSICS_TIMESTEP;
+            }
+
+            physics_accumulation_timer += dt;
         }
 
-        physics_accumulation_timer += dt;
+        {
+            update_all_particle_systems(dt);
+        }
+    }
+
+    {
+        test_emitter->x = player.x;
+        test_emitter->y = player.y;
     }
 
     camera_set_focus_speed_x(&game_camera, 12);
@@ -168,6 +196,8 @@ local void game_update_render_frame(float dt) {
     begin_graphics_frame(&game_camera); {
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         draw_tilemap(game_state->loaded_level);
+        draw_all_particle_systems();
+
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();
 

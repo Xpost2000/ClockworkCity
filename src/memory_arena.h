@@ -7,6 +7,8 @@
   I find these are the most versatile... So yeah
 */
 struct memory_arena {
+    char* name;
+
     size_t used;
     size_t top_used;
     size_t capacity;
@@ -15,6 +17,8 @@ struct memory_arena {
 
 /*This is intentionally structured like this so you can use the memory_arena functions. Ignore type problems*/
 struct temporary_arena { 
+    char* name;
+
     size_t used;
     size_t top_used;
     size_t capacity;

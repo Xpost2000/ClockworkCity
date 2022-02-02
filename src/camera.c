@@ -64,12 +64,6 @@ void camera_traumatize(struct camera* camera, float amount) {
 void camera_update(struct camera* camera, float dt) {
     camera->trauma = clampf(camera->trauma, 0.0, 1.0);
 
-    for (int index = 0; index < array_count(camera->interpolation_time); ++index) {
-        if (camera->interpolation_time[index] < 1.0) {
-            camera->interpolation_time[index] += dt * camera->interpolation_speed[index];
-        }
-    }
-
     /*
       Because of the frequency of set_focus_position... This is actually not linear but
       quadratic. So this is technically the *wrong* way to use lerp.
@@ -81,23 +75,33 @@ void camera_update(struct camera* camera, float dt) {
     float trauma_shake_x = (8 * random_float() - 4.5) * camera->trauma;
     float trauma_shake_y = (8 * random_float() - 4.5) * camera->trauma;
 
+    /* think of some better metrics on small levels */
     {
         struct rectangle screen_bounds = camera_get_bounds(camera);
 
         if ((screen_bounds.x + screen_bounds.w) > (camera->bounds_max_x)) {
             camera->target_position_x = camera->bounds_max_x - (screen_bounds.w/2);
+            camera->interpolation_time[0] = 0;
         }
-
         if ((screen_bounds.x) < (camera->bounds_min_x)) {
             camera->target_position_x = camera->bounds_min_x + (screen_bounds.w/2);
+            camera->interpolation_time[0] = 0;
         }
 
         if ((screen_bounds.y + screen_bounds.h) > (camera->bounds_max_y)) {
             camera->target_position_y = camera->bounds_max_y - (screen_bounds.h/2);
+            camera->interpolation_time[1] = 0;
         }
-
+        
         if ((screen_bounds.y) < (camera->bounds_min_y)) {
             camera->target_position_y = camera->bounds_min_y + (screen_bounds.h/2);
+            camera->interpolation_time[1] = 0;
+        }
+    }
+
+    for (int index = 0; index < array_count(camera->interpolation_time); ++index) {
+        if (camera->interpolation_time[index] < 1.0) {
+            camera->interpolation_time[index] += dt * camera->interpolation_speed[index];
         }
     }
 

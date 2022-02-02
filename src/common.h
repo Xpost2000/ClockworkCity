@@ -136,6 +136,7 @@ shared_storage float float_sign(float x) {
 
 char* clone_cstring(char* cstr);
 float random_float(void);
+float random_ranged_float(float min, float max);
 int random_ranged_integer(int min, int max);
 
 char* get_line_starting_from(char* text, int* starting_from);
