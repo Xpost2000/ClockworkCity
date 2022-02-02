@@ -107,8 +107,8 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
                               color4f((float)particle->r / 256.0f,
                                       (float)particle->g / 256.0f,
                                       (float)particle->b / 256.0f,
-                                      /* particle->lifetime / particle->lifetime_max */
-                                      1.0
+                                      particle->lifetime / particle->lifetime_max
+                                      /* 1.0 */
                               ));
     }
 }

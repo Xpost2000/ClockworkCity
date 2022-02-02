@@ -47,13 +47,13 @@ local void do_physics(float dt) {
     player.vx += player.ax * dt;
     player.vx -= (player.vx * 3 * dt);
 
-    const int MAX_SPEED = 150 * VPIXELS_PER_METER;
+    const int MAX_SPEED = 150;
     if (fabs(player.vx) > MAX_SPEED) {
         float sgn = float_sign(player.vx);
         player.vx = MAX_SPEED * sgn;
     }
 
-    if (fabs(player.vx) < (30 * VPIXELS_PER_METER)) {
+    if (fabs(player.vx) < (30)) {
         player.dash = false;
     }
 
@@ -77,9 +77,8 @@ local void do_physics(float dt) {
     }
 
     if (player.last_vy > 0) {
-        if (player.last_vy >= (VPIXELS_PER_METER*20)) {
+        if (player.last_vy >= (20)) {
             float g_force_count = (player.last_vy / (GRAVITY_CONSTANT));
-            /* camera_traumatize(0.02521 * (player.last_vy / ((VPIXELS_PER_METER*20)))); */
             float shake_factor = pow(0.02356, 1.10 / (g_force_count));
 
             camera_traumatize(&game_camera, shake_factor);
@@ -117,22 +116,22 @@ local void do_player_input(float dt) {
     }
 
     if (move_right) {
-        player.ax = VPIXELS_PER_METER * MAX_ACCELERATION;
+        player.ax = MAX_ACCELERATION;
         player.facing_dir = 1;
     } else if (move_left) {
-        player.ax = VPIXELS_PER_METER * -MAX_ACCELERATION;
+        player.ax = -MAX_ACCELERATION;
         player.facing_dir = -1;
     }
 
     if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
-        player.ax = VPIXELS_PER_METER * MAX_ACCELERATION * gamepad->left_stick.axes[0];
+        player.ax = MAX_ACCELERATION * gamepad->left_stick.axes[0];
         player.facing_dir = (int)float_sign(player.ax);
     }
 
     if (noclip) {
         player.ay = 0;
         if (fabs(gamepad->left_stick.axes[1]) >= 0.1) {
-            player.ay = VPIXELS_PER_METER * MAX_ACCELERATION * gamepad->left_stick.axes[1];
+            player.ay = MAX_ACCELERATION * gamepad->left_stick.axes[1];
         }
     }
 
@@ -143,7 +142,7 @@ local void do_player_input(float dt) {
     if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
         if (!player.dash) {
             player.vy = 0;
-            const int MAX_SPEED = 90 * VPIXELS_PER_METER;
+            const int MAX_SPEED = 90;
             player.vx = MAX_SPEED * player.facing_dir;
             camera_traumatize(&game_camera, 0.0675);
             player.dash = true;
@@ -152,7 +151,7 @@ local void do_player_input(float dt) {
 
     if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (player.onground && player.vy == 0) {
-            player.vy = VPIXELS_PER_METER * -10;
+            player.vy = -10;
             player.onground = false;
         }
     }
@@ -222,6 +221,18 @@ local void game_update_render_frame(float dt) {
     /* UI is a substate, we still draw the game under the UI, so it can look nice. */
     begin_graphics_frame(&game_camera); {
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+        /* 125 x 120 */
+        /* draw_texture(knight_twoview, player.x, (player.y+player.h) - (120/16.0f), */
+        /*              125/16.0f, */
+        /*              120/16.0f, color4f(1,0,0,1)); */
+
+        /*icon*/
+        /* draw_texture(test_icon, player.x, (player.y+player.h) - (172/16.0f), */
+        /*              172/16.0f, */
+        /*              172/16.0f, color4f(1,0,0,1)); */
+        draw_filled_rectangle(player.x + player.w, player.y, 1/16.0f, 1/16.0f, color4f(0, 1, 0, 1));
+        /* draw_texture(tile_textures[1], player.x, player.y, 1, 1, color4f(1,0,0,1)); */
+
         draw_tilemap(game_state->loaded_level);
         draw_all_particle_systems();
 
@@ -242,22 +253,4 @@ local void game_update_render_frame(float dt) {
             } break;
         }
     }
-#if 0
-    begin_graphics_frame(); {
-        int dimens[2];
-        get_screen_dimensions(dimens, dimens+1);
-        draw_filled_rectangle(0, 0, dimens[0], dimens[1], color4f(0,0,0,0.5));
-
-        draw_text(test_font, 0, 0,
-                  format_temp("onground: %d\npx: %f\npy:%15.15f\npvx: %f\npvy: %f\n%f ms (%f fps)\n",
-                              player.onground, player.x, player.y, player.vx, player.vy, dt * 1000.0f, (1.0f/dt)),
-                  COLOR4F_WHITE);
-        {
-            int tdimens[2];
-            char* text = "There's a radio stuck in my brain.\nHello Sailer!";
-            get_text_dimensions(test2_font, text, tdimens, tdimens+1);
-            draw_text(test2_font, dimens[0]/2 - tdimens[0]/2, dimens[1]/2 - tdimens[1]/2, text, COLOR4F_WHITE);
-        }
-    } end_graphics_frame();
-#endif
 }

@@ -1,7 +1,18 @@
 /*
   physics "constants"
 */
-#define VPIXELS_PER_METER (1)
+
+/*
+  As I'm converting to vector based rendering soon, the definition
+  of "pixel" is kind of arbitrary.
+
+  However I want characters of 16x16 to be one unit tall, one unit wide, which
+  is probably the best my artistic ability will allow me to draw, and that might even
+  be stretching it.
+  
+  If I such at pixel art even more... Just decrease the number!
+*/
+#define VPIXELS_PER_METER (16)
 #define TILES_PER_SCREEN (50)
 #define GRAVITY_CONSTANT (20)
 /*
@@ -47,6 +58,7 @@ struct entity player = {
 local struct memory_arena game_memory_arena;
 
 local texture_id knight_twoview;
+local texture_id test_icon;
 local font_id    dynamic_scale_font;
 local font_id    test_font;
 local font_id    game_title_font;
@@ -130,6 +142,7 @@ enum game_mode mode = GAME_MODE_PLAYING;
 void load_graphics_resources(void) {
     /* can change depending on resolution maybe... */
     knight_twoview      = load_texture("assets/knight_twoview.png");
+    test_icon      = load_texture("assets/icon.png");
     test_font           = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.03));
     _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
     test3_font          = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.04));

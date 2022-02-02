@@ -66,8 +66,8 @@ void graphics_initialize(void* window_handle) {
     global_window = window_handle;
     /*hardware*/
     global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1,
-                                         SDL_RENDERER_ACCELERATED /* | SDL_RENDERER_PRESENTVSYNC */
-                                         /* SDL_RENDERER_SOFTWARE */
+                                         /* SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC */
+                                         SDL_RENDERER_SOFTWARE
     );
     SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
 }

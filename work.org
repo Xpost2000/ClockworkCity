@@ -191,7 +191,7 @@
     actually simpler to just reduce the procedure instead of making a real
     UI system first.
 
-*** TODO (reallybasicthis)particle systems that can collide and bounce
+*** DONE (reallybasicthis)particle systems that can collide and bounce
     Looks kind of cool I guess, not necessarily interactive.
 
     Just wanna try and simulate some fire and smoke
@@ -261,6 +261,10 @@
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
 *** TODO add tile variations
 *** TODO Cleanup and refactor the code at the end of the week.
+** <2022-02-02 Wed>
+   More particle work today probably. Stream API today, and probably font texture atlas today. Then the start
+   of an OpenGL backend, which will eventually replace the SDL backend. (or maybe maintain both, but use the SDL renderer
+   in software mode as a fallback.)
 ** <2022-02-09 Wed> Soft stop day
   I'm going to stop with whatever progress I've made to rest. Basic engine
   capacities should be done.
