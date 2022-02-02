@@ -26,7 +26,15 @@
 /* these would go in a renderer, but these are actually meant to be global. So that's okay. */
 
 local uint16_t texture_count                           = 0;
-local SDL_Texture*   textures[RENDERER_MAX_TEXTURES+1] = {};
+struct texture {
+    uint32_t width;
+    uint32_t height;
+    /*pitch optional*/
+    uint8_t* pixels;
+    /* for now I'll assume the format is rgba32, expensive but okay. Easiest to work with */
+    SDL_Texture* texture_object;
+};
+local struct texture textures[RENDERER_MAX_TEXTURES+1] = {};
 
 local uint16_t font_count                   = 0;
 local TTF_Font* fonts[RENDERER_MAX_FONTS+1] = {};
@@ -160,7 +168,7 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h,
                             int srx, int sry, int srw, int srh, union color4f color) {
-    SDL_Texture* texture_object = textures[texture.id];
+    SDL_Texture* texture_object = textures[texture.id].texture_object;
 
     x *= _camera_render_scale(_active_camera);
     y *= _camera_render_scale(_active_camera);
@@ -275,13 +283,39 @@ texture_id load_texture(const char* texture_path) {
     };
 
     SDL_Surface* image_surface = IMG_Load(texture_path);
+    {
+        /*stupid but I don't want to have lots of special case code as I want to read the pixels for reasons and it's easier
+          to just have one format IE: prefer RGBA exclusive. Makes loading a bit slower... 
+         Probably unnoticable though.*/
+
+        /* lazy init implicit global object. Never free */
+        local SDL_PixelFormat* rgba32_format = NULL;
+
+        if (!(rgba32_format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32)));
+        assert(rgba32_format && "uh... wtf? SDL failed to make pixel format structure?");
+
+        SDL_Surface* reformatted_as_rgba32 = SDL_ConvertSurface(image_surface, rgba32_format, 0);
+        assert(reformatted_as_rgba32 && "conversion failed? wtf?");
+        SDL_FreeSurface(image_surface);
+        image_surface = reformatted_as_rgba32;
+    }
 
     assert(texture_count < RENDERER_MAX_TEXTURES && "too many textures");
     assert(image_surface && "bad image");
 
-    /* SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest"); */
-    textures[free_id] =
-        SDL_CreateTextureFromSurface(global_renderer, image_surface);
+    {
+        struct texture* new_texture = &textures[free_id];
+        new_texture->texture_object = SDL_CreateTextureFromSurface(global_renderer, image_surface);
+
+        uint32_t image_width  = image_surface->w;
+        uint32_t image_height = image_surface->h;
+
+        new_texture->width  = image_width;
+        new_texture->height = image_height;
+        assert(image_surface->format->BytesPerPixel == 4 && "Only RGBA images for simplicity!");
+        new_texture->pixels = system_clone_buffer(image_surface->pixels,
+                                                  image_surface->format->BytesPerPixel * image_width * image_height);
+    }
 
     SDL_FreeSurface(image_surface);
     return result;
@@ -304,17 +338,32 @@ font_id load_font(const char* font_path, int size) {
 }
 
 void unload_font(font_id font) {
+    struct TTF_Font* deleted = fonts[font.id];
+    {
+        TTF_CloseFont(deleted);
+    }
     fonts[font.id] = fonts[--font_count];
 }
 
 void unload_texture(texture_id texture) {
+    struct texture* deleted = &textures[texture.id];
+    {
+        SDL_DestroyTexture(deleted->texture_object);
+        system_deallocate_memory(deleted->pixels);
+
+        zero_buffer_memory(deleted, sizeof(*deleted));
+    }
     textures[texture.id] = textures[--texture_count];
 }
 
 void get_texture_dimensions(texture_id texture, int* width, int* height) {
     /* assert((texture.id > 0 && texture.id < RENDERER_MAX_TEXTURES+1) && "wtf? bad texture id??"); */
-    SDL_Texture* texture_object = textures[texture.id];
-    SDL_QueryTexture(texture_object, 0, 0, width, height);
+    /*not necessary, we cache width and height lol*/
+    struct texture* texture_target = &textures[texture.id];
+    safe_assignment(width)  = texture_target->width;
+    safe_assignment(height) = texture_target->height;
+    /* SDL_Texture* texture_object = textures[texture.id].texture_object; */
+    /* SDL_QueryTexture(texture_object, 0, 0, width, height); */
 }
 
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height) {

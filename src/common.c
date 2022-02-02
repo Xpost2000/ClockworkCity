@@ -163,6 +163,12 @@ void system_deallocate_memory(void* ptr) {
     free(ptr);
 }
 
+void* system_clone_buffer(void* buffer, size_t buffer_size) {
+    void* clone = system_allocate_memory(buffer_size);
+    memcpy(clone, buffer, buffer_size);
+    return clone;
+}
+
 void* system_allocate_zeroed_memory(size_t amount) {
     void* ptr = system_allocate_memory(amount);
     zero_buffer_memory(ptr, amount);

@@ -181,6 +181,7 @@ int count_lines_of_cstring(char* string);
 void* system_allocate_memory(size_t amount);
 void  system_deallocate_memory(void* ptr);
 void* system_allocate_zeroed_memory(size_t amount);
+void* system_clone_buffer(void* buffer, size_t buffer_size);
 
 inline shared_storage float degrees_to_radians(float deg) {
     return (deg * M_PI/180.0f);
