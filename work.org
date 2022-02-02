@@ -265,6 +265,12 @@
    More particle work today probably. Stream API today, and probably font texture atlas today. Then the start
    of an OpenGL backend, which will eventually replace the SDL backend. (or maybe maintain both, but use the SDL renderer
    in software mode as a fallback.)
+** <2022-02-05 Sat>
+   PHYSICS DAY!
+   I am ONLY programming physics/collision stuff on this day because it is in such a "meh" state!
+
+   So I'm going to try to fix the physics as hard as I can, cause this metroidvania's platforming system
+   kind of depends on it!
 ** <2022-02-09 Wed> Soft stop day
   I'm going to stop with whatever progress I've made to rest. Basic engine
   capacities should be done.
