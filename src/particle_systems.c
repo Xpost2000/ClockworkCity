@@ -40,6 +40,7 @@
 #define MAX_PARTICLE_EMITTER_COUNT (16) /*Most levels will probably never reach this number?*/
 
 struct particle {
+    texture_id texture;
     /* shared with struct entity intentionally to allow pointer cast reuse */
     float x;
     float y;
@@ -94,6 +95,7 @@ struct particle_emitter {
 
     /* use texture as emission source, overrides everything else, since I can't see any other way to use this for now */
     texture_id from_texture;
+    texture_id particle_texture;
 
     uint16_t emission_count;
     /* add more randomness entropy things here. */
@@ -131,13 +133,23 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
     for (unsigned index = 0; index < emitter->count; ++index) {
         struct particle* particle = emitter->particles + index;
         /* just draw a square I suppose */
-        draw_filled_rectangle(particle->x, particle->y, particle->w, particle->h,
-                              color4f((float)particle->color.r / 256.0f,
-                                      (float)particle->color.g / 256.0f,
-                                      (float)particle->color.b / 256.0f,
-                                      particle->lifetime / particle->lifetime_max
-                                      /* 1.0 */
-                              ));
+        if (particle->texture.id) {
+            draw_texture(particle->texture, particle->x, particle->y, particle->w, particle->h,
+                         color4f((float)particle->color.r / 256.0f,
+                                 (float)particle->color.g / 256.0f,
+                                 (float)particle->color.b / 256.0f,
+                                 particle->lifetime / particle->lifetime_max
+                                 /* 1.0 */
+                         ));
+        } else {
+            draw_filled_rectangle(particle->x, particle->y, particle->w, particle->h,
+                                  color4f((float)particle->color.r / 256.0f,
+                                          (float)particle->color.g / 256.0f,
+                                          (float)particle->color.b / 256.0f,
+                                          particle->lifetime / particle->lifetime_max
+                                          /* 1.0 */
+                                  ));
+        }
     }
 }
 
@@ -161,6 +173,7 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
                     return;
 
                 struct particle* emitted_particle = &emitter->particles[emitter->count++];
+                emitted_particle->texture = emitter->particle_texture;
                 {
                     emitted_particle->x = emitter->x + (float)x * pixel_scale_factor;
                     emitted_particle->y = emitter->y + (float)y * pixel_scale_factor;
@@ -189,6 +202,7 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
 local emit_particles(struct particle_emitter* emitter) {
     for (int emitted = 0; emitted < emitter->emission_count && emitter->count < MAX_PARTICLES_PER_EMITTER; ++emitted) {
         struct particle* emitted_particle = &emitter->particles[emitter->count++];
+        emitted_particle->texture = emitter->particle_texture;
         /* lots of randomness :D */
         {
             emitted_particle->x = lerp(emitter->x, emitter->x1, random_float());

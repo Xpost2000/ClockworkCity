@@ -19,7 +19,8 @@ local void gameplay_initialize(void) {
         test_emitter->emission_rate = 0.025;
         test_emitter->emission_count = 16;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
-        test_emitter2->particle_max_lifetime = 0.2;
+        test_emitter->particle_texture = knight_twoview;
+        test_emitter->particle_max_lifetime = 0.2;
     }
 
     {
