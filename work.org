@@ -179,6 +179,24 @@
     Since I'm planning on going for an incredibly simple visual style... It's entirely
     possible I might just retain the menu system I make at the moment.
 ** <2022-02-01 Tue>
+*** DONE (reallybasicthis)particle systems that can collide and bounce
+    Looks kind of cool I guess, not necessarily interactive.
+
+    Just wanna try and simulate some fire and smoke
+** <2022-02-02 Wed>
+   More particle work today probably. Stream API today, and probably font texture atlas today. Then the start
+   of an OpenGL backend, which will eventually replace the SDL backend. (or maybe maintain both, but use the SDL renderer
+   in software mode as a fallback.)
+
+   (LOL, as per usual I never actually follow through most of that. I
+   have not started the OpenGL backend nor the font atlas system!
+   (texture atlasing is already possible, it's just not engine
+   supported yet. Nor are animated sprites frankly.) As of typing
+   this. I should get the Stream API good enough though! Sparse
+   particle storage may also be underway but may be left incomplete.
+   If I start OpenGL stuff, it's likely just resource generation,
+   which is a decent start.)
+   
 *** TODO Mousable UI
     ... I don't actually want to program a full GUI Library, but I would
     be lying if I didn't think a proper UI system... Might help a lot.
@@ -191,10 +209,6 @@
     actually simpler to just reduce the procedure instead of making a real
     UI system first.
 
-*** DONE (reallybasicthis)particle systems that can collide and bounce
-    Looks kind of cool I guess, not necessarily interactive.
-
-    Just wanna try and simulate some fire and smoke
 *** TODO Switch to sparse tile storage on the level editor
     The reasoning for this is that malloc/realloc vector style is actually more complicated to support
     when I need to add stuff like islands.
@@ -206,6 +220,7 @@
     memory reclaimation process.
 
     This is only for the editor. Game runtime just loads into contiguous arrays from the binary file.
+*** TODO Sparse Particle Storage
 *** TODO Design a stream api to load levels seamlessly?
     Reduces code I write mostly.
 *** TODO Editor can remember last editing session!
@@ -262,10 +277,6 @@
     Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
 *** TODO add tile variations
 *** TODO Cleanup and refactor the code at the end of the week.
-** <2022-02-02 Wed>
-   More particle work today probably. Stream API today, and probably font texture atlas today. Then the start
-   of an OpenGL backend, which will eventually replace the SDL backend. (or maybe maintain both, but use the SDL renderer
-   in software mode as a fallback.)
 ** <2022-02-05 Sat>
    PHYSICS DAY!
    I am ONLY programming physics/collision stuff on this day because it is in such a "meh" state!
