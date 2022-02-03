@@ -40,7 +40,6 @@
 #define MAX_PARTICLE_EMITTER_COUNT (16) /*Most levels will probably never reach this number?*/
 
 struct particle {
-    texture_id texture;
     /* shared with struct entity intentionally to allow pointer cast reuse */
     float x;
     float y;
@@ -58,11 +57,16 @@ struct particle {
     bool onground;
 
     /* particle specific */
+    texture_id texture;
+
     float last_x;
     float last_y;
 
     float lifetime;
     float lifetime_max;
+
+    /*TEMPORARY*/
+    bool colliding_with_world;
 
     union color4u8 color;
 };
@@ -88,6 +92,8 @@ struct particle_emitter {
     /* I want to move properties like this into a "particle system definition" */
     union color4f particle_color;
     float particle_max_lifetime;
+    /*TEMPORARY, should be under flags*/
+    bool collides_with_world;
 
     /* second per emission */
     float emission_rate;
@@ -173,6 +179,7 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
                     return;
 
                 struct particle* emitted_particle = &emitter->particles[emitter->count++];
+                emitted_particle->colliding_with_world = emitter->collides_with_world;
                 emitted_particle->texture = emitter->particle_texture;
                 {
                     emitted_particle->x = emitter->x + (float)x * pixel_scale_factor;
@@ -203,6 +210,7 @@ local emit_particles(struct particle_emitter* emitter) {
     for (int emitted = 0; emitted < emitter->emission_count && emitter->count < MAX_PARTICLES_PER_EMITTER; ++emitted) {
         struct particle* emitted_particle = &emitter->particles[emitter->count++];
         emitted_particle->texture = emitter->particle_texture;
+        emitted_particle->colliding_with_world = emitter->collides_with_world;
         /* lots of randomness :D */
         {
             emitted_particle->x = lerp(emitter->x, emitter->x1, random_float());
@@ -218,7 +226,7 @@ local emit_particles(struct particle_emitter* emitter) {
     }
 }
 
-local void update_particle_emitter(struct particle_emitter* emitter, float dt) {
+local void update_particle_emitter(struct particle_emitter* emitter, struct tilemap* world, float dt) {
     if (emitter->alive && emitter->emission_timer <= 0.0f && emitter->emissions <= emitter->max_emissions) {
         if (emitter->from_texture.id) {
             emit_particles_from_image_source(emitter);
@@ -239,8 +247,15 @@ local void update_particle_emitter(struct particle_emitter* emitter, float dt) {
         particle->vy += particle->ay * dt;
         particle->vy += GRAVITY_CONSTANT * dt;
 
-        particle->x += particle->vx * dt;
-        particle->y += particle->vy * dt;
+        if (particle->colliding_with_world) {
+            do_moving_entity_horizontal_collision_response(world, particle, dt);
+            do_moving_entity_vertical_collision_response(world, particle, dt);
+            /* particle->x += particle->vx * dt; */
+            /* particle->y += particle->vy * dt; */
+        } else {
+            particle->x += particle->vx * dt;
+            particle->y += particle->vy * dt;
+        }
 
         particle->lifetime -= dt;
 
@@ -264,12 +279,13 @@ local void update_particle_emitter(struct particle_emitter* emitter, float dt) {
     }
 }
 
-void update_all_particle_systems(float dt) {
+/*Allow per entity collision? Pixel collision detection *crying**/
+void update_all_particle_systems(struct tilemap* world, float dt) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
 
         if (emitter->alive) {
-            update_particle_emitter(emitter, dt);
+            update_particle_emitter(emitter, world, dt);
         }
     }
 }

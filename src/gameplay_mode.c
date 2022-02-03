@@ -19,8 +19,8 @@ local void gameplay_initialize(void) {
         test_emitter->emission_rate = 0.025;
         test_emitter->emission_count = 16;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
-        test_emitter->particle_texture = knight_twoview;
         test_emitter->particle_max_lifetime = 0.2;
+        test_emitter->collides_with_world = true;
     }
 
     {
@@ -38,6 +38,7 @@ local void gameplay_initialize(void) {
         test_emitter2->y1 = b;
     }
     /* test_emitter2->gravity_active = true; */
+    printf("%d\n", sizeof(struct particle));
 }
 
 local void do_physics(float dt) {
@@ -213,7 +214,7 @@ local void game_update_render_frame(float dt) {
         }
 
         {
-            update_all_particle_systems(dt);
+            update_all_particle_systems(game_state->loaded_level, dt);
         }
     }
 
@@ -249,6 +250,7 @@ local void game_update_render_frame(float dt) {
                     emitter->max_emissions = 1;
                     emitter->particle_color = color4f(1, 0, 0, 1);
                     emitter->particle_max_lifetime = 2;
+                    emitter->collides_with_world = true;
                 }
             }
         } else {
