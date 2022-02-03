@@ -40,21 +40,7 @@
 #define MAX_PARTICLE_EMITTER_COUNT (16) /*Most levels will probably never reach this number?*/
 
 struct particle {
-    /* shared with struct entity intentionally to allow pointer cast reuse */
-    float x;
-    float y;
-
-    float w;
-    float h;
-
-    float vx;
-    float vy;
-
-    float ax;
-    float ay;
-
-    float last_vy;
-    bool onground;
+    KINEMATIC_ENITTY_BASE_BODY();
 
     /* particle specific */
     texture_id texture;

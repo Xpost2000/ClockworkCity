@@ -15,26 +15,30 @@
 #define VPIXELS_PER_METER (16)
 #define TILES_PER_SCREEN (50)
 #define GRAVITY_CONSTANT (20)
+
+/*
+  Particles are theoretically a type of entity, so this allows me to
+  make entities without 'inheritance'.
+  
+  This is like 40 bytes btw! So a bit chunky.
+*/
+#define KINEMATIC_ENITTY_BASE_BODY()            \
+    float x;                                    \
+    float y;                                    \
+    float w;                                    \
+    float h;                                    \
+    float vx;                                   \
+    float vy;                                   \
+    float ax;                                   \
+    float ay;                                   \
+    float last_vy;                              \
+    bool onground
+
 /*
   This might just turn into an uber struct or something.
 */
 struct entity {
-    float x;
-    float y;
-    
-    float w;
-    float h;
-
-    /* only acceleration is gravity for now. Don't care about other forces atm */
-    float vx;
-    float vy;
-
-    float ax;
-    float ay;
-
-    /* for falling reasons */
-    float last_vy;
-    bool onground;
+    KINEMATIC_ENITTY_BASE_BODY();
 
     /*temporary*/
     int facing_dir;
