@@ -143,6 +143,9 @@ void draw_filled_rectangle(float x, float y, float w, float h, union color4f col
     y *= _camera_render_scale(_active_camera);
     w *= _camera_render_scale(_active_camera);
     h *= _camera_render_scale(_active_camera);
+
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
     _camera_transform_v2(_active_camera, &x, &y);
     SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
 }
@@ -155,6 +158,8 @@ void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     h *= _camera_render_scale(_active_camera);
     _camera_transform_v2(_active_camera, &x, &y);
 
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
     if (within_screen_bounds(x, y, w, h)) {
         SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
     }

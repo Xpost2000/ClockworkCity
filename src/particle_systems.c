@@ -174,7 +174,8 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
 
                     emitted_particle->color = color4u8(r, g, b, a);
                 }
-                emitted_particle->h = emitted_particle->w = pixel_scale_factor;
+                emitted_particle->h = pixel_scale_factor;
+                emitted_particle->w = pixel_scale_factor;
 
                 emitted_particle->vx = (random_float() * 5) - 3;
                 emitted_particle->vy = -1 - (random_float() * 5);
