@@ -16,10 +16,10 @@ local void gameplay_initialize(void) {
     test_emitter2 = particle_emitter_allocate();
 
     {
-        test_emitter->emission_rate = 0.025;
-        test_emitter->emission_count = 16;
+        test_emitter->emission_rate = 0.015;
+        test_emitter->emission_count = 32;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
-        test_emitter->particle_max_lifetime = 0.3;
+        test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
     }
 
@@ -44,9 +44,12 @@ local void gameplay_initialize(void) {
 
 local void do_physics(float dt) {
     if (noclip) {
+        /*stupid*/
+        player.vx = player.ax;
+        player.vy = player.ay;
         player.x += player.vx * dt;
         player.y += player.vy * dt;
-        return;   
+        return;
     }
 
     struct tilemap* tilemap = game_state->loaded_level;
