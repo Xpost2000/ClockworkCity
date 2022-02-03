@@ -14,7 +14,67 @@
   be long enough that I shouldn't be able to play through them in an average browser session ya know?
 
   I mean I'm using SDL2 so I guess I have that choice if I want
-  
+** Task List Master  
+*** TODO Mousable UI
+    ... I don't actually want to program a full GUI Library, but I would
+    be lying if I didn't think a proper UI system... Might help a lot.
+
+    I'll see tonight about making a simple UI system, that I semantically
+    describe "widgets", and decide how to program myself I suppose.
+
+    The layout system for it is probably going to be dead simple, as in
+    the entire screen will be assumed as a canvas... IDK. I'll see if it's
+    actually simpler to just reduce the procedure instead of making a real
+    UI system first.
+
+*** TODO Switch to sparse tile storage on the level editor
+    The reasoning for this is that malloc/realloc vector style is actually more complicated to support
+    when I need to add stuff like islands.
+
+    It is easier to sparsely allocate contiguous chunks, and just never free them (so I can just recycle them
+    when I need stuff.)
+
+    Then just free all the chunks immediately by clearing an entire arena, instead of some long iterative
+    memory reclaimation process.
+
+    This is only for the editor. Game runtime just loads into contiguous arrays from the binary file.
+*** TODO Simple radial lighting
+    I could use a "light texture", but I want to do more generic tile lighting.
+
+    I'm considering just using BFS bounded by a distance formula, and calling that a day.
+    Pretty sure that'll look okay enough for what I need.
+*** TODO Editor undo / redo (probably don't need...)
+*** TODO Trails Rendering! (probably part of particles)
+*** TODO Background tiles or something
+    Support multiple tile layers. This is actually important.
+*** TODO Background Sprites?
+*** TODO Moveable tilemap "islands" / platforms
+    Editor support for these... Is going to be a bitch probably.
+
+    I guess the way this fits into the collision system without proper physics...
+    Will also be a bitch!
+
+    It... May be better to just make everything work into a separate "physics" world,
+    and just let the physics work itself out automatically...
+
+    But the code for what I currently have isn't so ridiculous. (slopes are the only complicated
+    part honestly...)
+    
+*** TODO Bloom / glow
+*** TODO SFL console has a crash in history?
+*** TODO Consider using "vector" tiles
+    I'm wondering if this would be a good idea. Vector world with pixel art entities and props...
+
+    Don't think I'm allowed to implement this yet, but it's an idea.
+*** TODO (animated sprite system) or something?
+*** TODO Try to build on ubuntu or something
+    someone teach me how to distribute on linux, I'll provide source anyways but
+    senpai pls.
+*** TODO Rope like objects 
+    Basic rope swinging should be fine.
+*** TODO add tile variations
+*** TODO Cleanup and refactor the code at the end of the week.
+   
 ** <2022-01-19 Wed>
 *** DONE Sprite rendering,
     :LOGBOOK:
@@ -196,87 +256,21 @@
    particle storage may also be underway but may be left incomplete.
    If I start OpenGL stuff, it's likely just resource generation,
    which is a decent start.)
-   
-*** TODO Mousable UI
-    ... I don't actually want to program a full GUI Library, but I would
-    be lying if I didn't think a proper UI system... Might help a lot.
+** <2022-02-03 Thu>  
 
-    I'll see tonight about making a simple UI system, that I semantically
-    describe "widgets", and decide how to program myself I suppose.
-
-    The layout system for it is probably going to be dead simple, as in
-    the entire screen will be assumed as a canvas... IDK. I'll see if it's
-    actually simpler to just reduce the procedure instead of making a real
-    UI system first.
-
-*** TODO Switch to sparse tile storage on the level editor
-    The reasoning for this is that malloc/realloc vector style is actually more complicated to support
-    when I need to add stuff like islands.
-
-    It is easier to sparsely allocate contiguous chunks, and just never free them (so I can just recycle them
-    when I need stuff.)
-
-    Then just free all the chunks immediately by clearing an entire arena, instead of some long iterative
-    memory reclaimation process.
-
-    This is only for the editor. Game runtime just loads into contiguous arrays from the binary file.
+*** TODO Binary Serializer
 *** TODO Sparse Particle Storage
-*** TODO Design a stream api to load levels seamlessly?
-    Reduces code I write mostly.
 *** TODO Editor can remember last editing session!
     I don't know if I wanna support the whole undo-redo debockle, I just wanna be able to load
     the last file I was editting (session really...)
-*** TODO Simple radial lighting
-    I could use a "light texture", but I want to do more generic tile lighting.
-
-    I'm considering just using BFS bounded by a distance formula, and calling that a day.
-    Pretty sure that'll look okay enough for what I need.
-*** TODO Editor undo / redo (probably don't need...)
-*** TODO Trails Rendering! (probably part of particles)
-*** TODO Background tiles or something
-    Support multiple tile layers. This is actually important.
-*** TODO Background Sprites?
-*** TODO (?)Consider thinking of the entity system
-*** TODO Moveable tilemap "islands" / platforms
-    Editor support for these... Is going to be a bitch probably.
-
-    I guess the way this fits into the collision system without proper physics...
-    Will also be a bitch!
-
-    It... May be better to just make everything work into a separate "physics" world,
-    and just let the physics work itself out automatically...
-
-    But the code for what I currently have isn't so ridiculous. (slopes are the only complicated
-    part honestly...)
+   
+*** TODO Atlased Fonts (specifically just for the console, which renders glyph by glyph)
+*** TODO Begin OpenGL Rendering (Resource Management)
+*** TODO Proper Spikes and Basic Health System & UI
+*** TODO Primitive Animated Sprite System
+    ... I want to just be able to animate them in a system not unlike a manager, but
+    it's mad annoying to have to do that... Chunked allocations and linked lists to the rescue
     
-*** TODO Bloom / glow
-*** TODO Faster text rendering for the console
-*** TODO SFL console has a crash in history?
-*** TODO Consider using "vector" tiles
-    I'm wondering if this would be a good idea. Vector world with pixel art entities and props...
-
-    Don't think I'm allowed to implement this yet, but it's an idea.
-*** TODO (animated sprite system) or something?
-*** TODO Try to build on ubuntu or something
-    someone teach me how to distribute on linux, I'll provide source anyways but
-    senpai pls.
-*** TODO Rope like objects 
-    Basic rope swinging should be fine.
-*** TODO (?)Start OpenGL renderer as the last thing I guess.
-*** TODO cpu "decal" system
-    I don't know enough about gpu magic to do this with opengl, but calculating some random
-    numbers, this will only use like 8 mbs on a moderately sized level. I assume it'll run fast
-    enough (considering apparently a -O2 naive software renderer runs at lightspeed on this computer,
-    I'm sure blitting on a smaller tilemap, and not even the whole thing would be pancakes easy...)
-
-    I kinda want to do this cause it would look cool for generic violent effects or liquid splatter or
-    something.
-
-    Probably will perform not so great but I think the frame budget is really generous...
-
-    Also since this only runs on the CPU, this doesn't require me to write an opengl renderer. Quite yet anyways.
-*** TODO add tile variations
-*** TODO Cleanup and refactor the code at the end of the week.
 ** <2022-02-05 Sat>
    PHYSICS DAY!
    I am ONLY programming physics/collision stuff on this day because it is in such a "meh" state!
