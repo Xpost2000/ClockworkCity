@@ -218,61 +218,6 @@ void draw_tilemap(struct tilemap* tilemap) {
     draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
 }
 
-local bool do_collision_response_tile_left_edge(struct tile* t, struct entity* ent) {
-    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
-
-    float entity_right_edge = ent->x + ent->w;
-    float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
-
-    if (entity_right_edge > t->x * TILE_TEX_SIZE && entity_right_edge < tile_right_edge) {
-        ent->x = t->x*TILE_TEX_SIZE - (ent->w + PHYSICS_EPSILION);
-        return true;
-    }
-
-    return false;
-}
-
-local bool do_collision_response_tile_right_edge(struct tile* t, struct entity* ent) {
-    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
-
-    float tile_right_edge  = (t->x + 1) * TILE_TEX_SIZE;
-
-    if (ent->x < tile_right_edge && ent->x > t->x * TILE_TEX_SIZE) {
-        ent->x = tile_right_edge + PHYSICS_EPSILION;
-        return true;
-    }
-
-    return false;
-}
-
-local bool do_collision_response_tile_top_edge(struct tile* t, struct entity* ent) {
-    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
-
-    float entity_bottom_edge = ent->y + ent->h;
-    float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
-
-    if (entity_bottom_edge >= t->y && entity_bottom_edge <= tile_bottom_edge) {
-        ent->y = t->y * TILE_TEX_SIZE - ent->h;
-        return true;
-    }
-
-    return false;
-}
-
-local bool do_collision_response_tile_bottom_edge(struct tile* t, struct entity* ent) {
-    assert(t->id != TILE_NONE && "uh, air tile tries collision?");
-
-    float entity_bottom_edge = ent->y + ent->h;
-    float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
-
-    if (ent->y <= tile_bottom_edge && entity_bottom_edge >= tile_bottom_edge) {
-        ent->y = tile_bottom_edge;
-        return true;
-    }
-
-    return false;
-}
-
 local bool tile_intersects_rectangle(struct tile* t, float x, float y, float w, float h) {
     float tile_x = t->x * TILE_TEX_SIZE;
     float tile_y = t->y * TILE_TEX_SIZE;
@@ -477,19 +422,17 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                     }
                 }
             } else {
-                bool stop_movement = false;
-                if (!do_collision_response_tile_left_edge(t, entity)) {
-                    if (do_collision_response_tile_right_edge(t, entity)) {
-                        stop_movement = true;
-                    }
-                } else {
-                    stop_movement = true;
-                }
+                float entity_right_edge = entity->x + entity->w;
+                float tile_right_edge = (t->x + 1) * TILE_TEX_SIZE;
 
-                if (stop_movement)
+                if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
+                    entity->x = t->x - (entity->w);
                     entity->vx = 0;
+                } else if (entity->x < tile_right_edge && entity->x > t->x) {
+                    entity->x = tile_right_edge;
+                    entity->vx = 0;
+                }
             }
-
         }
     }
 }
@@ -535,8 +478,13 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                 } break;
                 default:
                 case TILE_SOLID: {
-                    if(!do_collision_response_tile_top_edge(t, entity)) {
-                        do_collision_response_tile_bottom_edge(t, entity);
+                    float entity_bottom_edge = entity->y + entity->h;
+                    float tile_bottom_edge = (t->y + 1) * TILE_TEX_SIZE;
+
+                    if (entity_bottom_edge >= t->y && entity_bottom_edge <= tile_bottom_edge) {
+                        entity->y = t->y - entity->h;
+                    } else if (entity->y <= tile_bottom_edge && entity_bottom_edge >= tile_bottom_edge) {
+                        entity->y = tile_bottom_edge;
                     }
 
                     entity->last_vy = old_vy;
