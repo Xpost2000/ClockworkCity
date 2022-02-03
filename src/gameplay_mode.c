@@ -3,6 +3,10 @@
 local struct particle_emitter* test_emitter = 0x12345;
 local struct particle_emitter* test_emitter2 = 0x12345;
 
+#define TEST_timer1_max 2
+float TEST_timer1 = 0;
+bool TEST_bool1 = 0;
+
 local void load_gameplay_resources(void) {
     load_all_tile_assets();
 }
@@ -115,6 +119,11 @@ local void do_player_input(float dt) {
         game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
     }
 
+    if (is_key_down(KEY_T)) {
+        TEST_timer1 = TEST_timer1_max;
+        TEST_bool1 = 1;
+    }
+
     if (move_right) {
         player.ax = MAX_ACCELERATION;
         player.facing_dir = 1;
@@ -222,9 +231,28 @@ local void game_update_render_frame(float dt) {
     begin_graphics_frame(&game_camera); {
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         /* 125 x 120 */
-        /* draw_texture(knight_twoview, player.x, (player.y+player.h) - (120/16.0f), */
-        /*              125/16.0f, */
-        /*              120/16.0f, color4f(1,0,0,1)); */
+        if (TEST_bool1) {
+            draw_texture(knight_twoview, player.x, (player.y+player.h) - (120/16.0f),
+                         125/16.0f,
+                         120/16.0f, color4f(1,0,0,1));
+            TEST_timer1 -= dt;
+
+            if (TEST_timer1 < 0) {
+                if (TEST_bool1) {
+                    TEST_bool1 = 0;
+                    struct particle_emitter* emitter = particle_emitter_allocate();
+                    emitter->x = player.x;
+                    emitter->y = (player.y + player.h) - (120/16.0f);
+                    emitter->from_texture = knight_twoview;
+                    emitter->emission_rate = 0;
+                    emitter->max_emissions = 1;
+                    emitter->particle_color = color4f(1, 0, 0, 1);
+                    emitter->particle_max_lifetime = 2;
+                }
+            }
+        } else {
+            
+        }
 
         /*icon*/
         /* draw_texture(test_icon, player.x, (player.y+player.h) - (172/16.0f), */

@@ -26,7 +26,7 @@
   That's more complicated although it's more robust (since now particles can theoretically just use as many particles as they want (upto the
   still fixed particle limit, which is dependent on how much memory I chomp up still.))
 */
-#define MAX_PARTICLES_PER_EMITTER (1024) /* 32x32 filled(all non transparent) sprite. Which is incredibly unlikely since who the fuck just makes a 32x32 white square. Also I can't draw 32x32 tilesets :) */
+#define MAX_PARTICLES_PER_EMITTER (16384) /* 32x32 filled(all non transparent) sprite. Which is incredibly unlikely since who the fuck just makes a 32x32 white square. Also I can't draw 32x32 tilesets :) */
 
 /*
   May bump this number up, although I can reasonably assume this number shouldn't be reached often...
@@ -37,7 +37,7 @@
   That leaves like a good 50/60 for level design placement, because some particle systems can spawn spontaneously (like getting hit
   or landing really hard on the ground, but those particle emitters tend to die incredibly fast...)
  */
-#define MAX_PARTICLE_EMITTER_COUNT (128) /*Most levels will probably never reach this number?*/
+#define MAX_PARTICLE_EMITTER_COUNT (16) /*Most levels will probably never reach this number?*/
 
 struct particle {
     /* shared with struct entity intentionally to allow pointer cast reuse */
@@ -162,15 +162,15 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
 
                 struct particle* emitted_particle = &emitter->particles[emitter->count++];
                 {
-                    emitted_particle->x = (float)x * pixel_scale_factor;
-                    emitted_particle->y = (float)y * pixel_scale_factor;
+                    emitted_particle->x = emitter->x + (float)x * pixel_scale_factor;
+                    emitted_particle->y = emitter->y + (float)y * pixel_scale_factor;
                 }
             
                 {
-                    uint8_t r = image_buffer[y * image_width + (x * 4) + 0];
-                    uint8_t g = image_buffer[y * image_width + (x * 4) + 1];
-                    uint8_t b = image_buffer[y * image_width + (x * 4) + 2];
-                    uint8_t a = image_buffer[y * image_width + (x * 4) + 3];
+                    uint8_t r = image_buffer[y * (image_width * 4) + (x * 4) + 0] * emitter->particle_color.r;
+                    uint8_t g = image_buffer[y * (image_width * 4) + (x * 4) + 1] * emitter->particle_color.g;
+                    uint8_t b = image_buffer[y * (image_width * 4) + (x * 4) + 2] * emitter->particle_color.b;
+                    uint8_t a = image_buffer[y * (image_width * 4) + (x * 4) + 3] * emitter->particle_color.a;
 
                     emitted_particle->color = color4u8(r, g, b, a);
                 }
