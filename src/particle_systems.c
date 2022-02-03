@@ -92,6 +92,9 @@ struct particle_emitter {
     float emission_rate;
     float emission_timer;
 
+    /* use texture as emission source, overrides everything else, since I can't see any other way to use this for now */
+    texture_id from_texture;
+
     uint16_t emission_count;
     /* add more randomness entropy things here. */
 
@@ -138,23 +141,74 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
     }
 }
 
+/* TODO(jerry): more parameterization */
+
+local emit_particles_from_image_source(struct particle_emitter* emitter) {
+    /* image source particles will ignore most parameters except for particle kinematics. */
+    /* I'm only just going to make sure we don't run out of particles though. */
+    /* again assume 32 bit rgba image */
+    {
+        struct image_buffer texture_buffer = get_texture_buffer(emitter->from_texture);
+        float pixel_scale_factor = 1.0f/VPIXELS_PER_METER;
+
+        uint8_t* image_buffer = texture_buffer.pixels;
+        uint32_t image_width  = texture_buffer.width;
+        uint32_t image_height = texture_buffer.height;
+
+        for (unsigned y = 0; y < image_height; ++y) {
+            for (unsigned x = 0; x < image_width; ++x) {
+                if (emitter->count >= MAX_PARTICLES_PER_EMITTER)
+                    return;
+
+                struct particle* emitted_particle = &emitter->particles[emitter->count++];
+                {
+                    emitted_particle->x = (float)x * pixel_scale_factor;
+                    emitted_particle->y = (float)y * pixel_scale_factor;
+                }
+            
+                {
+                    uint8_t r = image_buffer[y * image_width + (x * 4) + 0];
+                    uint8_t g = image_buffer[y * image_width + (x * 4) + 1];
+                    uint8_t b = image_buffer[y * image_width + (x * 4) + 2];
+                    uint8_t a = image_buffer[y * image_width + (x * 4) + 3];
+
+                    emitted_particle->color = color4u8(r, g, b, a);
+                }
+                emitted_particle->h = emitted_particle->w = pixel_scale_factor;
+
+                emitted_particle->vx = (random_float() * 5) - 3;
+                emitted_particle->vy = -1 - (random_float() * 5);
+
+                emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
+            }
+        }
+    }
+}
+
+local emit_particles(struct particle_emitter* emitter) {
+    for (int emitted = 0; emitted < emitter->emission_count && emitter->count < MAX_PARTICLES_PER_EMITTER; ++emitted) {
+        struct particle* emitted_particle = &emitter->particles[emitter->count++];
+        /* lots of randomness :D */
+        {
+            emitted_particle->x = lerp(emitter->x, emitter->x1, random_float());
+            emitted_particle->y = lerp(emitter->y, emitter->y1, random_float());
+        }
+            
+        emitted_particle->color = color4u8_from_color4f(emitter->particle_color);
+            
+        emitted_particle->h = emitted_particle->w = 0.1 + random_float() * 0.1;
+        emitted_particle->vx = (random_float() * 5) - 3;
+        emitted_particle->vy = -1 - (random_float() * 5);
+        emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
+    }
+}
+
 local void update_particle_emitter(struct particle_emitter* emitter, float dt) {
     if (emitter->alive && emitter->emission_timer <= 0.0f && emitter->emissions <= emitter->max_emissions) {
-        /* emit some particles */
-        for (int emitted = 0; emitted < emitter->emission_count && emitter->count < MAX_PARTICLES_PER_EMITTER; ++emitted) {
-            struct particle* emitted_particle = &emitter->particles[emitter->count++];
-            /* lots of randomness :D */
-            {
-                emitted_particle->x = lerp(emitter->x, emitter->x1, random_float());
-                emitted_particle->y = lerp(emitter->y, emitter->y1, random_float());
-            }
-            
-            emitted_particle->color = color4u8_from_color4f(emitter->particle_color);
-            
-            emitted_particle->h = emitted_particle->w = 0.1 + random_float() * 0.1;
-            emitted_particle->vx = (random_float() * 5) - 3;
-            emitted_particle->vy = -1 - (random_float() * 5);
-            emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
+        if (emitter->from_texture.id) {
+            emit_particles_from_image_source(emitter);
+        } else {
+            emit_particles(emitter);
         }
 
         emitter->emission_timer = emitter->emission_rate;
