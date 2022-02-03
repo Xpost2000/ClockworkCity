@@ -19,7 +19,7 @@ local void gameplay_initialize(void) {
         test_emitter->emission_rate = 0.025;
         test_emitter->emission_count = 16;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
-        test_emitter->particle_max_lifetime = 0.2;
+        test_emitter->particle_max_lifetime = 0.3;
         test_emitter->collides_with_world = true;
     }
 
@@ -28,6 +28,7 @@ local void gameplay_initialize(void) {
         test_emitter2->emission_count = 1;
         test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
         test_emitter2->particle_max_lifetime = 8;
+        test_emitter2->collides_with_world = true;
 
         int a = 0;
         int b = -8;
@@ -264,8 +265,8 @@ local void game_update_render_frame(float dt) {
         draw_filled_rectangle(player.x + player.w, player.y, 1/16.0f, 1/16.0f, color4f(0, 1, 0, 1));
         /* draw_texture(tile_textures[1], player.x, player.y, 1, 1, color4f(1,0,0,1)); */
 
-        draw_tilemap(game_state->loaded_level);
         draw_all_particle_systems();
+        draw_tilemap(game_state->loaded_level);
 
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();
