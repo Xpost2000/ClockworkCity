@@ -22,7 +22,7 @@ struct binary_serializer {
 /* TODO(jerry): tomorrow or... The day after!! */
 struct binary_serializer open_write_file_serializer(char* filename) {
     struct binary_serializer result;
-    result.mode = BINARY_SERIALIZER_READ;
+    result.mode = BINARY_SERIALIZER_WRITE;
     result.type = BINARY_SERIALIZER_FILE;
 
     result.file_handle = fopen(filename, "wb+");
