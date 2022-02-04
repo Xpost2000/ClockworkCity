@@ -233,18 +233,7 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
         particle->vy += particle->ay * dt;
         particle->vy += GRAVITY_CONSTANT * dt;
         /*
-          NOTE(jerry):
-          Since the entity collision is incredibly naive and designed for
-          only 'per' entity call. It's not really optimized for particles.
-          
-          I *could* spatial hash things for a speed up, but that's a
-          bit more work to the world structure, and I don't want to
-          have to do that considering I believe my entity count (that
-          require collision) is on average going to be low enough that
-          I shouldn't care about that I'm thinking threading would be
-          an easier solution since the particles only ever read from
-          the world and write back into themselves. So they are all
-          independent from each other.
+          Threading would help I suppose.
         */
 
         if (particle->colliding_with_world) {

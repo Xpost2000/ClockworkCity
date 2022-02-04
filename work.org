@@ -15,6 +15,10 @@
 
   I mean I'm using SDL2 so I guess I have that choice if I want
 ** Task List Master  
+*** TODO Primitive Animated Sprite System
+    ... I want to just be able to animate them in a system not unlike a manager, but
+    it's mad annoying to have to do that... Chunked allocations and linked lists to the rescue
+    
 *** TODO Mousable UI
     ... I don't actually want to program a full GUI Library, but I would
     be lying if I didn't think a proper UI system... Might help a lot.
@@ -266,11 +270,7 @@
    
 *** TODO Atlased Fonts (specifically just for the console, which renders glyph by glyph)
 *** TODO Begin OpenGL Rendering (Resource Management)
-*** TODO Proper Spikes and Basic Health System & UI
-*** TODO Primitive Animated Sprite System
-    ... I want to just be able to animate them in a system not unlike a manager, but
-    it's mad annoying to have to do that... Chunked allocations and linked lists to the rescue
-    
+*** TODO Proper Spikes and Basic Health System
 ** <2022-02-05 Sat>
    PHYSICS DAY!
    I am ONLY programming physics/collision stuff on this day because it is in such a "meh" state!

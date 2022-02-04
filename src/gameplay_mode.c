@@ -16,8 +16,8 @@ local void gameplay_initialize(void) {
     test_emitter2 = particle_emitter_allocate();
 
     {
-        test_emitter->emission_rate = 0.015;
-        test_emitter->emission_count = 32;
+        test_emitter->emission_rate = 0.012;
+        test_emitter->emission_count = 64;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
@@ -25,7 +25,7 @@ local void gameplay_initialize(void) {
 
     {
         test_emitter2->emission_rate = 0.01;
-        test_emitter2->emission_count = 1;
+        test_emitter2->emission_count = 8;
         test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
         test_emitter2->particle_max_lifetime = 8;
         test_emitter2->collides_with_world = true;
@@ -94,7 +94,6 @@ local void do_physics(float dt) {
             camera_traumatize(&game_camera, shake_factor);
             {
                 struct particle_emitter* splatter = particle_emitter_allocate();
-                console_printf("%p\n", splatter);
                 splatter->x = splatter->x1 = player.x;
                 splatter->y = splatter->y1 = player.y + player.h;
                 splatter->emission_rate = 0;
@@ -254,7 +253,7 @@ local void game_update_render_frame(float dt) {
                     emitter->max_emissions = 1;
                     emitter->particle_color = color4f(1, 0, 0, 1);
                     emitter->particle_max_lifetime = 2;
-                    emitter->collides_with_world = true;
+                    emitter->collides_with_world = false;
                 }
             }
         } else {
