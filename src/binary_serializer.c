@@ -25,6 +25,15 @@ struct binary_serializer open_write_file_serializer(char* filename) {
     result.mode = BINARY_SERIALIZER_READ;
     result.type = BINARY_SERIALIZER_FILE;
 
+    result.file_handle = fopen(filename, "wb+");
+    return result;
+}
+
+struct binary_serializer open_read_file_serializer(char* filename) {
+    struct binary_serializer result;
+    result.mode = BINARY_SERIALIZER_READ;
+    result.type = BINARY_SERIALIZER_FILE;
+
     result.file_handle = fopen(filename, "rb+");
     return result;
 }
