@@ -387,87 +387,16 @@ local void editor_output_to_binary_file(char* filename) {
     struct binary_serializer file = open_write_file_serializer(filename);
     editor_serialize(&file);
     serializer_finish(&file);
-    console_printf("%p\n", file.file_handle);
-#if 0
-    FILE* f = fopen(filename, "wb+");
-
-    int width, height;
-    get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, NULL/*x*/, NULL/*y*/, &width, &height);
-
-    char magic[] = "MVOIDLVL";
-    fwrite(magic, 8, 1, f);
-
-    fwrite(&width, sizeof(width), 1, f);
-    fwrite(&height, sizeof(height), 1, f);
-    fwrite(&editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn), 1, f);
-    fwrite(&editor.tilemap.bounds_min_x, sizeof(float), 1, f);
-    fwrite(&editor.tilemap.bounds_min_y, sizeof(float), 1, f);
-    fwrite(&editor.tilemap.bounds_max_x, sizeof(float), 1, f);
-    fwrite(&editor.tilemap.bounds_max_y, sizeof(float), 1, f);
-    {
-        fwrite(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
-        fwrite(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
-    }
-    {
-        fwrite(&editor.tilemap.transition_zone_count, sizeof(editor.tilemap.transition_zone_count), 1, f);
-        fwrite(editor.tilemap.transitions, sizeof(*editor.tilemap.transitions) * editor.tilemap.transition_zone_count, 1, f);
-    }
-    {
-        fwrite(&editor.tilemap.player_spawn_link_count, sizeof(editor.tilemap.player_spawn_link_count), 1, f);
-        fwrite(editor.tilemap.player_spawn_links, sizeof(*editor.tilemap.player_spawn_links) * editor.tilemap.player_spawn_link_count, 1, f);
-    }
-
-    fclose(f);
-#endif
 }
 
 local void editor_load_from_binary_file(char* filename) {
-    FILE* f = fopen(filename, "rb+");
-
-    if (!f) return;
-
-    char magic[8] = {};
-
-    fread(magic, 8, 1, f);
-    assert(strncmp(magic, "MVOIDLVL", 8) == 0);
-
-    fread(&editor.tilemap.width, sizeof(editor.tilemap.width), 1, f);
-    fread(&editor.tilemap.height, sizeof(editor.tilemap.height), 1, f);
-    fread(&editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn), 1, f);
-    fread(&editor.tilemap.bounds_min_x, sizeof(float), 1, f);
-    fread(&editor.tilemap.bounds_min_y, sizeof(float), 1, f);
-    fread(&editor.tilemap.bounds_max_x, sizeof(float), 1, f);
-    fread(&editor.tilemap.bounds_max_y, sizeof(float), 1, f);
-    {
-        fread(&editor.tilemap.tile_count, sizeof(editor.tilemap.tile_count), 1, f);
-        fread(editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count, 1, f);
-    }
-    {
-        fread(&editor.tilemap.transition_zone_count, sizeof(editor.tilemap.transition_zone_count), 1, f);
-        fread(editor.tilemap.transitions, sizeof(*editor.tilemap.transitions) * editor.tilemap.transition_zone_count, 1, f);
-    }
-    {
-        fread(&editor.tilemap.player_spawn_link_count, sizeof(editor.tilemap.player_spawn_link_count), 1, f);
-        fread(editor.tilemap.player_spawn_links, sizeof(*editor.tilemap.player_spawn_links) * editor.tilemap.player_spawn_link_count, 1, f);
-    }
-
-    fclose(f);
-
+    struct binary_serializer file = open_read_file_serializer(filename);
+    editor_serialize(&file);
+    serializer_finish(&file);
     camera_set_position(&editor_camera, editor.tilemap.default_spawn.x, editor.tilemap.default_spawn.y);
+    console_printf("new code\n");
 }
 
-#if 0
-/*think of a BinarySerialization implementation so that way it can literally just be
-  something like this anyways.*/
-void editor_serialize_into_game_memory(void) {
-    struct binary_serializer cereal = write_binary_serializer();
-    struct memory_buffer buffer = editor_serialize(&cereal);
-
-    /*this is possibly a security hole but whatever for a singleplayer game*/
-    struct binary_serializer cereal2 = read_binary_serializer(buffer);
-    game_serialize_serialize(&cereal2);
-}
-#endif
 static void editor_serialize_into_game_memory(void) {
     int min_x;
     int min_y;
