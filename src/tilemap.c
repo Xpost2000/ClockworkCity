@@ -171,7 +171,7 @@ local struct tilemap_sample_interval tilemap_sampling_region_around_moving_entit
     /* This is really just a glorified clamped interval. Infact this is longer than it should be but whatever. */
     /* NOTE(jerry): Name indicates I should extrapolate the interval through the velocity to allow for better
      "continuous" collision. Not doing this yet though. */
-    const unsigned TILE_PRUNE_RADIUS = 5; /*default prefetch radius*/
+    const unsigned TILE_PRUNE_RADIUS = 4; /*default prefetch radius*/
 
     int entity_ceiled_x = ceilf(entity->x);
     int entity_ceiled_y = ceilf(entity->y);
@@ -198,10 +198,45 @@ local struct tilemap_sample_interval tilemap_sampling_region_around_moving_entit
     if (sample_max_x > tilemap->width)  sample_max_x = tilemap->width;
     if (sample_max_y > tilemap->height) sample_max_y = tilemap->height;
 
-    return (struct tilemap_sample_interval) {
+    /* minimizing bounding area */
+    struct tilemap_sample_interval result = (struct tilemap_sample_interval) {
         .min_x = sample_min_x, .min_y = sample_min_y,
         .max_x = sample_max_x, .max_y = sample_max_y,
     };
+
+#if 0
+    /*
+      I cannot actually say if this is faster, frametimings seem pretty close
+      with or without this.
+
+      I'll leave it in, but just not compile it cause I have no idea if this works.
+     */
+    {
+        int best_min_x = sample_min_x;
+        int best_min_y = sample_min_y;
+        int best_max_x = sample_max_x;
+        int best_max_y = sample_max_y;
+
+        for (unsigned y = result.min_y; y < result.max_y; ++y) {
+            for (unsigned x = result.min_x; x < result.max_x; ++x) {
+                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+                if (t->id == TILE_NONE) continue;
+
+                if (x < best_min_x) best_min_x = x;
+                if (x > best_max_x) best_max_x = x;
+                if (y < best_min_y) best_min_y = y;
+                if (y > best_max_y) best_max_y = y;
+            }
+        }
+
+        result.min_x = best_min_x;
+        result.min_y = best_min_y;
+        result.max_x = best_max_x;
+        result.max_y = best_max_y;
+    }
+#endif
+
+    return result;
 }
 
 float tile_get_slope_height(struct tile* t, float x, float w, float h) {

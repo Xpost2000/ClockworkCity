@@ -190,93 +190,27 @@ void serialize_bytes(struct binary_serializer* serializer, void* bytes, size_t s
             serializer_push_memory_node(serializer, obj, sizeof(type)); \
         }                                                               \
     } break
-/* 
-   Using some macro sauce, but not all the way since I'm not sure if different serializing methods
-   will look different. 
-   
-   So these are all duplicated.
-*/
 
-void serialize_u64(struct binary_serializer* serializer, uint64_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(uint64_t);
-        Serialize_Object_Into_Memory_Buffer(uint64_t);
-        invalid_cases();
+/* Pretty sure there's no special casing so this is okay. C "templates" to the rescue! */
+#define Define_Serializer_Function(Typename, Type)                      \
+    void serialize_##Typename(struct binary_serializer* serializer, Type* obj) { \
+        switch (serializer->type) {                                     \
+            Serialize_Object_Into_File(Type);                           \
+            Serialize_Object_Into_Memory_Buffer(Type);                  \
+            invalid_cases();                                            \
+        }                                                               \
     }
-}
 
-void serialize_i64(struct binary_serializer* serializer, int64_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(int64_t);
-        Serialize_Object_Into_Memory_Buffer(int64_t);
-        invalid_cases();
-    }
-}
-
-void serialize_u32(struct binary_serializer* serializer, uint32_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(uint32_t);
-        Serialize_Object_Into_Memory_Buffer(uint32_t);
-        invalid_cases();
-    }
-}
-
-void serialize_i32(struct binary_serializer* serializer, int32_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(int32_t);
-        Serialize_Object_Into_Memory_Buffer(int32_t);
-        invalid_cases();
-    }
-}
-
-void serialize_u16(struct binary_serializer* serializer, uint16_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(uint16_t);
-        Serialize_Object_Into_Memory_Buffer(uint16_t);
-        invalid_cases();
-    }
-}
-
-void serialize_i16(struct binary_serializer* serializer, int16_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(int16_t);
-        Serialize_Object_Into_Memory_Buffer(int16_t);
-        invalid_cases();
-    }
-}
-
-void serialize_u8(struct binary_serializer* serializer, uint8_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(uint8_t);
-        Serialize_Object_Into_Memory_Buffer(uint8_t);
-        invalid_cases();
-    }
-}
-
-void serialize_i8(struct binary_serializer* serializer, int8_t* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(int8_t);
-        Serialize_Object_Into_Memory_Buffer(int8_t);
-        invalid_cases();
-    }
-}
-
-void serialize_f64(struct binary_serializer* serializer, double* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(double);
-        Serialize_Object_Into_Memory_Buffer(double);
-        invalid_cases();
-    }
-}
-
-void serialize_f32(struct binary_serializer* serializer, float* obj) {
-    switch (serializer->type) {
-        Serialize_Object_Into_File(float);
-        Serialize_Object_Into_Memory_Buffer(float);
-        invalid_cases();
-    }
-}
-
+Define_Serializer_Function(u64, uint64_t);
+Define_Serializer_Function(i64, int64_t);
+Define_Serializer_Function(u32, uint32_t);
+Define_Serializer_Function(i32, int32_t);
+Define_Serializer_Function(u16, uint16_t);
+Define_Serializer_Function(i16, int16_t);
+Define_Serializer_Function(u8 , uint8_t);
+Define_Serializer_Function(i8 , int8_t);
+Define_Serializer_Function(f32, float);
+Define_Serializer_Function(f64, double);
 /*
   helpful macros
 */

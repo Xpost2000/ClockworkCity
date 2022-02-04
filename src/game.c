@@ -49,6 +49,10 @@ struct entity {
     float jump_leniancy_timer;
 };
 
+void entity_halt_motion(struct entity* entity) {
+    entity->ax = entity->ay = entity->vx = entity->vy = entity->last_vy = 0;
+}
+
 bool noclip = false;
 struct entity player = {
     // no units, prolly pixels
@@ -262,7 +266,6 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
             }
         }
     } else {
-        console_printf("What happened? (%d, %d)\n", game_state->loaded_level->default_spawn.x, game_state->loaded_level->default_spawn.y);
         player.x = game_state->loaded_level->default_spawn.x;
         player.y = game_state->loaded_level->default_spawn.y;
     }

@@ -55,12 +55,10 @@ Define_Console_Command(editor_clear) {
 Define_Console_Command(editor_playtest) {
     console_printf("loading current editor map into game... As if new spawn\n");
     editor_serialize_into_game_memory();
+    entity_halt_motion(&player);
     mode = GAME_MODE_PLAYING;
-    player.x = editor_camera.visual_position_x;
-    player.y = editor_camera.visual_position_y;
 }
 
-/*TODO(jerry): STUPID, allow direct loading from the file!*/
 Define_Console_Command(load) {
     if (argument_count != 1) {
         console_printf("provide file name\n");
@@ -75,8 +73,6 @@ Define_Console_Command(load) {
 
     char* command_string = csmode.string;
     game_load_level(&game_memory_arena, command_string, 0);
-    /* editor_load_from_binary_file(command_string); */
-    /* editor_serialize_into_game_memory(); */
     mode = GAME_MODE_PLAYING;
 }
 
