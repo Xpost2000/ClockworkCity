@@ -84,7 +84,15 @@ void serializer_finish(struct binary_serializer* serializer) {
         } break;
         case BINARY_SERIALIZER_MEMORY: {
             if (serializer->mode == BINARY_SERIALIZER_WRITE) {
-                /* NOTE(jerry): LEAK MEMORY FOR NOW! LINKED LIST TRAVERSAL */
+                /*free all memory*/ {
+                    struct binary_serializer_memory_node* current_node = serializer->memory_nodes.head;
+
+                    while (current_node) {
+                        struct binary_serializer_memory_node* next = current_node->next;
+                        system_deallocate_memory(current_node);
+                        current_node = next;
+                    }
+                }
             }
         } break;
             invalid_cases();
@@ -116,16 +124,6 @@ void* serializer_flatten_memory(struct binary_serializer* serializer, size_t* si
             struct binary_serializer_memory_node* next = current_node->next;
             memcpy(buffer + written, current_node->buffer, current_node->size);
             written += current_node->size;
-            current_node = next;
-        }
-    }
-
-    /*free all memory*/ {
-        struct binary_serializer_memory_node* current_node = serializer->memory_nodes.head;
-
-        while (current_node) {
-            struct binary_serializer_memory_node* next = current_node->next;
-            system_deallocate_memory(current_node);
             current_node = next;
         }
     }
