@@ -43,6 +43,7 @@ Define_Console_Command(editor_load) {
 
     char* command_string = mode.string;
     editor_load_from_binary_file(command_string);
+    console_execute_cstr("editor");
     console_printf("Okay! Loaded \"%s\" :)\n", command_string);
 }
 
