@@ -6,6 +6,7 @@ void* memory_arena_push(struct memory_arena* arena, size_t amount) {
 }
 
 local void _arena_diagonistic(struct memory_arena* arena) {
+    return;
     {
         size_t memusage = memory_arena_total_usage(arena);
         console_printf("(memory arena \"%s\") is using %d bytes, (%d kb) (%d mb) (%d gb)\n",

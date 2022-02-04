@@ -344,18 +344,58 @@ local void load_tilemap_editor_resources(void) {
     editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
 }
 
+local void editor_serialize(struct binary_serializer* serializer) {
+/* serialize_array(serializer, editor.tilemap.tiles, editor.tilemap.tile_count); */
+    char magic[8] = {};
+
+    if (serializer->mode == BINARY_SERIALIZER_READ) {
+        strncpy(magic, "MVOIDLVL", 8);
+    } else {
+        get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count,
+                                         NULL/*x*/, NULL/*y*/, &editor.tilemap.width, &editor.tilemap.height);
+    }
+
+    serialize_bytes(serializer, magic, sizeof(magic));
+    serialize_u32(serializer, &editor.tilemap.width);
+    serialize_u32(serializer, &editor.tilemap.height);
+    serialize_bytes(serializer, &editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn));
+    serialize_f32(serializer, &editor.tilemap.bounds_min_x);
+    serialize_f32(serializer, &editor.tilemap.bounds_min_y);
+    serialize_f32(serializer, &editor.tilemap.bounds_max_x);
+    serialize_f32(serializer, &editor.tilemap.bounds_max_y);
+
+    {
+        serialize_u32(serializer, &editor.tilemap.tile_count);
+        serialize_bytes(serializer, editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count);
+    }
+
+    {
+        serialize_u8(serializer, &editor.tilemap.transition_zone_count);
+        serialize_bytes(serializer, editor.tilemap.transitions, sizeof(*editor.tilemap.transitions) * editor.tilemap.transition_zone_count);
+    }
+
+    {
+        serialize_u8(serializer, &editor.tilemap.player_spawn_link_count);
+        serialize_bytes(serializer, editor.tilemap.player_spawn_links, sizeof(*editor.tilemap.player_spawn_links) * editor.tilemap.player_spawn_link_count);
+    }
+}
+
 /*
   This seriously suffers when having to do versioned files.
 */
 local void editor_output_to_binary_file(char* filename) {
+    struct binary_serializer file = open_write_file_serializer(filename);
+    editor_serialize(&file);
+    serializer_finish(&file);
+    console_printf("%p\n", file.file_handle);
+#if 0
     FILE* f = fopen(filename, "wb+");
-
-    char magic[] = "MVOIDLVL";
-    fwrite(magic, 8, 1, f);
 
     int width, height;
     get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, NULL/*x*/, NULL/*y*/, &width, &height);
-    console_printf("width height: %d, %d\n", width, height);
+
+    char magic[] = "MVOIDLVL";
+    fwrite(magic, 8, 1, f);
 
     fwrite(&width, sizeof(width), 1, f);
     fwrite(&height, sizeof(height), 1, f);
@@ -378,6 +418,7 @@ local void editor_output_to_binary_file(char* filename) {
     }
 
     fclose(f);
+#endif
 }
 
 local void editor_load_from_binary_file(char* filename) {

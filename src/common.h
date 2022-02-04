@@ -20,6 +20,7 @@
 
 #define unused_expression(x) (void)(x)
 #define unimplemented() assert(!"not implemented yet")
+#define invalid_cases() default: unimplemented(); break;
 
 #define not_really_important_assert(x) assert(x)
 

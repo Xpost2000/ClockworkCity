@@ -17,6 +17,8 @@
 #include "audio.h"
 #include "memory_arena.h"
 
+#include "binary_serializer.c"
+
 #define CONSOLE_IMPLEMENTATION
 #include "blackiron_console_sfl.h"
 
