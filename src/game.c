@@ -265,6 +265,7 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
         player.y = game_state->loaded_level->default_spawn.y;
     }
 
+    fclose(f);
     camera_set_position(&game_camera, player.x, player.y);
 }
 
