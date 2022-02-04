@@ -389,10 +389,10 @@ local void editor_load_from_binary_file(char* filename) {
     editor_serialize(&file);
     serializer_finish(&file);
     camera_set_position(&editor_camera, editor.tilemap.default_spawn.x, editor.tilemap.default_spawn.y);
-    console_printf("new code\n");
 }
 
 static void editor_serialize_into_game_memory(void) {
+#if 0
     int min_x;
     int min_y;
     get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, &min_x, &min_y,
@@ -423,6 +423,20 @@ static void editor_serialize_into_game_memory(void) {
     game_state->loaded_level->tiles  = memory_arena_copy_buffer_top(&game_memory_arena, tilemap_rectangle,
                                                                     editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
     end_temporary_memory(&temp);
+#else
+    /* The api is unfortunately not really designed for two way streaming so I have to
+       separate it into two steps. Not a big deal. */
+    struct binary_serializer write_memory = open_write_memory_serializer();
+    editor_serialize(&write_memory);
+    size_t size;
+    char* finalized_memory_buffer = serializer_flatten_memory(&write_memory, &size);
+    serializer_finish(&write_memory);
+
+    struct binary_serializer read_memory = open_read_memory_serializer(finalized_memory_buffer, size);
+    game_load_level_from_serializer(&game_memory_arena, &read_memory, NULL);
+    system_deallocate_memory(finalized_memory_buffer);
+    serializer_finish(&read_memory);
+#endif
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {

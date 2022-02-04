@@ -252,15 +252,11 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
     }
 }
 /*binary format*/
-void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
+void game_load_level_from_serializer(struct memory_arena* arena, struct binary_serializer* serializer, char* transition_link_to_spawn_at) {
     memory_arena_clear_top(arena);
     game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
 
-    {
-        struct binary_serializer file = open_read_file_serializer(filename);
-        game_serialize_level(arena, &file);
-        serializer_finish(&file);
-    }
+    game_serialize_level(arena, serializer);
 
     /*level is loaded, now setup player spawns*/
     if (transition_link_to_spawn_at) {
@@ -279,6 +275,12 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
     }
 
     camera_set_position(&game_camera, player.x, player.y);
+}
+
+void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
+    struct binary_serializer file = open_read_file_serializer(filename);
+    game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
+    serializer_finish(&file);
 }
 
 void update_render_frame(float dt) {
