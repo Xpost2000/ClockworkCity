@@ -171,7 +171,7 @@ local struct tilemap_sample_interval tilemap_sampling_region_around_moving_entit
     /* This is really just a glorified clamped interval. Infact this is longer than it should be but whatever. */
     /* NOTE(jerry): Name indicates I should extrapolate the interval through the velocity to allow for better
      "continuous" collision. Not doing this yet though. */
-    const unsigned TILE_PRUNE_RADIUS = 2; /*default prefetch radius*/
+    const unsigned TILE_PRUNE_RADIUS = 5; /*default prefetch radius*/
 
     int entity_ceiled_x = ceilf(entity->x);
     int entity_ceiled_y = ceilf(entity->y);
@@ -183,11 +183,14 @@ local struct tilemap_sample_interval tilemap_sampling_region_around_moving_entit
     get_bounding_rectangle_for_tiles(tilemap->tiles, tilemap->height * tilemap->width, &min_tile_x, &min_tile_y, 0, 0);
 
     /* Coordinate space transform for correct array positions. */
-    int sample_min_x = (entity_ceiled_x - min_tile_x) - TILE_PRUNE_RADIUS;
-    int sample_min_y = (entity_ceiled_y - min_tile_y) - TILE_PRUNE_RADIUS;
+    int sample_center_x = (entity_ceiled_x - min_tile_x);
+    int sample_center_y = (entity_ceiled_y - min_tile_y);
 
-    int sample_max_x = (entity_ceiled_x - min_tile_x) + TILE_PRUNE_RADIUS + entity_ceiled_w;
-    int sample_max_y = (entity_ceiled_y - min_tile_y) + TILE_PRUNE_RADIUS + entity_ceiled_h;
+    int sample_min_x = sample_center_x - TILE_PRUNE_RADIUS;
+    int sample_min_y = sample_center_y - TILE_PRUNE_RADIUS;
+
+    int sample_max_x = sample_center_x + TILE_PRUNE_RADIUS + entity_ceiled_w;
+    int sample_max_y = sample_center_y + TILE_PRUNE_RADIUS + entity_ceiled_h;
 
     if (sample_min_x < 0) sample_min_x = 0;
     if (sample_min_y < 0) sample_min_y = 0;

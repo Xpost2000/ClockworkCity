@@ -223,8 +223,8 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
 
             zero_buffer_memory(game_state->loaded_level->tiles, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));
 
-            int min_x, min_y;
-            get_bounding_rectangle_for_tiles(tiles, tile_count, &min_x, &min_y, 0, 0);
+            int min_x, min_y, e, f;
+            get_bounding_rectangle_for_tiles(tiles, tile_count, &min_x, &min_y, &e, &f);
 
             for (size_t index = 0; index < tile_count; ++index) {
                 struct tile* t = tiles + index;
@@ -236,6 +236,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                 game_state->loaded_level->tiles[index_mapped] = *t;
             }
 
+            console_printf("sz: %d, %d : %d %d\n", min_x, min_y, e, f);
             end_temporary_memory(&temp);
         }
     }
@@ -262,7 +263,6 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
     if (transition_link_to_spawn_at) {
         for (unsigned index = 0; index < game_state->loaded_level->player_spawn_link_count; ++index) {
             struct player_spawn_link* spawn = game_state->loaded_level->link_spawns + index;
-            console_printf("%s vs %s\n", transition_link_to_spawn_at, spawn->identifier);
             if (strncmp(spawn->identifier, transition_link_to_spawn_at, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH) == 0) {
                 player.x = spawn->x;
                 player.y = spawn->y;
@@ -270,6 +270,7 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
             }
         }
     } else {
+        console_printf("What happened? (%d, %d)\n", game_state->loaded_level->default_spawn.x, game_state->loaded_level->default_spawn.y);
         player.x = game_state->loaded_level->default_spawn.x;
         player.y = game_state->loaded_level->default_spawn.y;
     }

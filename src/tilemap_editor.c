@@ -392,38 +392,6 @@ local void editor_load_from_binary_file(char* filename) {
 }
 
 static void editor_serialize_into_game_memory(void) {
-#if 0
-    int min_x;
-    int min_y;
-    get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count, &min_x, &min_y,
-                                     &editor.tilemap.width, &editor.tilemap.height);
-
-    struct temporary_arena temp = begin_temporary_memory(&editor.arena, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
-    struct tile* tilemap_rectangle = memory_arena_push(&temp, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
-
-    {
-        zero_buffer_memory(tilemap_rectangle, editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
-
-        for (size_t index = 0; index < editor.tilemap.tile_count; ++index) {
-            struct tile* t = editor.tilemap.tiles + index;
-            int index_y = ((t->y) - (min_y));
-            int index_x = ((t->x) - (min_x));
-            assert(index_y >= 0 && index_x >= 0);
-            int index_mapped = index_y * editor.tilemap.width + index_x;
-            assert(index_mapped >= 0 && index_mapped < editor.tilemap.width * editor.tilemap.height);
-            tilemap_rectangle[index_mapped] = *t;
-        }
-    }
-
-    memory_arena_clear_top(&game_memory_arena);
-    game_state->loaded_level = memory_arena_push_top(&game_memory_arena, sizeof(*game_state->loaded_level));
-    game_state->loaded_level->width  = editor.tilemap.width;
-    game_state->loaded_level->height = editor.tilemap.height;
-
-    game_state->loaded_level->tiles  = memory_arena_copy_buffer_top(&game_memory_arena, tilemap_rectangle,
-                                                                    editor.tilemap.width * editor.tilemap.height * sizeof(*editor.tilemap.tiles));
-    end_temporary_memory(&temp);
-#else
     /* The api is unfortunately not really designed for two way streaming so I have to
        separate it into two steps. Not a big deal. */
     struct binary_serializer write_memory = open_write_memory_serializer();
@@ -436,7 +404,9 @@ static void editor_serialize_into_game_memory(void) {
     game_load_level_from_serializer(&game_memory_arena, &read_memory, NULL);
     system_deallocate_memory(finalized_memory_buffer);
     serializer_finish(&read_memory);
-#endif
+
+    player.vx = 0;
+    player.vy = 0;
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {
@@ -1008,7 +978,6 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
             }
 
             if (already_selected) {
-
                 if (!is_editting_text()) {
                     if (is_key_down(KEY_1) && already_selected != &editor.tilemap.default_spawn) {
                         editor_open_text_edit_prompt("SET NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->identifier));
