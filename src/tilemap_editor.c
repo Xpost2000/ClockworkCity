@@ -345,7 +345,6 @@ local void load_tilemap_editor_resources(void) {
 }
 
 local void editor_serialize(struct binary_serializer* serializer) {
-/* serialize_array(serializer, editor.tilemap.tiles, editor.tilemap.tile_count); */
     char magic[8] = "MVOIDLVL";
     get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count,
                                      NULL/*x*/, NULL/*y*/, &editor.tilemap.width, &editor.tilemap.height);
@@ -353,26 +352,15 @@ local void editor_serialize(struct binary_serializer* serializer) {
     serialize_bytes(serializer, magic, sizeof(magic));
     serialize_u32(serializer, &editor.tilemap.width);
     serialize_u32(serializer, &editor.tilemap.height);
-    serialize_bytes(serializer, &editor.tilemap.default_spawn, sizeof(editor.tilemap.default_spawn));
+    Serialize_Structure(serializer, editor.tilemap.default_spawn);
     serialize_f32(serializer, &editor.tilemap.bounds_min_x);
     serialize_f32(serializer, &editor.tilemap.bounds_min_y);
     serialize_f32(serializer, &editor.tilemap.bounds_max_x);
     serialize_f32(serializer, &editor.tilemap.bounds_max_y);
 
-    {
-        serialize_u32(serializer, &editor.tilemap.tile_count);
-        serialize_bytes(serializer, editor.tilemap.tiles, sizeof(*editor.tilemap.tiles) * editor.tilemap.tile_count);
-    }
-
-    {
-        serialize_u8(serializer, &editor.tilemap.transition_zone_count);
-        serialize_bytes(serializer, editor.tilemap.transitions, sizeof(*editor.tilemap.transitions) * editor.tilemap.transition_zone_count);
-    }
-
-    {
-        serialize_u8(serializer, &editor.tilemap.player_spawn_link_count);
-        serialize_bytes(serializer, editor.tilemap.player_spawn_links, sizeof(*editor.tilemap.player_spawn_links) * editor.tilemap.player_spawn_link_count);
-    }
+    Serialize_Fixed_Array(serializer, u32, editor.tilemap.tile_count, editor.tilemap.tiles);
+    Serialize_Fixed_Array(serializer, u8, editor.tilemap.transition_zone_count, editor.tilemap.transitions);
+    Serialize_Fixed_Array(serializer, u8, editor.tilemap.player_spawn_link_count, editor.tilemap.player_spawn_links);
 }
 
 /*
@@ -404,9 +392,6 @@ static void editor_serialize_into_game_memory(void) {
     game_load_level_from_serializer(&game_memory_arena, &read_memory, NULL);
     system_deallocate_memory(finalized_memory_buffer);
     serializer_finish(&read_memory);
-
-    player.vx = 0;
-    player.vy = 0;
 }
 
 local void draw_grid(float x_offset, float y_offset, int rows, int cols, float thickness, union color4f color) {

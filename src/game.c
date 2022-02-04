@@ -197,7 +197,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
     serialize_u32(serializer, &game_state->loaded_level->width);
     serialize_u32(serializer, &game_state->loaded_level->height);
 
-    serialize_bytes(serializer, &game_state->loaded_level->default_spawn, sizeof(game_state->loaded_level->default_spawn));
+    Serialize_Structure(serializer, game_state->loaded_level->default_spawn);
 
     serialize_f32(serializer, &game_state->loaded_level->bounds_min_x);
     serialize_f32(serializer, &game_state->loaded_level->bounds_min_y);
@@ -214,7 +214,6 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
     {
         uint32_t tile_count;
         serialize_u32(serializer, &tile_count); assert(tile_count > 0);
-
         game_state->loaded_level->tiles = memory_arena_push_top(arena, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));;
         {
             struct temporary_arena temp = begin_temporary_memory(arena, tile_count);
@@ -241,17 +240,10 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
         }
     }
 
-    {
-        serialize_u8(serializer, &game_state->loaded_level->transition_zone_count);
-        game_state->loaded_level->transitions = memory_arena_push_top(arena, game_state->loaded_level->transition_zone_count * sizeof(*game_state->loaded_level->transitions));;
-        serialize_bytes(serializer, game_state->loaded_level->transitions, sizeof(*game_state->loaded_level->transitions) * game_state->loaded_level->transition_zone_count);
-    }
-    {
-        serialize_u8(serializer, &game_state->loaded_level->player_spawn_link_count);
-        game_state->loaded_level->link_spawns = memory_arena_push_top(arena, game_state->loaded_level->player_spawn_link_count * sizeof(*game_state->loaded_level->link_spawns));
-        serialize_bytes(serializer, game_state->loaded_level->link_spawns, sizeof(*game_state->loaded_level->link_spawns) * game_state->loaded_level->player_spawn_link_count);
-    }
+    Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->transition_zone_count, game_state->loaded_level->transitions);
+    Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->player_spawn_link_count, game_state->loaded_level->link_spawns);
 }
+
 /*binary format*/
 void game_load_level_from_serializer(struct memory_arena* arena, struct binary_serializer* serializer, char* transition_link_to_spawn_at) {
     memory_arena_clear_top(arena);

@@ -277,4 +277,33 @@ void serialize_f32(struct binary_serializer* serializer, float* obj) {
     }
 }
 
+/*
+  helpful macros
+*/
+
+#define Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, type, counter, array) \
+    do {                                                                \
+        serialize_##type(serializer, &counter);                         \
+        if (serializer->mode == BINARY_SERIALIZER_READ)                 \
+            array = memory_arena_push_top(arena, counter * sizeof(*array)); \
+        serialize_bytes(serializer, array, counter * sizeof(*array));   \
+    } while (0)
+#define Serialize_Fixed_Array_And_Allocate_From_Arena(serializer, arena, type, counter, array) \
+    do {                                                                \
+        serialize_##type(serializer, &counter);                         \
+        if (serializer->mode == BINARY_SERIALIZER_READ)                 \
+            array = memory_arena_push(arena, counter * sizeof(*array)); \
+        serialize_bytes(serializer, array, counter * sizeof(*array));   \
+    } while (0)
+#define Serialize_Fixed_Array(serializer, type, counter, array) \
+    do {                                                                \
+        serialize_##type(serializer, &counter);                         \
+        serialize_bytes(serializer, array, counter * sizeof(*array));   \
+    } while (0)
+#define Serialize_Structure(serializer, structure) \
+    do {                                                                \
+        serialize_bytes(serializer, &structure, sizeof(structure));     \
+    } while (0)
+
+
 #undef Serialize_Object_Into_File
