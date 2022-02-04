@@ -192,32 +192,33 @@ local void reload_all_graphics_resources(void) {
 /*binary format*/
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     memory_arena_clear_top(arena);
-    FILE* f = fopen(filename, "rb+");
+    struct binary_serializer file = open_read_file_serializer(filename);
     game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
 
     char magic[8] = {};
-    fread(magic, 8, 1, f);
+    serialize_bytes(&file, magic, 8);
     assert(strncmp(magic, "MVOIDLVL", 8) == 0);
 
-    fread(&game_state->loaded_level->width, sizeof(game_state->loaded_level->width), 1, f);
-    fread(&game_state->loaded_level->height, sizeof(game_state->loaded_level->height), 1, f);
-    fread(&game_state->loaded_level->default_spawn, sizeof(game_state->loaded_level->default_spawn), 1, f);
-    fread(&game_state->loaded_level->bounds_min_x, sizeof(float), 1, f);
-    fread(&game_state->loaded_level->bounds_min_y, sizeof(float), 1, f);
-    fread(&game_state->loaded_level->bounds_max_x, sizeof(float), 1, f);
-    fread(&game_state->loaded_level->bounds_max_y, sizeof(float), 1, f);
+    serialize_u32(&file, &game_state->loaded_level->width);
+    serialize_u32(&file, &game_state->loaded_level->height);
+
+    serialize_bytes(&file, &game_state->loaded_level->default_spawn, sizeof(game_state->loaded_level->default_spawn));
+
+    serialize_f32(&file, &game_state->loaded_level->bounds_min_x);
+    serialize_f32(&file, &game_state->loaded_level->bounds_min_y);
+    serialize_f32(&file, &game_state->loaded_level->bounds_max_x);
+    serialize_f32(&file, &game_state->loaded_level->bounds_max_y);
 
     {
         uint32_t tile_count; 
-        fread(&tile_count, sizeof(tile_count), 1, f);
-        assert(tile_count > 0);
+        serialize_u32(&file, &tile_count); assert(tile_count > 0);
 
         game_state->loaded_level->tiles = memory_arena_push_top(arena, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));;
         {
             struct temporary_arena temp = begin_temporary_memory(arena, tile_count);
             struct tile* tiles = memory_arena_push(&temp, sizeof(*tiles) * tile_count);
-            fread(tiles, sizeof(*tiles) * tile_count, 1, f);
-
+            serialize_bytes(&file, tiles, sizeof(*tiles) * tile_count);
+            /* fread(tiles, sizeof(*tiles) * tile_count, 1, f); */
 
             zero_buffer_memory(game_state->loaded_level->tiles, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));
 
@@ -239,14 +240,14 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
         }
     }
     {
-        fread(&game_state->loaded_level->transition_zone_count, sizeof(game_state->loaded_level->transition_zone_count), 1, f);
+        serialize_u8(&file, &game_state->loaded_level->transition_zone_count);
         game_state->loaded_level->transitions = memory_arena_push_top(arena, game_state->loaded_level->transition_zone_count * sizeof(*game_state->loaded_level->transitions));;
-        fread(game_state->loaded_level->transitions, sizeof(*game_state->loaded_level->transitions) * game_state->loaded_level->transition_zone_count, 1, f);
+        serialize_bytes(&file, game_state->loaded_level->transitions, sizeof(*game_state->loaded_level->transitions) * game_state->loaded_level->transition_zone_count);
     }
     {
-        fread(&game_state->loaded_level->player_spawn_link_count, sizeof(game_state->loaded_level->player_spawn_link_count), 1, f);
+        serialize_u8(&file, &game_state->loaded_level->player_spawn_link_count);
         game_state->loaded_level->link_spawns = memory_arena_push_top(arena, game_state->loaded_level->player_spawn_link_count * sizeof(*game_state->loaded_level->link_spawns));
-        fread(game_state->loaded_level->link_spawns, sizeof(*game_state->loaded_level->link_spawns) * game_state->loaded_level->player_spawn_link_count, 1, f);
+        serialize_bytes(&file, game_state->loaded_level->link_spawns, sizeof(*game_state->loaded_level->link_spawns) * game_state->loaded_level->player_spawn_link_count);
     }
 
     /*level is loaded, now setup player spawns*/
@@ -265,7 +266,7 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
         player.y = game_state->loaded_level->default_spawn.y;
     }
 
-    fclose(f);
+    serializer_finish(&file);
     camera_set_position(&game_camera, player.x, player.y);
 }
 
