@@ -189,42 +189,42 @@ local void reload_all_graphics_resources(void) {
     load_graphics_resources();
 }
 
-/*binary format*/
-void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
-    memory_arena_clear_top(arena);
-    struct binary_serializer file = open_read_file_serializer(filename);
-    game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
-
-    char magic[8] = {};
-    serialize_bytes(&file, magic, 8);
+void game_serialize_level(struct memory_arena* arena, struct binary_serializer* serializer) {
+    char magic[8] = "MVOIDLVL";
+    serialize_bytes(serializer, magic, 8);
     assert(strncmp(magic, "MVOIDLVL", 8) == 0);
 
-    serialize_u32(&file, &game_state->loaded_level->width);
-    serialize_u32(&file, &game_state->loaded_level->height);
+    serialize_u32(serializer, &game_state->loaded_level->width);
+    serialize_u32(serializer, &game_state->loaded_level->height);
 
-    serialize_bytes(&file, &game_state->loaded_level->default_spawn, sizeof(game_state->loaded_level->default_spawn));
+    serialize_bytes(serializer, &game_state->loaded_level->default_spawn, sizeof(game_state->loaded_level->default_spawn));
 
-    serialize_f32(&file, &game_state->loaded_level->bounds_min_x);
-    serialize_f32(&file, &game_state->loaded_level->bounds_min_y);
-    serialize_f32(&file, &game_state->loaded_level->bounds_max_x);
-    serialize_f32(&file, &game_state->loaded_level->bounds_max_y);
+    serialize_f32(serializer, &game_state->loaded_level->bounds_min_x);
+    serialize_f32(serializer, &game_state->loaded_level->bounds_min_y);
+    serialize_f32(serializer, &game_state->loaded_level->bounds_max_x);
+    serialize_f32(serializer, &game_state->loaded_level->bounds_max_y);
 
+    /* 
+       NOTE(jerry):
+       the only reason why the serialization code is different between editor and game is this,
+       otherwise, I could use the same function.
+       
+       This is required because the game runtime assumes the tilemap is a 2D array for simplicity reasons.
+    */
     {
-        uint32_t tile_count; 
-        serialize_u32(&file, &tile_count); assert(tile_count > 0);
+        uint32_t tile_count;
+        serialize_u32(serializer, &tile_count); assert(tile_count > 0);
 
         game_state->loaded_level->tiles = memory_arena_push_top(arena, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));;
         {
             struct temporary_arena temp = begin_temporary_memory(arena, tile_count);
             struct tile* tiles = memory_arena_push(&temp, sizeof(*tiles) * tile_count);
-            serialize_bytes(&file, tiles, sizeof(*tiles) * tile_count);
-            /* fread(tiles, sizeof(*tiles) * tile_count, 1, f); */
+            serialize_bytes(serializer, tiles, sizeof(*tiles) * tile_count);
 
             zero_buffer_memory(game_state->loaded_level->tiles, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));
 
             int min_x, min_y;
-            int a, b;
-            get_bounding_rectangle_for_tiles(tiles, tile_count, &min_x, &min_y, &a, &b);
+            get_bounding_rectangle_for_tiles(tiles, tile_count, &min_x, &min_y, 0, 0);
 
             for (size_t index = 0; index < tile_count; ++index) {
                 struct tile* t = tiles + index;
@@ -239,15 +239,27 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
             end_temporary_memory(&temp);
         }
     }
+
     {
-        serialize_u8(&file, &game_state->loaded_level->transition_zone_count);
+        serialize_u8(serializer, &game_state->loaded_level->transition_zone_count);
         game_state->loaded_level->transitions = memory_arena_push_top(arena, game_state->loaded_level->transition_zone_count * sizeof(*game_state->loaded_level->transitions));;
-        serialize_bytes(&file, game_state->loaded_level->transitions, sizeof(*game_state->loaded_level->transitions) * game_state->loaded_level->transition_zone_count);
+        serialize_bytes(serializer, game_state->loaded_level->transitions, sizeof(*game_state->loaded_level->transitions) * game_state->loaded_level->transition_zone_count);
     }
     {
-        serialize_u8(&file, &game_state->loaded_level->player_spawn_link_count);
+        serialize_u8(serializer, &game_state->loaded_level->player_spawn_link_count);
         game_state->loaded_level->link_spawns = memory_arena_push_top(arena, game_state->loaded_level->player_spawn_link_count * sizeof(*game_state->loaded_level->link_spawns));
-        serialize_bytes(&file, game_state->loaded_level->link_spawns, sizeof(*game_state->loaded_level->link_spawns) * game_state->loaded_level->player_spawn_link_count);
+        serialize_bytes(serializer, game_state->loaded_level->link_spawns, sizeof(*game_state->loaded_level->link_spawns) * game_state->loaded_level->player_spawn_link_count);
+    }
+}
+/*binary format*/
+void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
+    memory_arena_clear_top(arena);
+    game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
+
+    {
+        struct binary_serializer file = open_read_file_serializer(filename);
+        game_serialize_level(arena, &file);
+        serializer_finish(&file);
     }
 
     /*level is loaded, now setup player spawns*/
@@ -266,7 +278,6 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
         player.y = game_state->loaded_level->default_spawn.y;
     }
 
-    serializer_finish(&file);
     camera_set_position(&game_camera, player.x, player.y);
 }
 

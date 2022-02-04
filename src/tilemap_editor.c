@@ -346,14 +346,9 @@ local void load_tilemap_editor_resources(void) {
 
 local void editor_serialize(struct binary_serializer* serializer) {
 /* serialize_array(serializer, editor.tilemap.tiles, editor.tilemap.tile_count); */
-    char magic[8] = {};
-
-    if (serializer->mode == BINARY_SERIALIZER_WRITE) {
-        strncpy(magic, "MVOIDLVL", 8);
-    } else {
-        get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count,
-                                         NULL/*x*/, NULL/*y*/, &editor.tilemap.width, &editor.tilemap.height);
-    }
+    char magic[8] = "MVOIDLVL";
+    get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count,
+                                     NULL/*x*/, NULL/*y*/, &editor.tilemap.width, &editor.tilemap.height);
 
     serialize_bytes(serializer, magic, sizeof(magic));
     serialize_u32(serializer, &editor.tilemap.width);
