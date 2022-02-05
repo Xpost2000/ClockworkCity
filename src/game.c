@@ -16,6 +16,19 @@
 #define TILES_PER_SCREEN (50)
 #define GRAVITY_CONSTANT (20)
 
+struct game_colorscheme {
+    union color4f primary; // foreground
+    union color4f secondary; // background
+    union color4f text; // what it sounds like.
+};
+
+/* ideally just read the colorschemes from a file or something */
+struct game_colorscheme test1 = {
+    .primary   = COLOR4F_normalize(102, 10, 163, 255),
+    .secondary = COLOR4F_normalize(204, 128, 255, 255),
+    .text      = COLOR4F_normalize(210, 230, 92, 255),
+};
+
 /*
   Particles are theoretically a type of entity, so this allows me to
   make entities without 'inheritance'.

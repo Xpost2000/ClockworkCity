@@ -130,11 +130,11 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
 
             /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
                pass as a basic menu system.*/
-            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", COLOR4F_WHITE);
+            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", test1.text);
             y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
 
             for (unsigned index = 0; index < array_count(menu_option_strings); ++index) {
-                union color4f color = COLOR4F_WHITE;
+                union color4f color = test1.text;
 
                 if (index == game_state->selected_menu_option) {
                     float brightness = clampf(normalized_sinf(global_elapsed_time * 3.15) + 0.5, 0, 1.0);
@@ -250,11 +250,11 @@ local void do_pausemenu_ui(struct game_controller* controller, float dt) {
 
             /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
                pass as a basic menu system.*/
-            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", COLOR4F_WHITE);
+            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", test1.text);
             y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
 
             for (unsigned index = 0; index < array_count(menu_pause_option_strings); ++index) {
-                union color4f color = COLOR4F_WHITE;
+                union color4f color = test1.text;
 
                 if (index == game_state->selected_menu_option) {
                     float brightness = clampf(normalized_sinf(global_elapsed_time * 3.15) + 0.5, 0, 1.0);

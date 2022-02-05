@@ -275,7 +275,8 @@ void draw_tiles(struct tile* tiles, size_t count) {
         struct tile* t = &tiles[index];
         draw_texture(tile_textures[t->id],
                      t->x, t->y,
-                     1, 1, COLOR4F_WHITE);
+                     1, 1,
+                     test1.primary);
     } 
 }
 

@@ -17,7 +17,7 @@ local void gameplay_initialize(void) {
 
     {
         test_emitter->emission_rate = 0.01;
-        test_emitter->emission_count = 32;
+        test_emitter->emission_count = 8;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
@@ -28,7 +28,7 @@ local void gameplay_initialize(void) {
         test_emitter2->emission_count = 8;
         test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
         test_emitter2->particle_max_lifetime = 8;
-        test_emitter2->collides_with_world = true;
+        test_emitter2->collides_with_world = false;
 
         int a = 0;
         int b = -8;
@@ -243,6 +243,9 @@ local void game_update_render_frame(float dt) {
     camera_set_focus_position(&game_camera, player.x - player.w/2, player.y - player.h/2);
 
     /* UI is a substate, we still draw the game under the UI, so it can look nice. */
+    begin_graphics_frame(NULL); {
+        draw_filled_rectangle(0, 0, 9999, 9999, test1.secondary);
+    } end_graphics_frame();
     begin_graphics_frame(&game_camera); {
         draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
         /* 125 x 120 */
