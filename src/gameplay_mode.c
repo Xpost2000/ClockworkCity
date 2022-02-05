@@ -12,33 +12,32 @@ local void load_gameplay_resources(void) {
 }
 
 local void gameplay_initialize(void) {
-    /* test_emitter  = particle_emitter_allocate(); */
-    /* test_emitter2 = particle_emitter_allocate(); */
+    test_emitter  = particle_emitter_allocate();
+    test_emitter2 = particle_emitter_allocate();
 
-    /* { */
-    /*     test_emitter->emission_rate = 0.01; */
-    /*     test_emitter->emission_count = 32; */
-    /*     test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0); */
-    /*     test_emitter->particle_max_lifetime = 1; */
-    /*     test_emitter->collides_with_world = true; */
-    /* } */
+    {
+        test_emitter->emission_rate = 0.01;
+        test_emitter->emission_count = 32;
+        test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
+        test_emitter->particle_max_lifetime = 1;
+        test_emitter->collides_with_world = true;
+    }
 
-    /* { */
-    /*     test_emitter2->emission_rate = 0.01; */
-    /*     test_emitter2->emission_count = 8; */
-    /*     test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0); */
-    /*     test_emitter2->particle_max_lifetime = 8; */
-    /*     test_emitter2->collides_with_world = true; */
+    {
+        test_emitter2->emission_rate = 0.01;
+        test_emitter2->emission_count = 8;
+        test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
+        test_emitter2->particle_max_lifetime = 8;
+        test_emitter2->collides_with_world = true;
 
-    /*     int a = 0; */
-    /*     int b = -8; */
-    /*     test_emitter2->x = a; */
-    /*     test_emitter2->y = b; */
+        int a = 0;
+        int b = -8;
+        test_emitter2->x = a;
+        test_emitter2->y = b;
 
-    /*     test_emitter2->x1 = a + 30; */
-    /*     test_emitter2->y1 = b; */
-    /* } */
-    /* test_emitter2->gravity_active = true; */
+        test_emitter2->x1 = a + 30;
+        test_emitter2->y1 = b;
+    }
 }
 
 local void do_physics(float dt) {
@@ -233,8 +232,8 @@ local void game_update_render_frame(float dt) {
     }
 
     {
-        /* test_emitter->x = test_emitter->x1 = player.x; */
-        /* test_emitter->y = test_emitter->y1 = player.y; */
+        test_emitter->x = test_emitter->x1 = player.x;
+        test_emitter->y = test_emitter->y1 = player.y;
     }
 
     camera_set_focus_speed_x(&game_camera, 3);

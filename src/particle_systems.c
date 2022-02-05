@@ -16,13 +16,15 @@
   
   There will be "emitter entities", which will be limited to the amount of particle emitters in the engine?
 */
-#define MAX_PARTICLE_EMITTER_COUNT (1024) /*Most levels will probably never reach this number?*/
+#define MAX_PARTICLE_EMITTER_COUNT (512) /* With the new particle storage system. GO NUTS!*/
 
 struct particle {
     KINEMATIC_ENITTY_BASE_BODY();
 
+    /* shared properties? */
+    texture_id texture; 
+    bool colliding_with_world;
     /* particle specific */
-    texture_id texture;
 
     float last_x;
     float last_y;
@@ -30,16 +32,13 @@ struct particle {
     float lifetime;
     float lifetime_max;
 
-    /*TEMPORARY*/
-    bool colliding_with_world;
-
     union color4u8 color;
 };
 
 /*
   sparse storage, doubly linked list
 */
-#define PARTICLE_CHUNK_SIZE (1024)
+#define PARTICLE_CHUNK_SIZE (256)
 struct particle_chunk {
     uint16_t               used;
     /* I made a typo earlier and that cost me 30 minutes lol, particle* instead of particle LOL*/
@@ -143,7 +142,6 @@ struct particle* particle_emitter_allocate_particle(struct particle_emitter* emi
             if (free_chunk->used == PARTICLE_CHUNK_SIZE) {
                 free_chunk = free_chunk->next;
             } else {
-                /* fprintf(stderr, "recycle chunk\n"); */
                 break;
             }
         }
@@ -157,12 +155,10 @@ struct particle* particle_emitter_allocate_particle(struct particle_emitter* emi
             free_chunk = freelist.head;
             freelist.head = head_next;
             head_next->previous = &list_sentinel;
-            fprintf(stderr, "pop off first freelist head\n");
         }
 
         if (free_chunk == &list_sentinel) {
             /* allocate a new chunk if nothing remains. */
-            fprintf(stderr, "allocate new chunk\n");
             free_chunk = memory_arena_push(emitter->arena, sizeof(*free_chunk));
             zero_buffer_memory(free_chunk, sizeof(*free_chunk));
             free_chunk->next = free_chunk->previous = &list_sentinel;
@@ -248,7 +244,6 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
         uint32_t image_width  = texture_buffer.width;
         uint32_t image_height = texture_buffer.height;
 
-        fprintf(stderr, "EMIT IMAGE\n");
         for (unsigned y = 0; y < image_height; ++y) {
             for (unsigned x = 0; x < image_width; ++x) {
                 uint8_t r = image_buffer[y * (image_width * 4) + (x * 4) + 0] * emitter->particle_color.r;
@@ -276,7 +271,6 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
                 }
             }
         }
-        fprintf(stderr, "EMIT IMAGE END\n");
     }
 }
 
@@ -302,7 +296,7 @@ local emit_particles(struct particle_emitter* emitter) {
 }
 
 local void update_particle_emitter(struct particle_emitter* emitter, struct tilemap* world, float dt) {
-    if (emitter->alive && emitter->emission_timer <= 0.0f && emitter->emissions < emitter->max_emissions) {
+    if (emitter->alive && emitter->emission_timer <= 0.0f && (emitter->max_emissions == 0 || emitter->emissions < emitter->max_emissions)) {
         if (emitter->from_texture.id) {
             emit_particles_from_image_source(emitter);
         } else {
@@ -347,9 +341,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
             chunk = chunk->next;
         }
-
-        fprintf(stderr, "%d chunk count\n", particle_chunk_list_length(list));
     }
+
     /* "garbage collection" */
     {
         struct particle_chunk* chunk = list->head;
@@ -373,7 +366,12 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
                     previous->next = next;
                     next->previous = previous;
-                    fprintf(stderr, "added to freelist\n");
+
+                    if (chunk == list->head) {
+                        list->head = next;
+                    } else if (chunk == list->tail) {
+                        list->tail = previous;
+                    }
                 }
             }
             chunk = next;
