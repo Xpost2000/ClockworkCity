@@ -175,11 +175,11 @@ local void load_static_resources(void) {
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 
-    game_memory_arena = allocate_memory_arena(Megabyte(128));
+    game_memory_arena = allocate_memory_arena(Megabyte(256));
     game_memory_arena.name = "Game Arena";
 
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
-    initialize_particle_emitter_pool(&game_memory_arena, MAX_PARTICLE_EMITTER_COUNT);
+    initialize_particle_emitter_pool(&game_memory_arena);
 
     load_tilemap_editor_resources();
     gameplay_initialize();

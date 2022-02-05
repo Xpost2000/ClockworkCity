@@ -6,7 +6,6 @@ void* memory_arena_push(struct memory_arena* arena, size_t amount) {
 }
 
 local void _arena_diagonistic(struct memory_arena* arena) {
-    return;
     {
         size_t memusage = memory_arena_total_usage(arena);
         console_printf("(memory arena \"%s\") is using %d bytes, (%d kb) (%d mb) (%d gb)\n",
@@ -19,7 +18,6 @@ void* memory_arena_push_top(struct memory_arena* arena, size_t amount) {
     arena->top_used += amount;
     void* result = (arena->memory + arena->capacity) - arena->top_used;
 
-    _arena_diagonistic(arena);
     return result;
 }
 
@@ -28,7 +26,6 @@ void* memory_arena_push_bottom(struct memory_arena* arena, size_t amount) {
     void* result = arena->memory + arena->used;
     arena->used += amount;
 
-    _arena_diagonistic(arena);
     return result;
 }
 

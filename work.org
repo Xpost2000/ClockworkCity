@@ -261,22 +261,24 @@
    If I start OpenGL stuff, it's likely just resource generation,
    which is a decent start.)
 ** <2022-02-03 Thu>  
-
-*** TODO Binary Serializer
-*** TODO Sparse Particle Storage
-*** TODO Editor can remember last editing session!
-    I don't know if I wanna support the whole undo-redo debockle, I just wanna be able to load
-    the last file I was editting (session really...)
-   
-*** TODO Atlased Fonts (specifically just for the console, which renders glyph by glyph)
-*** TODO Begin OpenGL Rendering (Resource Management)
-*** TODO Proper Spikes and Basic Health System
 ** <2022-02-05 Sat>
    PHYSICS DAY!
    I am ONLY programming physics/collision stuff on this day because it is in such a "meh" state!
 
    So I'm going to try to fix the physics as hard as I can, cause this metroidvania's platforming system
    kind of depends on it!
+
+   The stuff in this list shouldn't be incredibly difficult to do, and should only take a few hours.
+   The primary focus is physics as I said. After that I'm going to do whatever.
+   
+*** DONE Binary Serializer
+*** TODO Maybe versioning work?
+*** TODO Editor can remember last editing session!
+    I don't know if I wanna support the whole undo-redo debockle, I just wanna be able to load
+    the last file I was editting (session really...)
+   
+*** TODO Atlased Fonts (specifically just for the console, which renders glyph by glyph)
+*** TODO Begin OpenGL Rendering (Resource Management)
 ** <2022-02-09 Wed> Soft stop day
   I'm going to stop with whatever progress I've made to rest. Basic engine
   capacities should be done.

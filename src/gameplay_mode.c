@@ -16,8 +16,8 @@ local void gameplay_initialize(void) {
     test_emitter2 = particle_emitter_allocate();
 
     {
-        test_emitter->emission_rate = 0.012;
-        test_emitter->emission_count = 128;
+        test_emitter->emission_rate = 0.05;
+        test_emitter->emission_count = 32;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
@@ -197,6 +197,18 @@ local void DEBUG_draw_debug_stuff(void) {
     #endif
 }
 
+local void DEBUG_draw_debug_ui_stuff(void) {
+    begin_graphics_frame(NULL); {
+        {
+            struct memory_arena* arena = &game_memory_arena;
+            size_t memusage = memory_arena_total_usage(arena);
+            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n",
+                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024));
+            draw_text(_console_font, 0, 0, arena_msg, COLOR4F_GREEN);
+        }
+    } end_graphics_frame();
+}
+
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
 
@@ -253,7 +265,7 @@ local void game_update_render_frame(float dt) {
                     emitter->max_emissions = 1;
                     emitter->particle_color = color4f(1, 0, 0, 1);
                     emitter->particle_max_lifetime = 2;
-                    emitter->collides_with_world = true;
+                    /* emitter->collides_with_world = false; */
                 }
             }
         } else {
@@ -287,4 +299,5 @@ local void game_update_render_frame(float dt) {
             } break;
         }
     }
+    DEBUG_draw_debug_ui_stuff();
 }
