@@ -16,8 +16,7 @@
   
   There will be "emitter entities", which will be limited to the amount of particle emitters in the engine?
 */
-#define MAX_PARTICLES_PER_EMITTER (16384) /* 32x32 filled(all non transparent) sprite. Which is incredibly unlikely since who the fuck just makes a 32x32 white square. Also I can't draw 32x32 tilesets :) */
-#define MAX_PARTICLE_EMITTER_COUNT (16) /*Most levels will probably never reach this number?*/
+#define MAX_PARTICLE_EMITTER_COUNT (1024) /*Most levels will probably never reach this number?*/
 
 struct particle {
     KINEMATIC_ENITTY_BASE_BODY();
@@ -54,6 +53,17 @@ struct particle_chunk_list {
     struct particle_chunk* head;
     struct particle_chunk* tail;
 };
+
+int particle_chunk_list_length(struct particle_chunk_list* list) {
+    struct particle_chunk* chunk = list->head;
+    int c=0;
+    while (chunk != &list_sentinel) {
+        struct particle_chunk* next     = chunk->next;
+        c++;
+        chunk = next;
+    }
+    return c;
+}
 
 struct particle_emitter {
     struct memory_arena* arena;
@@ -133,23 +143,26 @@ struct particle* particle_emitter_allocate_particle(struct particle_emitter* emi
             if (free_chunk->used == PARTICLE_CHUNK_SIZE) {
                 free_chunk = free_chunk->next;
             } else {
+                /* fprintf(stderr, "recycle chunk\n"); */
                 break;
             }
         }
     }
     /* check if we have something in the freelist */
     if (free_chunk == &list_sentinel) {
-
         if (freelist.head != &list_sentinel) {
             struct particle_chunk* head = freelist.head;
             struct particle_chunk* head_next = head->next;
 
             free_chunk = freelist.head;
             freelist.head = head_next;
+            head_next->previous = &list_sentinel;
+            fprintf(stderr, "pop off first freelist head\n");
         }
 
         if (free_chunk == &list_sentinel) {
             /* allocate a new chunk if nothing remains. */
+            fprintf(stderr, "allocate new chunk\n");
             free_chunk = memory_arena_push(emitter->arena, sizeof(*free_chunk));
             zero_buffer_memory(free_chunk, sizeof(*free_chunk));
             free_chunk->next = free_chunk->previous = &list_sentinel;
@@ -235,33 +248,35 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
         uint32_t image_width  = texture_buffer.width;
         uint32_t image_height = texture_buffer.height;
 
+        fprintf(stderr, "EMIT IMAGE\n");
         for (unsigned y = 0; y < image_height; ++y) {
             for (unsigned x = 0; x < image_width; ++x) {
-                struct particle* emitted_particle = particle_emitter_allocate_particle(emitter);
-                emitted_particle->colliding_with_world = emitter->collides_with_world;
-                emitted_particle->texture = emitter->particle_texture;
-                {
-                    emitted_particle->x = emitter->x + (float)x * pixel_scale_factor;
-                    emitted_particle->y = emitter->y + (float)y * pixel_scale_factor;
-                }
+                uint8_t r = image_buffer[y * (image_width * 4) + (x * 4) + 0] * emitter->particle_color.r;
+                uint8_t g = image_buffer[y * (image_width * 4) + (x * 4) + 1] * emitter->particle_color.g;
+                uint8_t b = image_buffer[y * (image_width * 4) + (x * 4) + 2] * emitter->particle_color.b;
+                uint8_t a = image_buffer[y * (image_width * 4) + (x * 4) + 3] * emitter->particle_color.a;
+
+                if (a != 0) {
+                    struct particle* emitted_particle = particle_emitter_allocate_particle(emitter);
+                    emitted_particle->colliding_with_world = emitter->collides_with_world;
+                    emitted_particle->texture = emitter->particle_texture;
+                    {
+                        emitted_particle->x = emitter->x + (float)x * pixel_scale_factor;
+                        emitted_particle->y = emitter->y + (float)y * pixel_scale_factor;
+                    }
             
-                {
-                    uint8_t r = image_buffer[y * (image_width * 4) + (x * 4) + 0] * emitter->particle_color.r;
-                    uint8_t g = image_buffer[y * (image_width * 4) + (x * 4) + 1] * emitter->particle_color.g;
-                    uint8_t b = image_buffer[y * (image_width * 4) + (x * 4) + 2] * emitter->particle_color.b;
-                    uint8_t a = image_buffer[y * (image_width * 4) + (x * 4) + 3] * emitter->particle_color.a;
-
                     emitted_particle->color = color4u8(r, g, b, a);
+                    emitted_particle->h = pixel_scale_factor;
+                    emitted_particle->w = pixel_scale_factor;
+
+                    emitted_particle->vx = (random_float() * 5) - 3;
+                    emitted_particle->vy = -1 - (random_float() * 5);
+
+                    emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
                 }
-                emitted_particle->h = pixel_scale_factor;
-                emitted_particle->w = pixel_scale_factor;
-
-                emitted_particle->vx = (random_float() * 5) - 3;
-                emitted_particle->vy = -1 - (random_float() * 5);
-
-                emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
             }
         }
+        fprintf(stderr, "EMIT IMAGE END\n");
     }
 }
 
@@ -287,7 +302,7 @@ local emit_particles(struct particle_emitter* emitter) {
 }
 
 local void update_particle_emitter(struct particle_emitter* emitter, struct tilemap* world, float dt) {
-    if (emitter->alive && emitter->emission_timer <= 0.0f && emitter->emissions <= emitter->max_emissions) {
+    if (emitter->alive && emitter->emission_timer <= 0.0f && emitter->emissions < emitter->max_emissions) {
         if (emitter->from_texture.id) {
             emit_particles_from_image_source(emitter);
         } else {
@@ -332,6 +347,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
             chunk = chunk->next;
         }
+
+        fprintf(stderr, "%d chunk count\n", particle_chunk_list_length(list));
     }
     /* "garbage collection" */
     {
@@ -356,6 +373,7 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
                     previous->next = next;
                     next->previous = previous;
+                    fprintf(stderr, "added to freelist\n");
                 }
             }
             chunk = next;

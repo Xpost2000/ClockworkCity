@@ -175,7 +175,7 @@ local void load_static_resources(void) {
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 
-    game_memory_arena = allocate_memory_arena(Megabyte(256));
+    game_memory_arena = allocate_memory_arena(Megabyte(128));
     game_memory_arena.name = "Game Arena";
 
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
