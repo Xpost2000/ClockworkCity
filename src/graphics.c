@@ -20,6 +20,7 @@
 #include "camera.h"
 #include "graphics.h"
 
+#define IS_OPENGL 0
 struct texture {
     uint32_t width;
     uint32_t height;

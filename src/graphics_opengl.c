@@ -1,16 +1,9 @@
 /*
-  TODO(jerry):
-  all of this is pretty slow right now but it'll get my job done for now.
-  Rewrite this to be more efficient in the coming days once shit actually works.
-  
-  TODO(jerry):
-  fix the weird id issues and assertions
-  
-  TODO(jerry):
-  Blend modes
-  
-  TODO(jerry):
-  batching (I mean I'm going to turn this into an opengl renderer, but we do need render commands!)
+  Since I want to render the world as vector graphics, I'm going to have to special case the map,
+  because I need to build a mesh for the map...
+
+  Well actually I guess I can just draw a "mesh" by generating mesh resources. This just makes it completely
+  incompatible with SDL2, since I'm not rendering "sprites" per say anymore...
 */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -20,7 +13,7 @@
 #include "camera.h"
 #include "graphics.h"
 
-
+#include "opengl_wrap.c"
 /* these would go in a renderer, but these are actually meant to be global. So that's okay. */
 
 struct texture {
@@ -37,6 +30,7 @@ struct font {
     TTF_Font* font_object;
 };
 
+#define IS_OPENGL 1
 #include "graphics_common.c"
 
 local SDL_Renderer* global_renderer;
@@ -72,11 +66,12 @@ void clear_color(union color4f color) {
     unimplemented();
 }
 
-/* these crappy shapes are going to just be one per draw call. Not efficient. Don't need these to be */
+/* Might have to manually sprite batch everything? Makes things easier... */
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color) {
     unimplemented();
 }
 
+/* urgh... Lines? */
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     unimplemented();
 }
@@ -159,14 +154,16 @@ texture_id load_texture(const char* texture_path) {
     assert(image_surface && "bad image");
 
     {
-        struct texture* new_texture = &textures[free_id];
-        /* new_texture->texture_object = SDL_CreateTextureFromSurface(global_renderer, image_surface); */
-        {
-            
-        }
-
         uint32_t image_width  = image_surface->w;
         uint32_t image_height = image_surface->h;
+
+        struct texture* new_texture = &textures[free_id];
+        {
+            new_texture->opengl_texture_object = opengl_create_texture(image_width, image_height,
+                                                                       GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE,
+                                                                       image_surface->pixels, (struct opengl_texture_parameters){});
+        }
+
 
         new_texture->width  = image_width;
         new_texture->height = image_height;
@@ -179,6 +176,7 @@ texture_id load_texture(const char* texture_path) {
     return result;
 }
 
+/* Fonts are rasterized on the fly so this is the same. */
 font_id load_font(const char* font_path, int size) {
     uint16_t free_id = 1 + font_count++;
     font_id result = {
