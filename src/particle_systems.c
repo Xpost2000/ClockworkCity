@@ -300,85 +300,69 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
         emitter->emission_timer -= dt;
     }
 
-#if 0
-    for (int index = emitter->count-1; index >= 0; --index) {
-        struct particle* particle = emitter->particles + index;
-
-        particle->vx += particle->ax * dt;
-        particle->vy += particle->ay * dt;
-        particle->vy += GRAVITY_CONSTANT * dt;
-        /*
-          Threading would help I suppose.
-        */
-
-        if (particle->colliding_with_world) {
-            do_moving_entity_horizontal_collision_response(world, particle, dt);
-            do_moving_entity_vertical_collision_response(world, particle, dt);
-        } else {
-            particle->x += particle->vx * dt;
-            particle->y += particle->vy * dt;
-        }
-
-        particle->lifetime -= dt;
-
-        if (particle->lifetime <= 0.0) {
-            emitter->particles[index] = emitter->particles[--emitter->count];
-        }
-    }
-#else
     struct particle_chunk_list* list = &emitter->chunks;
-    struct particle_chunk* chunk = list->head;
+    {
+        struct particle_chunk* chunk = list->head;
 
-    while (chunk != &list_sentinel) {
-        for (int index = chunk->used-1; index >= 0; --index) {
-            struct particle* particle = chunk->storage + index;
+        while (chunk != &list_sentinel) {
+            for (int index = chunk->used-1; index >= 0; --index) {
+                struct particle* particle = chunk->storage + index;
 
-            particle->vx += particle->ax * dt;
-            particle->vy += particle->ay * dt;
-            particle->vy += GRAVITY_CONSTANT * dt;
-            /*
-              Threading would help I suppose.
-            */
+                particle->vx += particle->ax * dt;
+                particle->vy += particle->ay * dt;
+                particle->vy += GRAVITY_CONSTANT * dt;
+                /*
+                  Threading would help I suppose.
+                */
 
-            if (particle->colliding_with_world) {
-                do_moving_entity_horizontal_collision_response(world, particle, dt);
-                do_moving_entity_vertical_collision_response(world, particle, dt);
-            } else {
-                particle->x += particle->vx * dt;
-                particle->y += particle->vy * dt;
-            }
-
-            particle->lifetime -= dt;
-
-            if (particle->lifetime <= 0.0) {
-                chunk->storage[index] = chunk->storage[--chunk->used];
-            }
-        }
-
-        /* frelist adding if we can reuse it. */
-        struct particle_chunk* next     = chunk->next;
-        struct particle_chunk* previous = chunk->previous;
-        {
-            if (chunk->used == 0) {
-                /* add to freelist */
-                if (freelist.head == &list_sentinel) {
-                    freelist.head = freelist.tail = chunk;
-                    chunk->next = chunk->previous = &list_sentinel;
+                if (particle->colliding_with_world) {
+                    do_moving_entity_horizontal_collision_response(world, particle, dt);
+                    do_moving_entity_vertical_collision_response(world, particle, dt);
                 } else {
-                    struct particle_chunk* old_tail = freelist.tail;
-                    freelist.tail = chunk;
-                    chunk->previous = old_tail;
-                    old_tail->next = chunk;
-                    chunk->next = &list_sentinel;
+                    particle->x += particle->vx * dt;
+                    particle->y += particle->vy * dt;
                 }
 
-                previous->next = next;
-                next->previous = previous;
+                particle->lifetime -= dt;
+
+                if (particle->lifetime <= 0.0) {
+                    chunk->storage[index] = chunk->storage[--chunk->used];
+                }
             }
+
+            chunk = chunk->next;
         }
-        chunk = next;
     }
-#endif
+    /* "garbage collection" */
+    {
+        struct particle_chunk* chunk = list->head;
+
+        while (chunk != &list_sentinel) {
+            /* frelist adding if we can reuse it. */
+            struct particle_chunk* next     = chunk->next;
+            struct particle_chunk* previous = chunk->previous;
+            {
+                if (chunk->used == 0) {
+                    if (freelist.head == &list_sentinel) {
+                        freelist.head = freelist.tail = chunk;
+                        chunk->next = chunk->previous = &list_sentinel;
+                    } else {
+                        struct particle_chunk* old_tail = freelist.tail;
+                        freelist.tail = chunk;
+                        chunk->previous = old_tail;
+                        old_tail->next = chunk;
+                        chunk->next = &list_sentinel;
+                    }
+
+                    previous->next = next;
+                    next->previous = previous;
+                }
+            }
+            chunk = next;
+        }
+    }
+
+        
 
     if (emitter->emissions > emitter->max_emissions) {
         if (particle_emitter_active_particles(emitter) == 0) {
