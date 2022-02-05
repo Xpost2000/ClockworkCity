@@ -53,9 +53,50 @@ struct particle_chunk_list {
     struct particle_chunk* tail;
 };
 
+void particle_chunk_list_push(struct particle_chunk_list* list, struct particle_chunk* chunk) {
+    if (list->head == &list_sentinel) {
+        list->head  = list->tail = chunk;
+        chunk->next = chunk->previous = &list_sentinel;
+    } else {
+        struct particle_chunk* old_tail = list->tail;
+        list->tail                      = chunk;
+        chunk->previous                 = old_tail;
+        old_tail->next                  = chunk;
+        chunk->next                     = &list_sentinel;
+    }
+}
+
+struct particle_chunk* particle_chunk_list_pop_front(struct particle_chunk_list* list) {
+    struct particle_chunk* result = &list_sentinel;
+
+    if (list->head != &list_sentinel) {
+        struct particle_chunk* head_next = list->head->next;
+        result = list->head;
+
+        list->head = head_next;
+        head_next->previous = &list_sentinel;
+    }
+
+    return result;
+}
+
+void particle_chunk_list_remove(struct particle_chunk_list* list, struct particle_chunk* chunk) {
+    struct particle_chunk* next     = chunk->next;
+    struct particle_chunk* previous = chunk->previous;
+
+    previous->next = next;
+    next->previous = previous;
+
+    if (chunk == list->head) {
+        list->head = next;
+    } else if (chunk == list->tail) {
+        list->tail = previous; 
+    }
+}
+
 int particle_chunk_list_length(struct particle_chunk_list* list) {
     struct particle_chunk* chunk = list->head;
-    int c=0;
+    int c = 0;
     while (chunk != &list_sentinel) {
         struct particle_chunk* next     = chunk->next;
         c++;
@@ -146,16 +187,10 @@ struct particle* particle_emitter_allocate_particle(struct particle_emitter* emi
             }
         }
     }
+
     /* check if we have something in the freelist */
     if (free_chunk == &list_sentinel) {
-        if (freelist.head != &list_sentinel) {
-            struct particle_chunk* head = freelist.head;
-            struct particle_chunk* head_next = head->next;
-
-            free_chunk = freelist.head;
-            freelist.head = head_next;
-            head_next->previous = &list_sentinel;
-        }
+        free_chunk = particle_chunk_list_pop_front(&freelist);
 
         if (free_chunk == &list_sentinel) {
             /* allocate a new chunk if nothing remains. */
@@ -165,16 +200,7 @@ struct particle* particle_emitter_allocate_particle(struct particle_emitter* emi
         }
 
         /* push onto emitter list */
-        if (emitter->chunks.head == &list_sentinel) {
-            emitter->chunks.head = emitter->chunks.tail = free_chunk;
-            free_chunk->next = free_chunk->previous = &list_sentinel;
-        } else {
-            struct particle_chunk* old_tail = emitter->chunks.tail;
-            emitter->chunks.tail = free_chunk;
-            free_chunk->previous = old_tail;
-            old_tail->next       = free_chunk;
-            free_chunk->next = &list_sentinel;
-        }
+        particle_chunk_list_push(&emitter->chunks, free_chunk);
     }
 
     assert(free_chunk != &list_sentinel && "We ran out of memory?");
@@ -202,9 +228,8 @@ struct particle_emitter* particle_emitter_allocate(void) {
 
 local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
     struct particle_chunk_list* list = &emitter->chunks;
-    struct particle_chunk* chunk = list->head;
 
-    while (chunk != &list_sentinel) {
+    for (struct particle_chunk* chunk = list->head; chunk != &list_sentinel; chunk = chunk->next) {
         for (unsigned index = 0; index < chunk->used; ++index) {
             struct particle* particle = chunk->storage + index;
             if (particle->texture.id) {
@@ -225,8 +250,6 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
                                       ));
             }
         }
-
-        chunk = chunk->next;
     }
 }
 
@@ -310,75 +333,42 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
     }
 
     struct particle_chunk_list* list = &emitter->chunks;
-    {
-        struct particle_chunk* chunk = list->head;
 
-        while (chunk != &list_sentinel) {
-            for (int index = chunk->used-1; index >= 0; --index) {
-                struct particle* particle = chunk->storage + index;
+    for (struct particle_chunk* chunk = list->head; chunk != &list_sentinel; chunk = chunk->next) {
+        for (int index = chunk->used-1; index >= 0; --index) {
+            struct particle* particle = chunk->storage + index;
 
-                particle->vx += particle->ax * dt;
-                particle->vy += particle->ay * dt;
-                particle->vy += GRAVITY_CONSTANT * dt;
-                /*
-                  Threading would help I suppose.
-                */
+            particle->vx += particle->ax * dt;
+            particle->vy += particle->ay * dt;
+            particle->vy += GRAVITY_CONSTANT * dt;
+            /*
+              Threading would help I suppose.
+            */
 
-                if (particle->colliding_with_world) {
-                    do_moving_entity_horizontal_collision_response(world, particle, dt);
-                    do_moving_entity_vertical_collision_response(world, particle, dt);
-                } else {
-                    particle->x += particle->vx * dt;
-                    particle->y += particle->vy * dt;
-                }
-
-                particle->lifetime -= dt;
-
-                if (particle->lifetime <= 0.0) {
-                    chunk->storage[index] = chunk->storage[--chunk->used];
-                }
+            if (particle->colliding_with_world) {
+                do_moving_entity_horizontal_collision_response(world, particle, dt);
+                do_moving_entity_vertical_collision_response(world, particle, dt);
+            } else {
+                particle->x += particle->vx * dt;
+                particle->y += particle->vy * dt;
             }
 
-            chunk = chunk->next;
+            particle->lifetime -= dt;
+
+            if (particle->lifetime <= 0.0) {
+                chunk->storage[index] = chunk->storage[--chunk->used];
+            }
         }
     }
 
     /* "garbage collection" */
-    {
-        struct particle_chunk* chunk = list->head;
-
-        while (chunk != &list_sentinel) {
-            /* frelist adding if we can reuse it. */
-            struct particle_chunk* next     = chunk->next;
-            struct particle_chunk* previous = chunk->previous;
-            {
-                if (chunk->used == 0) {
-                    if (freelist.head == &list_sentinel) {
-                        freelist.head = freelist.tail = chunk;
-                        chunk->next = chunk->previous = &list_sentinel;
-                    } else {
-                        struct particle_chunk* old_tail = freelist.tail;
-                        freelist.tail = chunk;
-                        chunk->previous = old_tail;
-                        old_tail->next = chunk;
-                        chunk->next = &list_sentinel;
-                    }
-
-                    previous->next = next;
-                    next->previous = previous;
-
-                    if (chunk == list->head) {
-                        list->head = next;
-                    } else if (chunk == list->tail) {
-                        list->tail = previous;
-                    }
-                }
-            }
-            chunk = next;
+    for (struct particle_chunk* chunk = list->head; chunk != &list_sentinel; chunk = chunk->next) {
+        if (chunk->used == 0) {
+            /* This order does matter because push modifies the chunk */
+            particle_chunk_list_remove(list, chunk);
+            particle_chunk_list_push(&freelist, chunk);
         }
     }
-
-        
 
     if (emitter->emissions > emitter->max_emissions) {
         if (particle_emitter_active_particles(emitter) == 0) {
