@@ -19,6 +19,7 @@
 
 #include "binary_serializer.c"
 
+local font_id _console_font;
 #define CONSOLE_IMPLEMENTATION
 #include "blackiron_console_sfl.h"
 
@@ -37,15 +38,7 @@ local void load_static_resources(void);
 local void update_render_frame(float dt);
 local void register_console_commands();
 
-local font_id _console_font;
 void _console_draw_codepoint(void* context, uint32_t codepoint, float x, float y, float r, float g, float b, float a) {
-    /*
-      This weirdness is a holdover from the blackiron renderer, which had text render
-      above the baseline.
-
-      This renderer doesn't do that.
-      NOTE(jerry): lerping looks weird with this setup for whatever reason. Rest of the console works fine though.
-    */
     int height;
     get_text_dimensions(_console_font, "b", 0, &height);
     draw_codepoint(_console_font, x, y-height, codepoint, color4f(r,g,b,a));
@@ -359,9 +352,9 @@ local void handle_sdl_event(SDL_Event event) {
                     } else if (event.key.keysym.scancode == SDL_SCANCODE_F1) {
                         console_kill_line_from_current_position();
                     } else if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
-                        console_previous_history_entry();
+                        /* console_scroll_by(-1); */
                     } else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-                        console_next_history_entry();
+                        /* console_scroll_by(1); */
                     }
 
                     if (event.key.keysym.scancode == SDL_SCANCODE_RETURN) {
@@ -379,6 +372,8 @@ local void handle_sdl_event(SDL_Event event) {
         /*TODO(jerry): handle mouse relative mode later*/
         case SDL_MOUSEMOTION: {
             register_mouse_position(event.motion.x, event.motion.y);
+        } break;
+        case SDL_MOUSEWHEEL: {
         } break;
         case SDL_MOUSEBUTTONUP:
         case SDL_MOUSEBUTTONDOWN:

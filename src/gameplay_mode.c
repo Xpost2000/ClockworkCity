@@ -261,9 +261,9 @@ local void game_update_render_frame(float dt) {
                     emitter->from_texture = knight_twoview;
                     emitter->emission_rate = 0;
                     emitter->max_emissions = 1;
-                    emitter->particle_color = color4f(1, 0, 0, 1);
-                    emitter->particle_max_lifetime = 0.5;
-                    /* emitter->collides_with_world = false; */
+                    emitter->particle_color = color4f(1, 1, 0, 1);
+                    emitter->particle_max_lifetime = 1;
+                    /* emitter->collides_with_world = true; */
                 }
             }
         } else {

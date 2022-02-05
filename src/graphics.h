@@ -59,6 +59,7 @@ void get_texture_dimensions(texture_id texture, int* width, int* height);
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height); 
 
 font_id    load_font(const char* font_path, int size);
+
 texture_id load_texture(const char* texture_path);
 void       unload_font(font_id font);
 void       unload_texture(texture_id texture);

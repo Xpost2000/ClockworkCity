@@ -87,11 +87,11 @@ static bool is_human_readable_ascii_character(char character) {
 
 // The ring buffer implementation does not print whatever is at the head
 // as it is being used for writing purposes. So an extra byte is added.
-#define CONSOLE_SCROLLBACK_BUFFER_SIZE (16384 + 1)
+#define CONSOLE_SCROLLBACK_BUFFER_SIZE (8192 + 1)
 #define CONSOLE_INPUT_LINE_BUFFER_SIZE (512)
 
 #define CONSOLE_CURSOR_BLINK_TIMER_MAX (0.45)
-#define CONSOLE_SCREEN_PORTION (0.45)
+#define CONSOLE_SCREEN_PORTION (0.25)
 #define CONSOLE_INPUT_HISTORY_MAX_ENTRIES (8)
 #define CONSOLE_DROPSHADOW_X_OFFSET (2.3)
 #define CONSOLE_DROPSHADOW_Y_OFFSET (1)
@@ -609,7 +609,7 @@ void console_scroll_by(float amount) {
     float scroll_displacement   = (_global_console.scroll_y + amount);
     float scrolled_pages_height = scroll_displacement + lines_per_page * glyph_height;
 
-    _global_console.scroll_y += amount;
+    _global_console.scroll_y += amount * glyph_height;
 }
 
 //please inline
@@ -643,6 +643,7 @@ static void _console_display_codepoint(uint32_t codepoint, float* x_cursor, floa
         *y_cursor += (glyph_height);
     }
 }
+
 
 static float _internal_console_linear_interpolate_float(float a, float b, float t) {
     if (t <= 0.0f) {
@@ -702,18 +703,19 @@ void console_display(void) {
 
     {
         float rgba[4];
-        /* _internal_console_decode_rgba_from_uint32(0x008C77FF, rgba); */
-        _internal_console_decode_rgba_from_uint32(0xF50F22FF, rgba);
+        _internal_console_decode_rgba_from_uint32(0x008C77FF, rgba);
+        /* _internal_console_decode_rgba_from_uint32(0xF50F22FF, rgba); */
         
         _global_console.render_procedures.draw_quad(_global_console.render_procedures.context, 0, slide_offset_y, console_width, console_height, rgba[0], rgba[1], rgba[2], 0.93);
     }
     {
         float rgba[4];
-        /* _internal_console_decode_rgba_from_uint32(0x005A44FF, rgba); */
-        _internal_console_decode_rgba_from_uint32(0x752A30FF, rgba);
+        _internal_console_decode_rgba_from_uint32(0x005A44FF, rgba);
+        /* _internal_console_decode_rgba_from_uint32(0x752A30FF, rgba); */
         _global_console.render_procedures.draw_quad(_global_console.render_procedures.context, 0, input_line_y + slide_offset_y, _global_console.width, glyph_height*1.1, rgba[0], rgba[1], rgba[2], 1.0);
     }
 
+    /*NOTE(jerry): scroll back I presume wasn't fully figured out in terms of UX, so it never actually scrolls. Whoops*/
     float x_cursor = 0;
     float y_cursor = -(max_scroll_y);
 
@@ -746,8 +748,9 @@ void console_display(void) {
 
     {
         {
-            float x_cursor  = 0;
+            /* float x_cursor  = 0; */
             float y_cursor  = input_line_y;
+            draw_text(_console_font, 0, y_cursor, _global_console.input_line, COLOR4F_WHITE);
 
             for (decode__internal_console_utf8_iterator iterator = decode__internal_console_utf8_from(_global_console.input_line, _global_console.input_line_count+1);
                  decode__internal_console_utf8_iterator_valid(&iterator);

@@ -37,7 +37,10 @@ struct texture {
 local struct texture textures[RENDERER_MAX_TEXTURES+1] = {};
 
 local uint16_t font_count                   = 0;
-local TTF_Font* fonts[RENDERER_MAX_FONTS+1] = {};
+struct font {
+    TTF_Font* font_object;
+};
+local struct font fonts[RENDERER_MAX_FONTS+1] = {};
 
 local SDL_Renderer* global_renderer;
 local SDL_Window*   global_window;
@@ -227,7 +230,7 @@ float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr,
 }
 
 void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union color4f color) {
-    TTF_Font* font_object = fonts[font.id];
+    TTF_Font* font_object = fonts[font.id].font_object;
     if (font.id != 0)
         assert(font_object && "weird... bad font?");
 
@@ -237,15 +240,16 @@ void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union co
                                                            color.b * 255, color.a * 255});
 
     _camera_transform_v2(_active_camera, &x, &y);
-    /* SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); */
     rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
     SDL_FreeSurface(text_surface);
 
     int dimensions[2] = {};
     {
         SDL_QueryTexture(rendered_text, 0, 0, dimensions, dimensions+1);
-        SDL_RenderCopy(global_renderer, rendered_text,
-                       NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
+        if (within_screen_bounds(x, y, dimensions[0], dimensions[1])) {
+            SDL_RenderCopy(global_renderer, rendered_text,
+                           NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
+        }
     }
 
     SDL_DestroyTexture(rendered_text);
@@ -256,15 +260,11 @@ void draw_text(font_id font, float x, float y, const char* cstr, union color4f c
 }
 
 void draw_text_scaled(font_id font, float x, float y, const char* cstr, float scale, union color4f color) {
-    TTF_Font* font_object = fonts[font.id];
+    TTF_Font* font_object = fonts[font.id].font_object;
 
     if (font.id != 0)
         assert(font_object && "weird... bad font?");
 
-    /*
-      sorry performance gods.
-      this is the easiest thing right now
-     */
     int line_starting_index = 0;
     char* current_line;
 
@@ -344,18 +344,18 @@ font_id load_font(const char* font_path, int size) {
 
     assert(font_count < RENDERER_MAX_FONTS && "too many fonts");
 
-    fonts[free_id] =
-        TTF_OpenFont(font_path, size);
-
-    assert(fonts[free_id] && "bad font");
+    struct font* new_font = fonts + free_id;
+    new_font->font_object = TTF_OpenFont(font_path, size);
+    assert(new_font->font_object && "bad font");
 
     return result;
 }
 
 void unload_font(font_id font) {
-    struct TTF_Font* deleted = fonts[font.id];
+    struct font* deleted = fonts + font.id;
     {
-        TTF_CloseFont(deleted);
+        TTF_CloseFont(deleted->font_object);
+        deleted->font_object = NULL;
     }
     fonts[font.id] = fonts[--font_count];
 }
@@ -383,7 +383,7 @@ void get_texture_dimensions(texture_id texture, int* width, int* height) {
 
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height) {
     assert((font.id > 0 && font.id < RENDERER_MAX_FONTS+1) && "wtf? bad font id??");
-    TTF_Font* font_object = fonts[font.id];
+    TTF_Font* font_object = fonts[font.id].font_object;
 
     int line_starting_index = 0;
     char* current_line;
