@@ -20,39 +20,35 @@
 #include "camera.h"
 #include "graphics.h"
 
+
+/* these would go in a renderer, but these are actually meant to be global. So that's okay. */
+
 struct texture {
     uint32_t width;
     uint32_t height;
     /*pitch optional*/
     uint8_t* pixels;
     /* for now I'll assume the format is rgba32, expensive but okay. Easiest to work with */
-    SDL_Texture* texture_object;
+    uint32_t opengl_texture_object;
 };
 
+uint32_t opengl_global_text_texture_object  = 0;
 struct font {
     TTF_Font* font_object;
 };
 
 #include "graphics_common.c"
+
 local SDL_Renderer* global_renderer;
+
 
 void graphics_initialize(void* window_handle) {
     global_window = window_handle;
-    /*hardware*/
-    global_renderer = SDL_CreateRenderer((SDL_Window*) window_handle, -1,
-                                         SDL_RENDERER_ACCELERATED /* | SDL_RENDERER_PRESENTVSYNC */
-                                         /* SDL_RENDERER_SOFTWARE */
-    );
-    SDL_SetRenderDrawBlendMode(global_renderer,  SDL_BLENDMODE_BLEND);
 }
 
 void graphics_deinitialize(void) {
-    SDL_DestroyRenderer(global_renderer);
-}
-
-local void _set_draw_color(union color4f color) {
-    SDL_SetRenderDrawColor(global_renderer, color.r * 255, color.g * 255,
-                           color.b * 255, color.a * 255);
+    unload_all_textures();
+    unload_all_fonts();
 }
 
 void begin_graphics_frame(struct camera* camera) {
@@ -69,40 +65,20 @@ void end_graphics_frame(void) {
 }
 
 void present_graphics_frame(void) {
-    SDL_RenderPresent(global_renderer);
+    unimplemented();
 }
 
 void clear_color(union color4f color) {
-    _set_draw_color(color);
-    SDL_RenderClear(global_renderer);
+    unimplemented();
 }
 
+/* these crappy shapes are going to just be one per draw call. Not efficient. Don't need these to be */
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color) {
-    _set_draw_color(color);
-    x *= _camera_render_scale(_active_camera);
-    y *= _camera_render_scale(_active_camera);
-    w *= _camera_render_scale(_active_camera);
-    h *= _camera_render_scale(_active_camera);
-
-    if (w < 1) w = 1;
-    if (h < 1) h = 1;
-    _camera_transform_v2(_active_camera, &x, &y);
-    SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
+    unimplemented();
 }
 
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
-    _set_draw_color(color);
-    x *= _camera_render_scale(_active_camera);
-    y *= _camera_render_scale(_active_camera);
-    w *= _camera_render_scale(_active_camera);
-    h *= _camera_render_scale(_active_camera);
-    _camera_transform_v2(_active_camera, &x, &y);
-
-    if (w < 1) w = 1;
-    if (h < 1) h = 1;
-    if (within_screen_bounds(x, y, w, h)) {
-        SDL_RenderDrawRect(global_renderer, &(SDL_Rect){x, y, w, h});
-    }
+    unimplemented();
 }
 
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color) {
@@ -113,83 +89,15 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h,
                             int srx, int sry, int srw, int srh, union color4f color) {
-    SDL_Texture* texture_object = textures[texture.id].texture_object;
-
-    x *= _camera_render_scale(_active_camera);
-    y *= _camera_render_scale(_active_camera);
-    /* weird sdl rendering shenanigans. */
-    if (roundf(_camera_render_scale(_active_camera)) != 1.0f) {
-        w *= _camera_render_scale(_active_camera)+1;
-        h *= _camera_render_scale(_active_camera)+1;
-    }
-
-    if (texture.id != 0)
-        assert(texture_object && "weird... bad texture?");
-
-    SDL_SetTextureColorMod(texture_object, color.r * 255, color.g * 255, color.b * 255);
-    SDL_SetTextureAlphaMod(texture_object, color.a * 255);
-
-    _camera_transform_v2(_active_camera, &x, &y);
-
-    if (within_screen_bounds(x, y, w, h)) {
-        SDL_RenderCopy(global_renderer, texture_object,
-                       &(SDL_Rect){srx, sry, srw, srh},
-                       &(SDL_Rect){x, y, w, h});
-    }
+    unimplemented();
 }
 
-/* 
-   TODO(jerry):
-   We need a form of "dynamic" font, that can be used for ingame renderings.
-   IE: a scaled font.
-*/
 float _draw_text_line(TTF_Font* font_object, float x, float y, const char* cstr, float scale, union color4f color) {
-    SDL_Texture* rendered_text;
-    SDL_Surface* text_surface = TTF_RenderUTF8_Blended(font_object, cstr,
-                                                       (SDL_Color) {color.r * 255, color.g * 255,
-                                                           color.b * 255, color.a * 255});
-    _camera_transform_v2(_active_camera, &x, &y);
-    rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
-    SDL_FreeSurface(text_surface);
-
-    int dimensions[2] = {};
-    {
-        SDL_QueryTexture(rendered_text, 0, 0, dimensions, dimensions+1);
-
-        if (within_screen_bounds(x, y, dimensions[0], dimensions[1])) {
-            SDL_RenderCopy(global_renderer, rendered_text,
-                           NULL, &(SDL_Rect){x, y, dimensions[0] * scale, dimensions[1] * scale});
-        }
-    }
-
-    SDL_DestroyTexture(rendered_text);
-    return dimensions[1];
+    unimplemented();
 }
 
 void draw_codepoint(font_id font, float x, float y, uint32_t codepoint, union color4f color) {
-    TTF_Font* font_object = fonts[font.id].font_object;
-    if (font.id != 0)
-        assert(font_object && "weird... bad font?");
-
-    SDL_Texture* rendered_text;
-    SDL_Surface* text_surface = TTF_RenderGlyph_Blended(font_object, codepoint,
-                                                        (SDL_Color) {color.r * 255, color.g * 255,
-                                                           color.b * 255, color.a * 255});
-
-    _camera_transform_v2(_active_camera, &x, &y);
-    rendered_text = SDL_CreateTextureFromSurface(global_renderer, text_surface);
-    SDL_FreeSurface(text_surface);
-
-    int dimensions[2] = {};
-    {
-        SDL_QueryTexture(rendered_text, 0, 0, dimensions, dimensions+1);
-        if (within_screen_bounds(x, y, dimensions[0], dimensions[1])) {
-            SDL_RenderCopy(global_renderer, rendered_text,
-                           NULL, &(SDL_Rect){x, y, dimensions[0], dimensions[1]});
-        }
-    }
-
-    SDL_DestroyTexture(rendered_text);
+    unimplemented();
 }
 
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color) {
@@ -236,11 +144,6 @@ texture_id load_texture(const char* texture_path) {
 
     SDL_Surface* image_surface = IMG_Load(texture_path);
     {
-        /*stupid but I don't want to have lots of special case code as I want to read the pixels for reasons and it's easier
-          to just have one format IE: prefer RGBA exclusive. Makes loading a bit slower... 
-         Probably unnoticable though.*/
-
-        /* lazy init implicit global object. Never free */
         local SDL_PixelFormat* rgba32_format = NULL;
 
         if (!(rgba32_format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32)));
@@ -257,7 +160,10 @@ texture_id load_texture(const char* texture_path) {
 
     {
         struct texture* new_texture = &textures[free_id];
-        new_texture->texture_object = SDL_CreateTextureFromSurface(global_renderer, image_surface);
+        /* new_texture->texture_object = SDL_CreateTextureFromSurface(global_renderer, image_surface); */
+        {
+            
+        }
 
         uint32_t image_width  = image_surface->w;
         uint32_t image_height = image_surface->h;
@@ -300,7 +206,6 @@ void unload_font(font_id font) {
 void unload_texture(texture_id texture) {
     struct texture* deleted = &textures[texture.id];
     {
-        SDL_DestroyTexture(deleted->texture_object);
         system_deallocate_memory(deleted->pixels);
 
         zero_buffer_memory(deleted, sizeof(*deleted));

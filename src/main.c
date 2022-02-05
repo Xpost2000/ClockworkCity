@@ -11,6 +11,8 @@
 
 #include "common.h"
 
+#include "../glad/glad.h"
+
 #include "input.h"
 #include "camera.h"
 #include "graphics.h"
@@ -27,6 +29,7 @@ local font_id _console_font;
 #define DEFAULT_RESOLUTION_X 640
 #define DEFAULT_RESOLUTION_Y 480
 
+SDL_GLContext global_opengl_context;
 SDL_Window* global_window;
 local float global_elapsed_time = 0;
 local SDL_GameController* global_controller_devices[4] = {};
@@ -273,6 +276,15 @@ local void initialize(void) {
         report_screen_dimensions(screen_dimensions);
     }
 
+    {
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+        global_opengl_context = SDL_GL_CreateContext(global_window);
+        assert(gladLoadGLLoader(SDL_GL_GetProcAddress) && "OpenGL functions not loadable?");
+    }
+
     graphics_initialize(global_window);
     audio_initialize();
 
@@ -295,6 +307,7 @@ local void deinitialize(void) {
     close_all_controllers();
     audio_deinitialize();
     graphics_deinitialize();
+    SDL_GL_DeleteContext(global_opengl_context);
     SDL_DestroyWindow(global_window);
     Mix_Quit();
     TTF_Quit();
