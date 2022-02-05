@@ -13,21 +13,34 @@
   If I such at pixel art even more... Just decrease the number!
 */
 #define VPIXELS_PER_METER (16)
-#define TILES_PER_SCREEN (50)
+#define TILES_PER_SCREEN (30)
 #define GRAVITY_CONSTANT (20)
 
 struct game_colorscheme {
+    /* will get more complicated overtime I suppose, as I think of more colors to add */
     union color4f primary; // foreground
     union color4f secondary; // background
+
+#if 0
+    union color4f entity_primary; // foreground (entity)
+    union color4f entity_secondary; // particle effect color A (entity???) /*blood?*/
+    union color4f entity_teritary; // particle effect color B (entity???)  /*who knows?*/
+#endif
+
     union color4f text; // what it sounds like.
 };
 
-/* ideally just read the colorschemes from a file or something */
 struct game_colorscheme test1 = {
     .primary   = COLOR4F_normalize(102, 10, 163, 255),
     .secondary = COLOR4F_normalize(204, 128, 255, 255),
     .text      = COLOR4F_normalize(210, 230, 92, 255),
 };
+struct game_colorscheme DEFAULT_mono = {
+    .secondary = COLOR4F_BLACK,
+    .primary   = COLOR4F_WHITE,
+    .text = COLOR4F_WHITE,
+};
+struct game_colorscheme* active_colorscheme = &DEFAULT_mono;
 
 /*
   Particles are theoretically a type of entity, so this allows me to
@@ -78,6 +91,7 @@ struct entity player = {
 /*TODO(jerry): move some game state globals into this.*/
 local struct memory_arena game_memory_arena;
 
+local texture_id test_guy;
 local texture_id knight_twoview;
 local texture_id test_icon;
 local font_id    dynamic_scale_font;
@@ -165,6 +179,7 @@ void load_graphics_resources(void) {
     knight_twoview      = load_texture("assets/knight_twoview.png");
     test_icon      = load_texture("assets/icon.png");
     test_font           = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.03));
+    test_guy  = load_texture("assets/guy.png");
     _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
     test3_font          = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.04));
     /* test2_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", 64); */

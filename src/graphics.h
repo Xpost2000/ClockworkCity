@@ -46,13 +46,13 @@ struct image_buffer {
     uint8_t* pixels;
 };
 
-shared_storage union color4f COLOR4F_BLACK    = {{0, 0, 0, 1}};
-shared_storage union color4f COLOR4F_RED      = {{1, 0, 0, 1}};
-shared_storage union color4f COLOR4F_GREEN    = {{0, 1, 0, 1}};
-shared_storage union color4f COLOR4F_BLUE     = {{0, 0, 1, 1}};
-shared_storage union color4f COLOR4F_WHITE    = {{1, 1, 1, 1}};
-shared_storage union color4f COLOR4F_YELLOW   = {{1, 1, 0.6235, 1}};
-shared_storage union color4f COLOR4F_DARKGRAY = {{0.3, 0.3, 0.3, 1}};
+#define COLOR4F_BLACK    (union color4f) {{0, 0, 0, 1}}
+#define COLOR4F_RED      (union color4f) {{1, 0, 0, 1}}
+#define COLOR4F_GREEN    (union color4f) {{0, 1, 0, 1}}
+#define COLOR4F_BLUE     (union color4f) {{0, 0, 1, 1}}
+#define COLOR4F_WHITE    (union color4f) {{1, 1, 1, 1}}
+#define COLOR4F_YELLOW   (union color4f) {{1, 1, 0.6235, 1}}
+#define COLOR4F_DARKGRAY (union color4f) {{0.3, 0.3, 0.3, 1}}
 
 union color4f color4f(float r, float g, float b, float a);
 union color4f color4f_normalize(uint8_t r, uint8_t g, uint8_t b, uint8_t a);

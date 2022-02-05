@@ -17,7 +17,7 @@ local void gameplay_initialize(void) {
 
     {
         test_emitter->emission_rate = 0.01;
-        test_emitter->emission_count = 8;
+        test_emitter->emission_count = 0;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
@@ -247,7 +247,10 @@ local void game_update_render_frame(float dt) {
         draw_filled_rectangle(0, 0, 9999, 9999, test1.secondary);
     } end_graphics_frame();
     begin_graphics_frame(&game_camera); {
-        draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+        {
+            /* draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0)); */
+            draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), test1.primary);
+        }
         /* 125 x 120 */
         if (TEST_bool1) {
             draw_texture(knight_twoview, player.x, (player.y+player.h) - (120/16.0f),
