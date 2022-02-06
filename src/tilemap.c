@@ -396,14 +396,9 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
             struct tile* t = &tilemap->tiles[y * tilemap->width + x];
             if(t->id == TILE_NONE) continue;
 
-            float tile_x = t->x;
-            float tile_y = t->y;
-            float tile_w = 1;
-            float tile_h = 1;
-
             float old_y = entity->y;
 
-            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, 1, 1)) {
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
                 if (tile_is_slope(t)) {
                     if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
                         float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
@@ -496,7 +491,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                             entity->vy = 0;
                                         }
                                     } else {
-                                        entity->x = t->x - entity->w;
+                                        entity->x = t->x - entity->w+PHYSICS_EPSILION;
                                     }
                                 } break;
                                 case INTERSECTION_EDGE_RIGHT: {
@@ -508,24 +503,15 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                         }
                     }
                 } else {
-                    switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
-                        case INTERSECTION_EDGE_TOP: {
-                            entity->y = t->y - entity->h;
-                            entity->vy = 0;
-                        } break;
-                        case INTERSECTION_EDGE_BOTTOM: {
-                            entity->y = t->y + 1;
-                            entity->vy = 0;
-                        } break;
-                        case INTERSECTION_EDGE_RIGHT: {
-                            entity->x = t->x + 1;
-                            entity->vx = 0;
-                        } break;
-                        case INTERSECTION_EDGE_LEFT: {
-                            entity->x = t->x - entity->w;
-                            entity->vx = 0;
-                        } break;
-                            invalid_cases();
+                    float entity_right_edge = entity->x + entity->w;
+                    float tile_right_edge = (t->x + 1);
+
+                    if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
+                        entity->x = t->x - (entity->w);
+                        entity->vx = 0;
+                    } else if (entity->x < tile_right_edge && entity->x > t->x) {
+                        entity->x = tile_right_edge;
+                        entity->vx = 0;
                     }
                 }
             }
@@ -560,26 +546,17 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                         }
                     } break;
                     case TILE_SOLID: {
-                        entity->last_vy = old_vy;
-                        switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
-                            case INTERSECTION_EDGE_TOP: {
-                                entity->y = t->y - entity->h;
-                                entity->vy = 0;
-                            } break;
-                            case INTERSECTION_EDGE_BOTTOM: {
-                                entity->y = t->y + 1;
-                                entity->vy = 0;
-                            } break;
-                            case INTERSECTION_EDGE_RIGHT: {
-                                entity->x = t->x + 1;
-                                entity->vx = 0;
-                            } break;
-                            case INTERSECTION_EDGE_LEFT: {
-                                entity->x = t->x - entity->w;
-                                entity->vx = 0;
-                            } break;
-                                invalid_cases();
+                        float entity_bottom_edge = entity->y + entity->h;
+                        float tile_bottom_edge = (t->y + 1);
+
+                        if (entity_bottom_edge >= t->y && entity_bottom_edge <= tile_bottom_edge) {
+                            entity->y = t->y - entity->h;
+                        } else if (entity->y <= tile_bottom_edge && entity_bottom_edge >= tile_bottom_edge) {
+                            entity->y = tile_bottom_edge;
                         }
+
+                        entity->last_vy = old_vy;
+                        entity->vy = 0;
                     } break;
                     default: break;
                 }
@@ -612,16 +589,19 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
 
             if (tile_is_slope(t)) {
                 float slope_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
-                bool is_bottom_facing_tile = (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL);
 
-                if (!is_bottom_facing_tile && roundf(entity->y) == roundf(slope_location)) {
-                    entity->onground = true;
-                } else {
-                    if (is_bottom_facing_tile && entity->onground) {
-                        return;
+                if (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1) == INTERSECTION_EDGE_TOP) {
+                    bool is_bottom_facing_tile = (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL);
+
+                    if (is_bottom_facing_tile) {
+                        if (entity->onground) return;
+                        entity->onground = false;
+                    } else {
+                        if (fabs(entity->y - slope_location) < 0.1) {
+                            entity->onground = true;
+                            return;
+                        }
                     }
-
-                    entity->onground = false;
                 }
             }
 

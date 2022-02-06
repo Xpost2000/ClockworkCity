@@ -199,8 +199,8 @@ local void DEBUG_draw_debug_ui_stuff(void) {
         {
             struct memory_arena* arena = &game_memory_arena;
             size_t memusage = memory_arena_total_usage(arena);
-            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n",
-                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024));
+            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f)\n",
+                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player.onground, player.x, player.y);
             draw_text(_console_font, 0, 0, arena_msg, COLOR4F_GREEN);
         }
     } end_graphics_frame();
