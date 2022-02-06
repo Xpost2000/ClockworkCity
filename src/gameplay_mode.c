@@ -210,6 +210,23 @@ local void DEBUG_draw_debug_ui_stuff(void) {
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
 
+    {
+        if (transitioning) {
+            {
+                active_colorscheme.primary = color4f_lerp(DEFAULT_mono.primary, transition_to.primary, transition_t); 
+                active_colorscheme.secondary = color4f_lerp(DEFAULT_mono.secondary, transition_to.secondary, transition_t); 
+                active_colorscheme.text = color4f_lerp(DEFAULT_mono.text, transition_to.text, transition_t); 
+            }
+
+            transition_t += dt;
+
+            if (transition_t > 1) {
+                transitioning = false;
+                transition_t = 0;
+            }
+        }
+    }
+
     if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
         do_player_input(dt);
 
@@ -244,12 +261,12 @@ local void game_update_render_frame(float dt) {
 
     /* UI is a substate, we still draw the game under the UI, so it can look nice. */
     begin_graphics_frame(NULL); {
-        draw_filled_rectangle(0, 0, 9999, 9999, test1.secondary);
+        draw_filled_rectangle(0, 0, 9999, 9999, active_colorscheme.secondary);
     } end_graphics_frame();
     begin_graphics_frame(&game_camera); {
         {
             /* draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0)); */
-            draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), test1.primary);
+            draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary);
         }
         /* 125 x 120 */
         if (TEST_bool1) {

@@ -265,13 +265,10 @@
    
 *** DONE Binary Serializer
 *** DONE particle sparse storage
-*** TODO Maybe versioning work?
-*** TODO Editor can remember last editing session!
-    I don't know if I wanna support the whole undo-redo debockle, I just wanna be able to load
-    the last file I was editting (session really...)
-   
-*** TODO Atlased Fonts (specifically just for the console, which renders glyph by glyph)
-*** TODO Begin OpenGL Rendering (Resource Management)
+*** DONE Atlased Fonts (specifically just for the console, which renders glyph by glyph)
+    Eh, works fine enough if I just do camera culling.
+*** DONE Begin OpenGL Rendering (Resource Management)
+*** DONE Colorscheme loading stuff
 ** <2022-02-06 Sun>
    PHYSICS DAY!
    I am ONLY programming physics/collision stuff on this day because it is in such a "meh" state!

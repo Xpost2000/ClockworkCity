@@ -13,19 +13,14 @@
   If I such at pixel art even more... Just decrease the number!
 */
 #define VPIXELS_PER_METER (16)
-#define TILES_PER_SCREEN (30)
+#define TILES_PER_SCREEN (33)
 #define GRAVITY_CONSTANT (20)
 
+/* Let's work on this soon. */
 struct game_colorscheme {
     /* will get more complicated overtime I suppose, as I think of more colors to add */
     union color4f primary; // foreground
     union color4f secondary; // background
-
-#if 0
-    union color4f entity_primary; // foreground (entity)
-    union color4f entity_secondary; // particle effect color A (entity???) /*blood?*/
-    union color4f entity_teritary; // particle effect color B (entity???)  /*who knows?*/
-#endif
 
     union color4f text; // what it sounds like.
 };
@@ -40,7 +35,10 @@ struct game_colorscheme DEFAULT_mono = {
     .primary   = COLOR4F_WHITE,
     .text = COLOR4F_WHITE,
 };
-struct game_colorscheme* active_colorscheme = &DEFAULT_mono;
+bool transitioning = false;
+struct game_colorscheme transition_to;
+float transition_t = 0;
+struct game_colorscheme active_colorscheme;
 
 /*
   Particles are theoretically a type of entity, so this allows me to
@@ -208,6 +206,7 @@ local void load_static_resources(void) {
 
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
     initialize_particle_emitter_pool(&game_memory_arena);
+    active_colorscheme = DEFAULT_mono;
 
     load_tilemap_editor_resources();
     gameplay_initialize();
@@ -299,12 +298,17 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
     }
 
     camera_set_position(&game_camera, player.x, player.y);
+    camera_force_clamp_to_bounds(&game_camera);
 }
 
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     struct binary_serializer file = open_read_file_serializer(filename);
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
+
     serializer_finish(&file);
+    transitioning = true;
+    transition_t = 0;
+    transition_to = test1;
 }
 
 void update_render_frame(float dt) {

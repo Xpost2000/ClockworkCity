@@ -54,6 +54,7 @@ void camera_set_focus_speed_x(struct camera* camera, float speed);
 void camera_set_focus_speed_y(struct camera* camera, float speed);
 void camera_set_focus_position(struct camera* camera, float x, float y);
 void camera_update(struct camera* camera, float dt);
+void camera_force_clamp_to_bounds(struct camera* camera);
 void camera_reset_transform(struct camera* camera);
 /*based on the renderer scale / game units*/
 void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y);

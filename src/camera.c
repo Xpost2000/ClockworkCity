@@ -57,6 +57,28 @@ void camera_traumatize(struct camera* camera, float amount) {
     camera->trauma += amount;
 }
 
+void camera_force_clamp_to_bounds(struct camera* camera) {
+    struct rectangle screen_bounds = camera_get_bounds(camera);
+    float area = ((camera->bounds_max_x - camera->bounds_min_x) * (camera->bounds_max_y - camera->bounds_min_y));
+
+    if (area > 0) {
+        if ((screen_bounds.x + screen_bounds.w) > (camera->bounds_max_x)) {
+            camera->visual_position_x = camera->target_position_x = camera->bounds_max_x - (screen_bounds.w/2);
+        }
+        if ((screen_bounds.x) < (camera->bounds_min_x)) {
+            camera->visual_position_x = camera->target_position_x = camera->bounds_min_x + (screen_bounds.w/2);
+        }
+
+        if ((screen_bounds.y + screen_bounds.h) > (camera->bounds_max_y)) {
+            camera->visual_position_y = camera->target_position_y = camera->bounds_max_y - (screen_bounds.h/2);
+        }
+        
+        if ((screen_bounds.y) < (camera->bounds_min_y)) {
+            camera->visual_position_y = camera->target_position_y = camera->bounds_min_y + (screen_bounds.h/2);
+        }
+    }
+}
+
 void camera_update(struct camera* camera, float dt) {
     camera->trauma = clampf(camera->trauma, 0.0, 1.0);
 
@@ -68,8 +90,10 @@ void camera_update(struct camera* camera, float dt) {
      */
 
     /*hardcoded for now*/
-    float trauma_shake_x = (8 * random_float() - 4.5) * camera->trauma;
-    float trauma_shake_y = (8 * random_float() - 4.5) * camera->trauma;
+    const float CAMERA_SHAKE_RADIUS_X = 3;
+    const float CAMERA_SHAKE_RADIUS_Y = 3;
+    float trauma_shake_x = random_ranged_float(-CAMERA_SHAKE_RADIUS_X, CAMERA_SHAKE_RADIUS_X) * camera->trauma;
+    float trauma_shake_y = random_ranged_float(-CAMERA_SHAKE_RADIUS_Y, CAMERA_SHAKE_RADIUS_Y) * camera->trauma;
 
     /* think of some better metrics on small levels */
     {
@@ -111,7 +135,7 @@ void camera_update(struct camera* camera, float dt) {
         lerp(camera->last_position_y, camera->target_position_y,
              clampf(camera->interpolation_time[1], 0, 1)) + trauma_shake_y;
 
-    camera->trauma -= dt * 0.078;
+    camera->trauma -= dt * 0.098;
 }
 
 void camera_reset_transform(struct camera* camera) {

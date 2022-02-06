@@ -77,6 +77,15 @@ union color4f color4f(float r, float g, float b, float a) {
     };
 }
 
+union color4f color4f_lerp(union color4f a, union color4f b, float t) {
+    return (union color4f) {
+        .r = lerp(a.r, b.r, t),
+        .g = lerp(a.g, b.g, t),
+        .b = lerp(a.b, b.b, t),
+        .a = lerp(a.a, b.a, t),
+    };
+}
+
 union color4f color4f_normalize(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     return color4f(r/255.0f, g/255.0f, b/255.0f, a/255.0f);
 }

@@ -276,7 +276,7 @@ void draw_tiles(struct tile* tiles, size_t count) {
         draw_texture(tile_textures[t->id],
                      t->x, t->y,
                      1, 1,
-                     test1.primary);
+                     active_colorscheme.primary);
     } 
 }
 
