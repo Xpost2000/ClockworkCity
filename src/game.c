@@ -210,8 +210,8 @@ local void load_static_resources(void) {
 
     load_tilemap_editor_resources();
     gameplay_initialize();
-    console_execute_cstr("load e");
-    console_execute_cstr("noclip");
+    console_execute_cstr("load 1.lvl");
+    /* console_execute_cstr("noclip"); */
 }
 /*
   This is really reloading all graphical assets... But anyways.

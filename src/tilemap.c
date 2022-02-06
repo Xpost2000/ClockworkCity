@@ -405,9 +405,9 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
 
             if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, 1, 1)) {
                 if (tile_is_slope(t)) {
-                    float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
-
                     if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
+                        float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
+
                         if (t->id == TILE_SLOPE_L) {
                             switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
                                 case INTERSECTION_EDGE_LEFT:
@@ -432,7 +432,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 } break;
                                     invalid_cases();
                             }
-                        } else {
+                        } else if (t->id == TILE_SLOPE_R) {
                             switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
                                 case INTERSECTION_EDGE_RIGHT:
                                 case INTERSECTION_EDGE_TOP: {
@@ -458,6 +458,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             }
                         }
                     } else {
+                        float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
                         if (t->id == TILE_SLOPE_BR) {
                             switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
                                 case INTERSECTION_EDGE_TOP: {
@@ -481,7 +482,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 } break;
                                     invalid_cases();
                             }
-                        } else {
+                        } else if (t->id == TILE_SLOPE_BL) {
                             switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
                                 case INTERSECTION_EDGE_TOP: {
                                     entity->y = t->y - entity->h;
@@ -558,7 +559,6 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                             entity->vy = 0;
                         }
                     } break;
-                    default:
                     case TILE_SOLID: {
                         entity->last_vy = old_vy;
                         switch (rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
@@ -581,6 +581,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                                 invalid_cases();
                         }
                     } break;
+                    default: break;
                 }
             }
         }
