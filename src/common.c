@@ -68,7 +68,7 @@ enum intersection_edge opposite_edge_of(enum intersection_edge edge) {
 }
 
 enum intersection_edge rectangle_closest_intersection_edge_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
-    if (!rectangle_overlapping_v(x1,y1,w1,h1, x2,y2,w2,h2)) {
+    if (!rectangle_intersects_v(x1,y1,w1,h1, x2,y2,w2,h2)) {
         return INTERSECTION_EDGE_NONE;
     }
 
