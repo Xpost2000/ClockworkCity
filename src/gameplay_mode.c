@@ -17,7 +17,7 @@ local void gameplay_initialize(void) {
 
     {
         test_emitter->emission_rate = 0.01;
-        test_emitter->emission_count = 0;
+        test_emitter->emission_count = 1;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
@@ -73,7 +73,6 @@ local void do_physics(float dt) {
 
     do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
     do_moving_entity_vertical_collision_response(tilemap, &player, dt);
-    evaluate_moving_entity_grounded_status(tilemap, &player, dt);
 
     /* game collisions, not physics */
     /* check if I hit transition then change level */
@@ -116,7 +115,7 @@ local void do_player_input(float dt) {
 
     player.ax = 0;
 
-    const int MAX_ACCELERATION = 25;
+    const int MAX_ACCELERATION = 40;
 
     if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
@@ -237,7 +236,7 @@ local void game_update_render_frame(float dt) {
 
         {
             local float physics_accumulation_timer = 0;
-            const int PHYSICS_FRAMERATE = 500;
+            const int PHYSICS_FRAMERATE = 300;
             const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
             while (physics_accumulation_timer > 0.0f) {
