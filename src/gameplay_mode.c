@@ -166,6 +166,7 @@ local void do_player_input(float dt) {
 
     if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (player.onground) {
+            /* player.vy = -GRAVITY_CONSTANT; */
             player.vy = -10;
             player.onground = false;
             fprintf(stderr, "jump?\n");
