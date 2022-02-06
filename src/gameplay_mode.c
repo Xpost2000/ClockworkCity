@@ -164,6 +164,7 @@ local void do_player_input(float dt) {
         if (player.onground && player.vy == 0) {
             player.vy = -10;
             player.onground = false;
+            fprintf(stderr, "jump?\n");
         }
     }
 
@@ -199,8 +200,8 @@ local void DEBUG_draw_debug_ui_stuff(void) {
         {
             struct memory_arena* arena = &game_memory_arena;
             size_t memusage = memory_arena_total_usage(arena);
-            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f)\n",
-                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player.onground, player.x, player.y);
+            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f, %f)\n",
+                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player.onground, player.x, player.y, player.vy);
             draw_text(_console_font, 0, 0, arena_msg, COLOR4F_GREEN);
         }
     } end_graphics_frame();
