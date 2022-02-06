@@ -172,7 +172,7 @@ local struct tilemap_sample_interval tilemap_sampling_region_around_moving_entit
     /* This is really just a glorified clamped interval. Infact this is longer than it should be but whatever. */
     /* NOTE(jerry): Name indicates I should extrapolate the interval through the velocity to allow for better
      "continuous" collision. Not doing this yet though. */
-    const unsigned TILE_PRUNE_RADIUS = 4; /*default prefetch radius*/
+    const unsigned TILE_PRUNE_RADIUS = 5; /*default prefetch radius*/
 
     int entity_ceiled_x = ceilf(entity->x);
     int entity_ceiled_y = ceilf(entity->y);
@@ -382,14 +382,42 @@ local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct t
     return false;
 }
 
-/* maybe move to entity.c? */
 void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
     float old_x = entity->x;
     float old_vy = entity->vy;
     /*technically wrong because slopes should slow you down. Whatever*/
-    entity->x += entity->vx * dt;
+    float future_y = entity->y + entity->vy * dt;
 
     struct tilemap_sample_interval sample_region = tilemap_sampling_region_around_moving_entity(tilemap, entity);
+
+    bool in_slope = false;
+    for (unsigned y = sample_region.min_y; y < sample_region.max_y; ++y) {
+        for (unsigned x = sample_region.min_x; x < sample_region.max_x; ++x) {
+            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+
+            if (t->id == TILE_NONE) continue;
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
+                switch (t->id) {
+                    case TILE_SLOPE_R:
+                    case TILE_SLOPE_L: {
+                        const float DISTANCE_EPSILION = 0.4;
+                        if (fabs(entity->y - tile_get_slope_height(t, entity->x, entity->w, entity->h)) <= DISTANCE_EPSILION) {
+                            in_slope = true;
+                            goto after;
+                        }
+                    } break;
+                    default: break;
+                }
+            }
+        }
+    }
+after:
+
+    if (in_slope) {
+        entity->x += entity->vx * sinf(degrees_to_radians(45)) * dt;
+    } else {
+        entity->x += entity->vx * dt;
+    }
 
     for (unsigned y = sample_region.min_y; y < sample_region.max_y; ++y) {
         for (unsigned x = sample_region.min_x; x < sample_region.max_x; ++x) {
@@ -408,7 +436,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                 case INTERSECTION_EDGE_LEFT:
                                 case INTERSECTION_EDGE_TOP: {
                                     if (entity->y + entity->h <= (t->y + 1)) {
-                                        if (entity->y > slope_snapped_location) {
+                                        if (future_y > slope_snapped_location) {
                                             entity->y = slope_snapped_location;
 
                                             if (entity_intersects_any_tiles_excluding(entity, tilemap, y * tilemap->width + x)) {
@@ -623,15 +651,13 @@ void evaluate_moving_entity_grounded_status(struct tilemap* tilemap, struct enti
                 entity->onground = true;
             }
 
-            if (tile_is_slope(t)) {
+            bool is_bottom_facing_tile = (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL);
+            if (tile_is_slope(t) && !is_bottom_facing_tile) {
                 float slope_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
-                bool is_bottom_facing_tile = (t->id == TILE_SLOPE_BR || t->id == TILE_SLOPE_BL);
 
-                if (!is_bottom_facing_tile && rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1) == INTERSECTION_EDGE_TOP) {
-                    if (fabs(entity->y - slope_location) < 0.1) {
-                        entity->onground = true;
-                        return;
-                    }
+                if (fabs(entity->y - slope_location) < 0.1) {
+                    entity->onground = true;
+                    return;
                 }
             }
 

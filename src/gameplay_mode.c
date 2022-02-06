@@ -52,9 +52,13 @@ local void do_physics(float dt) {
     struct tilemap* tilemap = game_state->loaded_level;
 
     player.vx += player.ax * dt;
-    player.vx -= (player.vx * 3 * dt);
+    if (player.dash) {
+        player.vx -= (player.vx * 60 * dt);
+    } else {
+        player.vx -= (player.vx * 3 * dt);
+    }
 
-    const int MAX_SPEED = 150;
+    const int MAX_SPEED = 500;
     if (fabs(player.vx) > MAX_SPEED) {
         float sgn = float_sign(player.vx);
         player.vx = MAX_SPEED * sgn;
@@ -153,7 +157,7 @@ local void do_player_input(float dt) {
     if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
         if (!player.dash) {
             player.vy = 0;
-            const int MAX_SPEED = 90;
+            const int MAX_SPEED = 500;
             player.vx = MAX_SPEED * player.facing_dir;
             camera_traumatize(&game_camera, 0.0675);
             player.dash = true;
@@ -161,7 +165,7 @@ local void do_player_input(float dt) {
     }
 
     if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
-        if (player.onground && player.vy == 0) {
+        if (player.onground) {
             player.vy = -10;
             player.onground = false;
             fprintf(stderr, "jump?\n");
@@ -200,8 +204,8 @@ local void DEBUG_draw_debug_ui_stuff(void) {
         {
             struct memory_arena* arena = &game_memory_arena;
             size_t memusage = memory_arena_total_usage(arena);
-            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f, %f)\n",
-                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player.onground, player.x, player.y, player.vy);
+            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f, %f, %f)\n",
+                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player.onground, player.x, player.y, player.vx, player.vy);
             draw_text(_console_font, 0, 0, arena_msg, COLOR4F_GREEN);
         }
     } end_graphics_frame();
@@ -232,7 +236,7 @@ local void game_update_render_frame(float dt) {
 
         {
             local float physics_accumulation_timer = 0;
-            const int PHYSICS_FRAMERATE = 300;
+            const int PHYSICS_FRAMERATE = 500;
             const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
             while (physics_accumulation_timer > 0.0f) {

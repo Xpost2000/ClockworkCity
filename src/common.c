@@ -80,22 +80,22 @@ enum intersection_edge rectangle_closest_intersection_edge_v(float x1, float y1,
     float                  minimum_intersection = INFINITY;
     enum intersection_edge best_edge            = INTERSECTION_EDGE_NONE;
 
-    if (intersection_left_edge < minimum_intersection) {
+    if (intersection_left_edge && intersection_left_edge < minimum_intersection) {
         minimum_intersection = intersection_left_edge;
         best_edge = INTERSECTION_EDGE_LEFT;
     }
 
-    if (intersection_right_edge < minimum_intersection) {
+    if (intersection_right_edge && intersection_right_edge < minimum_intersection) {
         minimum_intersection = intersection_right_edge;
         best_edge = INTERSECTION_EDGE_RIGHT;
     }
 
-    if (intersection_top_edge < minimum_intersection) {
+    if (intersection_top_edge && intersection_top_edge < minimum_intersection) {
         minimum_intersection = intersection_top_edge;
         best_edge = INTERSECTION_EDGE_TOP;
     }
 
-    if (intersection_bottom_edge < minimum_intersection) {
+    if (intersection_bottom_edge && intersection_bottom_edge < minimum_intersection) {
         minimum_intersection = intersection_bottom_edge;
         best_edge = INTERSECTION_EDGE_BOTTOM;
     }
