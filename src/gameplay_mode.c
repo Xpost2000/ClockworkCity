@@ -83,7 +83,7 @@ local void do_physics(float dt) {
         }
     }
 
-    if (player.last_vy > 0) {
+    if (player.last_vy > 0 && !noclip) {
         if (player.last_vy >= (20)) {
             float g_force_count = (player.last_vy / (GRAVITY_CONSTANT));
             float shake_factor = pow(0.02356, 1.10 / (g_force_count));
@@ -94,7 +94,7 @@ local void do_physics(float dt) {
                 splatter->x = splatter->x1 = player.x;
                 splatter->y = splatter->y1 = player.y + player.h;
                 splatter->emission_rate = 0;
-                splatter->emission_count = ceilf(128 * shake_factor);
+                splatter->emission_count = minf(ceilf(128 * shake_factor), 32);
                 splatter->max_emissions = 1;
                 splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
                 splatter->particle_max_lifetime = 1;
@@ -112,7 +112,7 @@ local void do_player_input(float dt) {
 
     player.ax = 0;
 
-    const int MAX_ACCELERATION = 25;
+    const int MAX_ACCELERATION = 10;
 
     if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;

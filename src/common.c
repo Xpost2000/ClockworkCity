@@ -56,12 +56,63 @@ bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, f
     return (x1min <= x2max && x1max >= x2min) && (y1min <= y2max && y1max >= y2min);
 }
 
+enum intersection_edge opposite_edge_of(enum intersection_edge edge) {
+    switch (edge) {
+        case INTERSECTION_EDGE_TOP:    return INTERSECTION_EDGE_BOTTOM;
+        case INTERSECTION_EDGE_BOTTOM: return INTERSECTION_EDGE_TOP;
+        case INTERSECTION_EDGE_LEFT:   return INTERSECTION_EDGE_LEFT;
+        case INTERSECTION_EDGE_RIGHT:  return INTERSECTION_EDGE_RIGHT;
+    }
+
+    return INTERSECTION_EDGE_NONE;
+}
+
+enum intersection_edge rectangle_closest_intersection_edge_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
+    if (!rectangle_overlapping_v(x1,y1,w1,h1, x2,y2,w2,h2)) {
+        return INTERSECTION_EDGE_NONE;
+    }
+
+    float intersection_left_edge   = fabs(x2 - (x1 + w1));
+    float intersection_right_edge  = fabs(x1 - (x2 + w2));
+    float intersection_top_edge    = fabs(y2 - (y1 + h1));
+    float intersection_bottom_edge = fabs(y1 - (y2 + h2));
+
+    float                  minimum_intersection = INFINITY;
+    enum intersection_edge best_edge            = INTERSECTION_EDGE_NONE;
+
+    if (intersection_left_edge < minimum_intersection) {
+        minimum_intersection = intersection_left_edge;
+        best_edge = INTERSECTION_EDGE_LEFT;
+    }
+
+    if (intersection_right_edge < minimum_intersection) {
+        minimum_intersection = intersection_right_edge;
+        best_edge = INTERSECTION_EDGE_RIGHT;
+    }
+
+    if (intersection_top_edge < minimum_intersection) {
+        minimum_intersection = intersection_top_edge;
+        best_edge = INTERSECTION_EDGE_TOP;
+    }
+
+    if (intersection_bottom_edge < minimum_intersection) {
+        minimum_intersection = intersection_bottom_edge;
+        best_edge = INTERSECTION_EDGE_BOTTOM;
+    }
+
+    return best_edge;
+}
+
 bool rectangle_intersects(struct rectangle a, struct rectangle b) {
     return rectangle_intersects_v(a.x, a.y, a.w, a.h, b.x, b.y, b.w, b.h);
 }
 
 bool rectangle_overlapping(struct rectangle a, struct rectangle b) {
     return rectangle_overlapping_v(a.x, a.y, a.w, a.h, b.x, b.y, b.w, b.h);
+}
+
+enum intersection_edge rectangle_closest_intersection_edge(struct rectangle testing, struct rectangle against) {
+    return rectangle_closest_intersection_edge_v(testing.x, testing.y, testing.w, testing.h, against.x, against.y, against.w, against.h);
 }
 
 /* starting from receives next line index.

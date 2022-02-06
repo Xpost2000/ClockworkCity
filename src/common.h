@@ -42,6 +42,16 @@
         b = _tmp;                               \
     } while(0)
 
+enum intersection_edge {
+    INTERSECTION_EDGE_NONE,
+    INTERSECTION_EDGE_TOP,
+    INTERSECTION_EDGE_BOTTOM,
+    INTERSECTION_EDGE_LEFT,
+    INTERSECTION_EDGE_RIGHT,
+};
+
+enum intersection_edge opposite_edge_of(enum intersection_edge edge);
+
 struct rectangle {
     float x;
     float y;
@@ -72,6 +82,9 @@ bool rectangle_intersects_v(float x1, float y1, float w1, float h1, float x2, fl
 bool rectangle_overlapping_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
 bool rectangle_intersects(struct rectangle a, struct rectangle b);
 bool rectangle_overlapping(struct rectangle a, struct rectangle b);
+/* returns edge for against */
+enum intersection_edge rectangle_closest_intersection_edge(struct rectangle testing, struct rectangle against);
+enum intersection_edge rectangle_closest_intersection_edge_v(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2);
 
 local float lerp(float a, float b, float t) {
     return (1.0 - t) * a + (b * t);
