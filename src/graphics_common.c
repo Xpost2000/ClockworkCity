@@ -1,14 +1,55 @@
 #define RENDERER_MAX_TEXTURES (2048)
 #define RENDERER_MAX_FONTS    (256)
 
-local uint16_t font_count                   = 0;
-local struct font fonts[RENDERER_MAX_FONTS+1] = {};
-local uint16_t texture_count                           = 0;
-local struct texture textures[RENDERER_MAX_TEXTURES+1] = {};
+/* TODO(jerry) */
+#define RENDERER_MAX_BATCH_COMMANDS (8192)
+
+enum batch_command_type {
+    BATCH_COMMAND_NONE,
+    BATCH_COMMAND_FILLED_RECTANGLE,
+    BATCH_COMMAND_TEXTURE,
+    BATCH_COMMAND_COUNT,
+};
+
+struct batch_command_filled_rectangle {
+    float x; float y;
+    float w; float h;
+    union color4u8 color;
+};
+
+struct batch_command_texture {
+    float x; float y;
+    float w; float h;
+    union color4u8 color;
+
+    texture_id texture;
+
+    float uv_x; float uv_y;
+    float uv_w; float uv_h;
+};
+
+struct batch_command {
+    uint8_t type;
+    int layer;
+    union {
+        struct batch_command_filled_rectangle filled_rectangle;
+        struct batch_command_texture texture;
+    };
+};
+
 local SDL_Window*   global_window;
 local struct camera* _active_camera = NULL;
 local struct camera  camera_sentinel = {};
 local int screen_dimensions[2] = {};
+
+local uint16_t font_count                   = 0;
+local struct font fonts[RENDERER_MAX_FONTS+1] = {};
+
+local uint16_t texture_count                           = 0;
+local struct texture textures[RENDERER_MAX_TEXTURES+1] = {};
+
+local uint16_t batch_command_count                                        = 0;
+local struct   batch_command render_commands[RENDERER_MAX_BATCH_COMMANDS] = {};
 
 #include "camera.c"
 
@@ -107,14 +148,18 @@ union color4u8 color4u8_from_color4f(union color4f color) {
 }
 
 float ratio_with_screen_width(float dividend) {
-    return (float)screen_dimensions[0] / dividend;
+    int rounded = floorf((float)screen_dimensions[0] / dividend);
+    int difference_from_two = rounded % 2;
+    return rounded + difference_from_two;
 }
 
 float ratio_with_screen_height(float dividend) {
-    return (float)screen_dimensions[1] / dividend;
+    int rounded = floorf((float)screen_dimensions[1] / dividend);
+    int difference_from_two = rounded % 2;
+    console_printf(rounded + difference_from_two);
+    return rounded + difference_from_two;
 }
 
 bool within_screen_bounds(int x, int y, int w, int h) {
     return rectangle_overlapping_v(x, y, w, h, 0, 0, screen_dimensions[0], screen_dimensions[1]);
 }
-

@@ -45,9 +45,8 @@ local void do_physics(float dt) {
         /*stupid*/
         player.vx = player.ax;
         player.vy = player.ay;
-        player.x += player.vx * dt;
-        player.y += player.vy * dt;
-        return;
+        /* player.x += player.vx * dt; */
+        /* player.y += player.vy * dt; */
     }
 
     struct tilemap* tilemap = game_state->loaded_level;
@@ -265,8 +264,8 @@ local void game_update_render_frame(float dt) {
     } end_graphics_frame();
     begin_graphics_frame(&game_camera); {
         {
-            /* draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0)); */
-            draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary);
+            draw_filled_rectangle(player.x, player.y, player.w, player.h, color4f(0.3, 0.2, 1.0, 1.0));
+            /* draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary); */
         }
         /* 125 x 120 */
         if (TEST_bool1) {

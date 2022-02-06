@@ -80,9 +80,6 @@ struct image_buffer get_texture_buffer(texture_id texture);
 void graphics_initialize(void* window_handle);
 void graphics_deinitialize(void);
 
-void begin_graphics_frame(struct camera* camera); /*null is okay*/
-void end_graphics_frame(void);
-
 void present_graphics_frame(void);
 
 void report_screen_dimensions(int* dimensions);
@@ -90,12 +87,40 @@ void get_screen_dimensions(int* width, int* height);
 
 void clear_color(union color4f color);
 
+void begin_graphics_frame(struct camera* camera); /*null is okay*/
+void end_graphics_frame(void);
+
+/* This is for immediately drawing, this isn't very efficient. */
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color);
+/* draw as a line buffer lol */
 void draw_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color);
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color);
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
 void draw_text_right_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color);
+
+#if 0
+/* I'm not adding an explicit shader api yet... */
+void draw_mesh(mesh_id mesh);
+#endif
+
+#if 0
+/* this is the batching api */
+/* this is meant to be used for the game itself, to reduce rendering time. */
+/* relies on a stable sort for this to work properly. */
+
+void begin_batch(void); 
+
+void push_filled_rectangle(float x, float y, float w, float h);
+void push_texture(texture_id texture, float x, float y, float w, float h, union color4f color);
+void push_texture_subregion(texture_id texture, float x, float y, float w, float h, union color4f color);
+void push_texture_ext(texture_id texture, float x, float y, float w, float h, union color4f color, int layer);
+void push_texture_subregion_ext(texture_id texture, float x, float y, float w, float h, union color4f color, int layer);
+
+/* render all batches */
+void end_batch(void);
+#endif
+
 /*don't need scaled*/
 void draw_text_scaled(font_id font, float x, float y, const char* cstr, float scale, union color4f color);
 

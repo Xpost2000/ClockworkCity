@@ -11,6 +11,9 @@
   
   TODO(jerry):
   batching (I mean I'm going to turn this into an opengl renderer, but we do need render commands!)
+  
+  TODO(jerry):
+  Deprecating this, and favoring opengl only.
 */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

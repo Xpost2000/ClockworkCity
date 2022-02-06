@@ -348,6 +348,10 @@ local bool entity_intersects_any_tiles_excluding(struct entity* entity, struct t
                 if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
                     return false;
                 }
+            } else if (excluded_tile->id == TILE_SLOPE_BL || excluded_tile->id == TILE_SLOPE_BR) {
+                if (t->id == TILE_SLOPE_BL || t->id == TILE_SLOPE_BR) {
+                    return false;
+                }
             }
 
             return true;
@@ -398,8 +402,8 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
             if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, tile_x, tile_y, 1, 1)) {
                 if (tile_is_slope(t)) {
                     /* assume this is for right facing (left) slope first. (slope = 1) */
-                    bool taller_edge_intersection = (entity->x > tile_x + tile_w);
-                    bool smaller_edge_intersection = (entity->x + entity->w < tile_x);
+                    bool taller_edge_intersection = (entity->x + entity->w < tile_x);
+                    bool smaller_edge_intersection = (entity->x > tile_x + tile_w);
                     float taller_edge_correction_position = tile_x + tile_w;
                     float smaller_edge_correction_position = tile_x - entity->w;
 
@@ -427,15 +431,10 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
                             float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
 
-                            if (entity->y + entity->h < tile_y + tile_h) {
-                                /*
-                                  TODO(jerry):
-                                  this is the wrong condition, I need more data to properly determine
-                                  when I should "anchor on".
+                            float entity_bottom_edge = entity->y + entity->h;
+                            float tile_bottom_edge = tile_y + tile_h;
 
-                                  This is a very small bug compared to other shit I've fucked up so far
-                                  so I can sleep soundly at night knowing this is still here.
-                                */
+                            if (entity_bottom_edge < tile_bottom_edge) {
                                 if (entity->vy >= 0 && (entity->y >= slope_snapped_location || delta_from_foot_to_tile_top <= ((float)entity->h * 0.6))) {
                                     float old_y = entity->y;
                                     entity->y = slope_snapped_location;
@@ -445,10 +444,6 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                         entity->y = old_y;
                                         entity->vx = 0;
                                     }
-
-                                    /*eh.*/
-                                    const float SIN45 = 0.7071067812;
-                                    entity->vx -= (entity->vx * SIN45 * dt);
 
                                     entity->last_vy = old_vy;
                                     entity->vy = 0;
@@ -477,7 +472,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                             float delta_from_foot_to_tile_top = (slope_snapped_location - entity->y);
                             float delta_from_foot_to_tile_bottom = (entity->y - (tile_y + tile_h));
 
-                            if (entity->y >= tile_y) {
+                            if (entity->y > tile_y) {
                                 if (entity->y < slope_snapped_location) {
                                     float old_y = entity->y;
                                     entity->y = slope_snapped_location;
@@ -488,7 +483,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                         entity->vx = 0;
                                     }
 
-                                    if (entity->vy < 0 && taller_edge_intersection) {
+                                    if (entity->vy < 0) {
                                         entity->last_vy = old_vy;
                                         entity->vy = 0;
                                     }
