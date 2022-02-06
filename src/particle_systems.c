@@ -38,7 +38,7 @@ struct particle {
 /*
   sparse storage, doubly linked list
 */
-#define PARTICLE_CHUNK_SIZE (256)
+#define PARTICLE_CHUNK_SIZE (512)
 struct particle_chunk {
     uint16_t               used;
     /* I made a typo earlier and that cost me 30 minutes lol, particle* instead of particle LOL*/
@@ -46,7 +46,7 @@ struct particle_chunk {
     struct particle_chunk* previous;
     struct particle_chunk* next;
 };
-struct particle_chunk list_sentinel = {};
+struct particle_chunk particle_chunk_list_sentinel = {};
 
 struct particle_chunk_list {
     struct particle_chunk* head;
@@ -54,27 +54,27 @@ struct particle_chunk_list {
 };
 
 void particle_chunk_list_push(struct particle_chunk_list* list, struct particle_chunk* chunk) {
-    if (list->head == &list_sentinel) {
+    if (list->head == &particle_chunk_list_sentinel) {
         list->head  = list->tail = chunk;
-        chunk->next = chunk->previous = &list_sentinel;
+        chunk->next = chunk->previous = &particle_chunk_list_sentinel;
     } else {
         struct particle_chunk* old_tail = list->tail;
         list->tail                      = chunk;
         chunk->previous                 = old_tail;
         old_tail->next                  = chunk;
-        chunk->next                     = &list_sentinel;
+        chunk->next                     = &particle_chunk_list_sentinel;
     }
 }
 
 struct particle_chunk* particle_chunk_list_pop_front(struct particle_chunk_list* list) {
-    struct particle_chunk* result = &list_sentinel;
+    struct particle_chunk* result = &particle_chunk_list_sentinel;
 
-    if (list->head != &list_sentinel) {
+    if (list->head != &particle_chunk_list_sentinel) {
         struct particle_chunk* head_next = list->head->next;
         result = list->head;
 
         list->head = head_next;
-        head_next->previous = &list_sentinel;
+        head_next->previous = &particle_chunk_list_sentinel;
     }
 
     return result;
@@ -97,7 +97,7 @@ void particle_chunk_list_remove(struct particle_chunk_list* list, struct particl
 int particle_chunk_list_length(struct particle_chunk_list* list) {
     struct particle_chunk* chunk = list->head;
     int c = 0;
-    while (chunk != &list_sentinel) {
+    while (chunk != &particle_chunk_list_sentinel) {
         struct particle_chunk* next     = chunk->next;
         c++;
         chunk = next;
@@ -146,7 +146,7 @@ struct particle_emitter {
 
 local size_t particle_emitter_count = 0;
 local struct particle_emitter* particle_emitter_pool = NULL;
-local struct particle_chunk_list freelist = {};
+local struct particle_chunk_list particle_chunk_freelist = {};
 
 void initialize_particle_emitter_pool(struct memory_arena* arena) {
     particle_emitter_pool  = memory_arena_push(arena, sizeof(*particle_emitter_pool) * MAX_PARTICLE_EMITTER_COUNT);
@@ -155,10 +155,10 @@ void initialize_particle_emitter_pool(struct memory_arena* arena) {
 
     for (size_t index = 0; index < MAX_PARTICLE_EMITTER_COUNT; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
-        emitter->chunks.head = emitter->chunks.tail = &list_sentinel;
+        emitter->chunks.head = emitter->chunks.tail = &particle_chunk_list_sentinel;
     }
 
-    freelist.head = freelist.tail = &list_sentinel;
+    particle_chunk_freelist.head = particle_chunk_freelist.tail = &particle_chunk_list_sentinel;
 }
 
 size_t particle_emitter_active_particles(struct particle_emitter* emitter) {
@@ -166,7 +166,7 @@ size_t particle_emitter_active_particles(struct particle_emitter* emitter) {
     struct particle_chunk* chunk = list->head;
     size_t count = 0;
 
-    while (chunk != &list_sentinel) {
+    while (chunk != &particle_chunk_list_sentinel) {
         count += chunk->used;
         chunk = chunk->next;
     }
@@ -175,11 +175,11 @@ size_t particle_emitter_active_particles(struct particle_emitter* emitter) {
 }
 
 struct particle* particle_emitter_allocate_particle(struct particle_emitter* emitter) {
-    struct particle_chunk* free_chunk = &list_sentinel;
+    struct particle_chunk* free_chunk = &particle_chunk_list_sentinel;
     /* check if we have any good chunks. */
     {
         free_chunk = emitter->chunks.head;
-        while (free_chunk != &list_sentinel) {
+        while (free_chunk != &particle_chunk_list_sentinel) {
             if (free_chunk->used == PARTICLE_CHUNK_SIZE) {
                 free_chunk = free_chunk->next;
             } else {
@@ -188,22 +188,22 @@ struct particle* particle_emitter_allocate_particle(struct particle_emitter* emi
         }
     }
 
-    /* check if we have something in the freelist */
-    if (free_chunk == &list_sentinel) {
-        free_chunk = particle_chunk_list_pop_front(&freelist);
+    /* check if we have something in the particle_chunk_freelist */
+    if (free_chunk == &particle_chunk_list_sentinel) {
+        free_chunk = particle_chunk_list_pop_front(&particle_chunk_freelist);
 
-        if (free_chunk == &list_sentinel) {
+        if (free_chunk == &particle_chunk_list_sentinel) {
             /* allocate a new chunk if nothing remains. */
             free_chunk = memory_arena_push(emitter->arena, sizeof(*free_chunk));
             zero_buffer_memory(free_chunk, sizeof(*free_chunk));
-            free_chunk->next = free_chunk->previous = &list_sentinel;
+            free_chunk->next = free_chunk->previous = &particle_chunk_list_sentinel;
         }
 
         /* push onto emitter list */
         particle_chunk_list_push(&emitter->chunks, free_chunk);
     }
 
-    assert(free_chunk != &list_sentinel && "We ran out of memory?");
+    assert(free_chunk != &particle_chunk_list_sentinel && "We ran out of memory?");
     struct particle* new_particle = &free_chunk->storage[free_chunk->used++];
     return new_particle;
 }
@@ -216,7 +216,7 @@ struct particle_emitter* particle_emitter_allocate(void) {
 
         if (!emitter->alive && particle_emitter_active_particles(emitter) == 0) {
             zero_buffer_memory(emitter, sizeof(*emitter));
-            emitter->chunks.head = emitter->chunks.tail = &list_sentinel;
+            emitter->chunks.head = emitter->chunks.tail = &particle_chunk_list_sentinel;
             emitter->arena = &game_memory_arena; /* hack for now */
             emitter->alive = true;
             return emitter;
@@ -229,7 +229,7 @@ struct particle_emitter* particle_emitter_allocate(void) {
 local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
     struct particle_chunk_list* list = &emitter->chunks;
 
-    for (struct particle_chunk* chunk = list->head; chunk != &list_sentinel; chunk = chunk->next) {
+    for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
         for (unsigned index = 0; index < chunk->used; ++index) {
             struct particle* particle = chunk->storage + index;
             if (particle->texture.id) {
@@ -334,7 +334,7 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
     struct particle_chunk_list* list = &emitter->chunks;
 
-    for (struct particle_chunk* chunk = list->head; chunk != &list_sentinel; chunk = chunk->next) {
+    for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
         for (int index = chunk->used-1; index >= 0; --index) {
             struct particle* particle = chunk->storage + index;
 
@@ -362,11 +362,11 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
     }
 
     /* "garbage collection" */
-    for (struct particle_chunk* chunk = list->head; chunk != &list_sentinel; chunk = chunk->next) {
+    for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
         if (chunk->used == 0) {
             /* This order does matter because push modifies the chunk */
             particle_chunk_list_remove(list, chunk);
-            particle_chunk_list_push(&freelist, chunk);
+            particle_chunk_list_push(&particle_chunk_freelist, chunk);
         }
     }
 
