@@ -346,8 +346,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
             */
 
             if (particle->colliding_with_world) {
-                do_moving_entity_horizontal_collision_response(world, particle, dt);
-                do_moving_entity_vertical_collision_response(world, particle, dt);
+                do_particle_horizontal_collision_response(world, particle, dt);
+                do_particle_vertical_collision_response(world, particle, dt);
             } else {
                 particle->x += particle->vx * dt;
                 particle->y += particle->vy * dt;

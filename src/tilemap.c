@@ -605,3 +605,159 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
         }
     }
 }
+
+/* 
+   NOTE(jerry):
+   simplified versions of the previous routines. Otherwise identical. Likely copied and pasted 
+   
+   Particles don't need the 'higher resolution' collision routines that game entities need.
+*/
+void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
+    float old_x = entity->x;
+    float old_vy = entity->vy;
+    entity->onground = false;
+    struct tilemap_sample_interval sample_region = tilemap_sampling_region_around_moving_entity(tilemap, entity);
+
+    entity->x += entity->vx * dt;
+
+    for (unsigned y = sample_region.min_y; y < sample_region.max_y; ++y) {
+        for (unsigned x = sample_region.min_x; x < sample_region.max_x; ++x) {
+            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+            if(t->id == TILE_NONE) continue;
+
+            float old_y = entity->y;
+
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1)) {
+                if (tile_is_slope(t)) {
+                    float slope_snapped_location = tile_get_slope_height(t, entity->x, entity->w, entity->h) - PHYSICS_EPSILION;
+                    enum intersection_edge closest_edge = rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1);
+
+                    if (t->id == TILE_SLOPE_L || t->id == TILE_SLOPE_R) {
+                        if (t->id == TILE_SLOPE_L) {
+                            switch (closest_edge) {
+                                case INTERSECTION_EDGE_BOTTOM: {
+                                    entity->y       = t->y + 1;
+                                    entity->last_vy = old_vy;
+                                    entity->vy      = 0;
+                                    continue;
+                                } break;
+                                case INTERSECTION_EDGE_RIGHT: {
+                                    entity->x  = t->x + 1;
+                                    entity->vx = 0;
+                                    continue;
+                                } break;
+                            }
+                        } else if (t->id == TILE_SLOPE_R) {
+                            switch (closest_edge) {
+                                case INTERSECTION_EDGE_BOTTOM: {
+                                    entity->y       = t->y + 1;
+                                    entity->last_vy = old_vy;
+                                    entity->vy      = 0;
+                                    continue;
+                                } break;
+                                case INTERSECTION_EDGE_LEFT: {
+                                    entity->x  = t->x - entity->w;
+                                    entity->vx = 0;
+                                    continue;
+                                } break;
+                            }
+                        }
+
+                        if (entity->y + entity->h <= (t->y + 1)) {
+                            if (entity->y > slope_snapped_location) {
+                                entity->y = slope_snapped_location;
+                                entity->onground = true;
+
+                                if (entity_intersects_any_tiles_excluding(entity, tilemap, y * tilemap->width + x)) {
+                                    entity->x = old_x;
+                                    entity->y = old_y;
+                                    entity->vx = 0;
+                                }
+                            }
+                        } else {
+                            if (closest_edge == INTERSECTION_EDGE_LEFT) {
+                                entity->x = t->x - entity->w;
+                            } else {
+                                entity->x = t->x + 1;
+                            }
+
+                            entity->vx = 0;
+                        }
+                    } else {
+                        if (t->id == TILE_SLOPE_BR) {
+                            switch (closest_edge) {
+                                case INTERSECTION_EDGE_TOP: {
+                                    entity->onground = true;
+                                    entity->y        = t->y - entity->h;
+                                    entity->last_vy  = old_vy;
+                                    entity->vy       = 0;
+                                    continue;
+                                } break;
+                                case INTERSECTION_EDGE_LEFT: {
+                                    entity->x  = t->x - entity->w;
+                                    entity->vx = 0;
+                                    continue;
+                                } break;
+                            }
+                        } else if (t->id == TILE_SLOPE_BL) {
+                            switch (closest_edge) {
+                                case INTERSECTION_EDGE_TOP: {
+                                    entity->onground = true;
+                                    entity->y        = t->y - entity->h;
+                                    entity->last_vy  = old_vy;
+                                    entity->vy       = 0;
+                                    continue;
+                                } break;
+                                case INTERSECTION_EDGE_RIGHT: {
+                                    entity->x  = t->x + 1;
+                                    entity->vx = 0;
+                                    continue;
+                                } break;
+                            }
+                        }
+
+                        if (entity->y > t->y) {
+                            if (entity->y < slope_snapped_location) {
+                                entity->y = slope_snapped_location;
+
+                                if (entity_intersects_any_tiles_excluding(entity, tilemap, y * tilemap->width + x)) {
+                                    entity->x = old_x;
+                                    entity->y = old_y;
+                                    entity->vx = 0;
+                                }
+
+                                if (entity->vy < 0) {
+                                    entity->last_vy = old_vy;
+                                    entity->vy = 0;
+                                }
+                            }
+                        } else {
+                            if (closest_edge == INTERSECTION_EDGE_LEFT) {
+                                entity->x = t->x - entity->w;
+                            } else {
+                                entity->x = t->x + 1;
+                            }
+
+                            entity->vx = 0;
+                        }
+                    }
+                } else {
+                    float entity_right_edge = entity->x + entity->w;
+                    float tile_right_edge = (t->x + 1);
+
+                    if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
+                        entity->x = t->x - (entity->w);
+                        entity->vx = 0;
+                    } else if (entity->x < tile_right_edge && entity->x > t->x) {
+                        entity->x = tile_right_edge;
+                        entity->vx = 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void do_particle_vertical_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
+    do_moving_entity_vertical_collision_response(tilemap, entity, dt);
+}

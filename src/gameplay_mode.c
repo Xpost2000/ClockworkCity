@@ -115,7 +115,7 @@ local void do_player_input(float dt) {
 
     player.ax = 0;
 
-    const int MAX_ACCELERATION = 10;
+    const int MAX_ACCELERATION = 30;
 
     if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
@@ -167,7 +167,7 @@ local void do_player_input(float dt) {
     if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (player.onground) {
             /* player.vy = -GRAVITY_CONSTANT; */
-            player.vy = -14;
+            player.vy = -10;
             player.onground = false;
             fprintf(stderr, "jump?\n");
         }
