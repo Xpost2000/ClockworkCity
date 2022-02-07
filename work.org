@@ -278,6 +278,15 @@
 
    The stuff in this list shouldn't be incredibly difficult to do, and should only take a few hours.
    The primary focus is physics as I said. After that I'm going to do whatever.
+
+   Wow I actually did what I said I would do. Good job me!
+** <2022-02-07 Mon>
+*** TODO Vector Field
+*** TODO Multiple Layer Tilemaps
+*** TODO Basic Health System
+*** TODO OpenGL Rendering (sprite mode)
+*** TODO Improve the Menu System?
+*** TODO (not programming) Draft out the intro areas
 ** <2022-02-09 Wed> Soft stop day
   I'm going to stop with whatever progress I've made to rest. Basic engine
   capacities should be done.

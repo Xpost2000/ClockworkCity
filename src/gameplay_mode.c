@@ -17,7 +17,7 @@ local void gameplay_initialize(void) {
 
     {
         test_emitter->emission_rate = 0.01;
-        test_emitter->emission_count = 8;
+        test_emitter->emission_count = 16;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
@@ -25,7 +25,7 @@ local void gameplay_initialize(void) {
 
     {
         test_emitter2->emission_rate = 0.01;
-        test_emitter2->emission_count = 8;
+        test_emitter2->emission_count = 16;
         test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
         test_emitter2->particle_max_lifetime = 8;
         test_emitter2->collides_with_world = false;
