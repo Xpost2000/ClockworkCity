@@ -452,8 +452,6 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                                     entity->y = old_y;
                                                     entity->vx = 0;
                                                 }
-
-                                                entity->last_vy = old_vy;
                                             }
                                         } else {
                                             entity->x = t->x - entity->w;
@@ -525,8 +523,10 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                                     entity->vx = 0;
                                                 }
 
-                                                entity->last_vy = old_vy;
-                                                entity->vy = 0;
+                                                if (entity->vy < 0) {
+                                                    entity->last_vy = old_vy;
+                                                    entity->vy = 0;
+                                                }
                                             }
                                         } else {
                                             entity->x = t->x + 1;
@@ -558,8 +558,10 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                                     entity->vx = 0;
                                                 }
 
-                                                entity->last_vy = old_vy;
-                                                entity->vy = 0;
+                                                if (entity->vy < 0) {
+                                                    entity->last_vy = old_vy;
+                                                    entity->vy = 0;
+                                                }
                                             }
                                         } else {
                                             entity->x = t->x - (entity->w);
@@ -629,7 +631,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
     }
 
     /* handle slope snapping as a separate step. */
-    {
+    if (entity->vy >= 0) {
         float extended_height = entity->h;
         float extended_vy     = GRAVITY_CONSTANT;
 
@@ -644,20 +646,22 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                     switch (t->id) {
                         case TILE_SLOPE_R:
                         case TILE_SLOPE_L: {
-                            if (entity->vy >= GRAVITY_CONSTANT*dt && fabs(entity->y - tile_get_slope_height(t, entity->x, entity->w, extended_height)) <= 0.015) {
+                            if (fabs(tile_get_slope_height(t, entity->x, entity->w, entity->h)+entity->h - t->y) <= PHYSICS_EPSILION *2) {
+                                entity->onground = true;
+                                entity->last_vy = old_vy;
+                                entity->vy = 0;
+                            }
+
+                            if (entity->vy >= 0 && fabs(entity->y - tile_get_slope_height(t, entity->x, entity->w, extended_height)) <= PHYSICS_EPSILION *2) {
                                 entity->y = tile_get_slope_height(t, entity->x, entity->w, entity->h);
                                 entity->onground = true;
-                                return;
+                                entity->last_vy = old_vy;
+                                entity->vy = 0;
                             }
                         } break;
                     }
                 }
             }
         }
-    }
-
-    if (entity->onground) {
-        entity->last_vy = old_vy;
-        entity->vy = 0;
     }
 }

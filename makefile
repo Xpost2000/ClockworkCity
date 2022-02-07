@@ -2,7 +2,7 @@
 # it makes distribution easier so I don't have to worry about lots of dlls.
 SRCFILES=glad/glad.c $(wildcard ./src/*.c) $(wildcard ./src/*.h)
 
-CFLAGS=-std=c11 -O2
+CFLAGS=-std=c11 -ggdb3
 CLIBS=`pkg-config --libs --cflags sdl2 sdl2_ttf sdl2_mixer sdl2_image`
 
 .phony: all clean build run

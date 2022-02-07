@@ -53,7 +53,7 @@ local void do_physics(float dt) {
 
     player.vx += player.ax * dt;
     if (player.dash) {
-        player.vx -= (player.vx * 60 * dt);
+        player.vx -= (player.vx * 40 * dt);
     } else {
         player.vx -= (player.vx * 3 * dt);
     }
@@ -115,7 +115,7 @@ local void do_player_input(float dt) {
 
     player.ax = 0;
 
-    const int MAX_ACCELERATION = 40;
+    const int MAX_ACCELERATION = 50;
 
     if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
@@ -156,8 +156,9 @@ local void do_player_input(float dt) {
     if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
         if (!player.dash) {
             player.vy = 0;
-            const int MAX_SPEED = 500;
+            const int MAX_SPEED = 300;
             player.vx = MAX_SPEED * player.facing_dir;
+            player.vy = MAX_SPEED * player.facing_dir;
             camera_traumatize(&game_camera, 0.0675);
             player.dash = true;
         }
