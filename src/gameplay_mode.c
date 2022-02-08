@@ -124,10 +124,12 @@ local void do_player_input(float dt) {
         game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
     }
 
+    #if 0
     if (is_key_down(KEY_T)) {
         TEST_timer1 = TEST_timer1_max;
         TEST_bool1 = 1;
     }
+    #endif
 
     if (move_right) {
         player.ax = MAX_ACCELERATION;

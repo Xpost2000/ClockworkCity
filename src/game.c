@@ -16,52 +16,13 @@
 #define TILES_PER_SCREEN (33)
 #define GRAVITY_CONSTANT (20)
 
+local struct camera game_camera   = {};
+local struct camera editor_camera = {};
+
 #include "colorschemes.c"
-/*
-  Particles are theoretically a type of entity, so this allows me to
-  make entities without 'inheritance'.
-  
-  This is like 40 bytes btw! So a bit chunky.
-*/
-#define KINEMATIC_ENITTY_BASE_BODY()            \
-    float x;                                    \
-    float y;                                    \
-    float w;                                    \
-    float h;                                    \
-    float vx;                                   \
-    float vy;                                   \
-    float ax;                                   \
-    float ay;                                   \
-    float last_vy;                              \
-    bool onground
-
-/*
-  This might just turn into an uber struct or something.
-*/
-struct entity {
-    KINEMATIC_ENITTY_BASE_BODY();
-
-    /*temporary*/
-    int facing_dir;
-    bool dash;
-    /*end temporary*/
-
-    /* player specific */
-    float jump_leniancy_timer;
-};
-
-void entity_halt_motion(struct entity* entity) {
-    entity->ax = entity->ay = entity->vx = entity->vy = entity->last_vy = 0;
-}
+#include "entities.c"
 
 bool noclip = false;
-struct entity player = {
-    // no units, prolly pixels
-    .x = -4,
-    .y = -5,
-    .w = 1/2.0f,
-    .h = 1,
-};
 
 /*TODO(jerry): move some game state globals into this.*/
 local struct memory_arena game_memory_arena;
@@ -140,8 +101,6 @@ struct game_state {
     struct tilemap* loaded_level;
 };
 
-local struct camera game_camera   = {};
-local struct camera editor_camera = {};
 local struct game_state* game_state;
 
 enum game_mode mode = GAME_MODE_PLAYING;
