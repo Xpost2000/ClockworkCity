@@ -91,11 +91,30 @@ void load_colorscheme_database(struct memory_arena* arena, char* filepath) {
                 read_index += copy_until_next_line(file_buffer, read_index, current_colorscheme->name, GAME_COLORSCHEME_NAME_STRING_MAX);
                 console_printf("\"%s\" colorscheme loaded\n", current_colorscheme->name);
 
-                current_colorscheme->primary   = _colors_read_colorstring(file_buffer, &read_index, &last_read_color);
-                current_colorscheme->secondary = _colors_read_colorstring(file_buffer, &read_index, &last_read_color);
-                current_colorscheme->text      = _colors_read_colorstring(file_buffer, &read_index, &last_read_color);
-                _colors_read_colorstring(file_buffer, &read_index, &last_read_color);
-                _colors_read_colorstring(file_buffer, &read_index, &last_read_color);
+                size_t colors_per_struct = (sizeof(struct game_colorscheme) - GAME_COLORSCHEME_NAME_STRING_MAX) / sizeof(union color4f);
+                size_t written_colors = 0;
+                union color4f* current_color_location = &current_colorscheme->primary;
+
+                /*
+                  NOTE(jerry):
+                  Colorschemes are just lists/arrays of colors, and I'm going to take advantage of that and just write this...
+                  It's not very clear code, but this allows me to grow the struct and add colors without really changing much code.
+                  
+                  Takes advantage of the fact the struct is sanely packed (4 byte alignment, and name string must be a POT in order for
+                  this to work.)
+                 */
+                while (file_buffer[read_index] != '\n' && file_buffer[read_index] != '\r' && read_index < file_size) {
+                    union color4f current_read_color = _colors_read_colorstring(file_buffer, &read_index, &last_read_color);;
+
+                    if (written_colors < colors_per_struct) {
+                        *current_color_location = current_read_color; 
+                        written_colors++;
+                        current_color_location++;
+                    } else {
+                        console_printf("(NOTE): Read extra color (%f, %f, %f) from theme!\n",
+                                       current_read_color.r, current_read_color.g, current_read_color.b);
+                    }
+                }
 
                 console_printf("Done reading color\n");
             } break;
