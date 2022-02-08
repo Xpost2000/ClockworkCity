@@ -141,6 +141,24 @@ char* get_line_starting_from(char* text, int* starting_from) {
     return temporary_line_buffer;
 }
 
+size_t copy_until_next_line(char* text, size_t starting_from, char* into, size_t into_buffer_size) {
+    size_t written = 0;
+    size_t text_size = strlen(text);
+
+    while (true) {
+        char current_character = text[starting_from++];
+
+        if (text_size == starting_from) return ++written; /* finish off the buffer. */
+        if (current_character == '\r' || current_character == '\n') return ++written; /* skip the newline */
+
+        if (written < into_buffer_size) {
+            into[written++] = current_character;
+        }
+    }
+
+    return written;
+}
+
 char* format_temp(char* fmt, ...) {
     local int current_buffer = 0;
     local char temporary_text_buffer[TEMPORARY_STORAGE_BUFFER_COUNT][TEMPORARY_STORAGE_BUFFER_SIZE] = {};

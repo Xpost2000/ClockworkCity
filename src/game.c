@@ -16,30 +16,7 @@
 #define TILES_PER_SCREEN (33)
 #define GRAVITY_CONSTANT (20)
 
-/* Let's work on this soon. */
-struct game_colorscheme {
-    /* will get more complicated overtime I suppose, as I think of more colors to add */
-    union color4f primary; // foreground
-    union color4f secondary; // background
-
-    union color4f text; // what it sounds like.
-};
-
-struct game_colorscheme test1 = {
-    .primary   = COLOR4F_normalize(102, 10, 163, 255),
-    .secondary = COLOR4F_normalize(204, 128, 255, 255),
-    .text      = COLOR4F_normalize(210, 230, 92, 255),
-};
-struct game_colorscheme DEFAULT_mono = {
-    .secondary = COLOR4F_BLACK,
-    .primary   = COLOR4F_WHITE,
-    .text = COLOR4F_WHITE,
-};
-bool transitioning = false;
-struct game_colorscheme transition_to;
-float transition_t = 0;
-struct game_colorscheme active_colorscheme;
-
+#include "colorschemes.c"
 /*
   Particles are theoretically a type of entity, so this allows me to
   make entities without 'inheritance'.
@@ -205,8 +182,8 @@ local void load_static_resources(void) {
     game_memory_arena.name = "Game Arena";
 
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
+    initialize_colorscheme_database(&game_memory_arena);
     initialize_particle_emitter_pool(&game_memory_arena);
-    active_colorscheme = DEFAULT_mono;
 
     load_tilemap_editor_resources();
     gameplay_initialize();
@@ -307,9 +284,6 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
 
     serializer_finish(&file);
-    transitioning = true;
-    transition_t = 0;
-    transition_to = test1;
 }
 
 void update_render_frame(float dt) {

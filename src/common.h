@@ -185,6 +185,11 @@ float random_ranged_float(float min, float max);
 int random_ranged_integer(int min, int max);
 
 char* get_line_starting_from(char* text, int* starting_from);
+/* 
+   this is the "sane" version of get_line_starting_from.
+   cstrings though, so it could be safer.
+*/
+size_t copy_until_next_line(char* text, size_t starting_from, char* into, size_t into_buffer_size);
 char* format_temp(char* fmt, ...);
 
 void read_file_into_buffer(char* path, char* dest, size_t length);

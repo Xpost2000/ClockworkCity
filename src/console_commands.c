@@ -81,6 +81,21 @@ Define_Console_Command(noclip) {
     noclip ^= 1;
 }
 
+Define_Console_Command(use_color) {
+    if (argument_count != 1) {
+        console_printf("provide color name\n");
+        return;
+    } 
+
+    struct console_system_variant csmode = parameters[0];
+    if (!(csmode.type & CONSOLE_VARIABLE_TYPE_STRING)) {
+        console_printf("colorname is a string\n");
+        return;
+    }
+
+    use_colorscheme(csmode.string);
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
     console_system_register_command(&cmd_noclip);
@@ -91,4 +106,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_editor_clear);
     console_system_register_command(&cmd_editor_playtest);
     console_system_register_command(&cmd_load);
+    console_system_register_command(&cmd_use_color);
 }
