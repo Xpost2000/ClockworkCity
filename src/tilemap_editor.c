@@ -27,6 +27,9 @@ struct editable_tilemap {
     uint32_t width;
     uint32_t height;
 
+    uint32_t foreground_tile_count;
+    uint32_t background_tile_count;
+
     float bounds_min_x;
     float bounds_min_y;
     float bounds_max_x;
@@ -34,6 +37,8 @@ struct editable_tilemap {
 
     struct player_spawn_link* player_spawn_links;
     struct tile* tiles;
+    struct tile* foreground_tiles;
+    struct tile* background_tiles;
     struct transition_zone* transitions;
     struct player_spawn default_spawn;
 };
@@ -348,8 +353,9 @@ local void editor_serialize(struct binary_serializer* serializer) {
     char magic[8] = "MVOIDLVL";
     get_bounding_rectangle_for_tiles(editor.tilemap.tiles, editor.tilemap.tile_count,
                                      NULL/*x*/, NULL/*y*/, &editor.tilemap.width, &editor.tilemap.height);
-
     serialize_bytes(serializer, magic, sizeof(magic));
+    uint32_t version_id = TILEMAP_CURRENT_VERSION;
+    serialize_u32(serializer, &version_id);
     serialize_u32(serializer, &editor.tilemap.width);
     serialize_u32(serializer, &editor.tilemap.height);
     Serialize_Structure(serializer, editor.tilemap.default_spawn);

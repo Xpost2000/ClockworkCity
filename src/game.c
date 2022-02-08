@@ -162,6 +162,9 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
     serialize_bytes(serializer, magic, 8);
     assert(strncmp(magic, "MVOIDLVL", 8) == 0);
 
+    uint32_t version_id = TILEMAP_CURRENT_VERSION;
+    serialize_u32(serializer, &version_id);
+
     serialize_u32(serializer, &game_state->loaded_level->width);
     serialize_u32(serializer, &game_state->loaded_level->height);
 
