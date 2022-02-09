@@ -255,6 +255,11 @@ local void game_update_render_frame(float dt) {
     } end_graphics_frame();
     begin_graphics_frame(&game_camera); {
         {
+            struct tilemap* tilemap = game_state->loaded_level;
+            draw_tiles(tilemap->background_tiles, tilemap->background_tile_count, active_colorscheme.primary_background);
+        }
+
+        {
             draw_filled_rectangle(player.x, player.y, player.w, player.h, active_colorscheme.primary);
             /* draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary); */
         }
@@ -283,15 +288,12 @@ local void game_update_render_frame(float dt) {
             
         }
 
-        /*icon*/
-        /* draw_texture(test_icon, player.x, (player.y+player.h) - (172/16.0f), */
-        /*              172/16.0f, */
-        /*              172/16.0f, color4f(1,0,0,1)); */
-        draw_filled_rectangle(player.x + player.w, player.y, 1/16.0f, 1/16.0f, color4f(0, 1, 0, 1));
-        /* draw_texture(tile_textures[1], player.x, player.y, 1, 1, color4f(1,0,0,1)); */
-
         draw_all_particle_systems();
-        draw_tilemap(game_state->loaded_level);
+        {
+            struct tilemap* tilemap = game_state->loaded_level;
+            draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
+            draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
+        }
 
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();

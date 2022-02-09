@@ -1,6 +1,6 @@
 #include "memory_arena.h"
-#define EDITOR_TILE_MAX_COUNT (16384)
-#define EDITOR_TRANSITIONS_MAX_COUNT (32)
+#define EDITOR_TILE_MAX_COUNT (32768)
+#define EDITOR_TRANSITIONS_MAX_COUNT (64)
 #define EDITOR_PLAYER_SPAWN_MAX_COUNT (EDITOR_TRANSITIONS_MAX_COUNT)
 
 /*
@@ -344,7 +344,9 @@ local void load_tilemap_editor_resources(void) {
     editor.arena = allocate_memory_arena(Megabyte(4));
     editor.arena.name = "Editor Arena";
 
-    editor.tilemap.tiles              = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    editor.tilemap.tiles            = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    editor.tilemap.foreground_tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
+    editor.tilemap.background_tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
     editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT * sizeof(*editor.tilemap.transitions));
     editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
 }
@@ -476,6 +478,10 @@ local void tilemap_editor_update_render_frame(float dt) {
         }
     }
 
+    begin_graphics_frame(NULL); {
+        draw_filled_rectangle(0, 0, 9999, 9999, active_colorscheme.secondary);
+    } end_graphics_frame();
+
     begin_graphics_frame(&editor_camera); {
         /*grid*/
         {
@@ -513,7 +519,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                 if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
                     continue;
 
-                draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, COLOR4F_WHITE);
+                draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, active_colorscheme.primary);
             } 
 
             draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
@@ -603,6 +609,7 @@ local void tilemap_editor_update_render_frame(float dt) {
         } end_graphics_frame();
     }
 
+    /* text widget */
     {
         int dimens[2];
         get_screen_dimensions(dimens, dimens+1);
@@ -752,16 +759,15 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
         int mouse_position[2];
         get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
 
-        draw_text(test_font, 0, 0, format_temp("tiles present: %d\n", editor.tilemap.tile_count), COLOR4F_WHITE);
-        /* draw_text(test_font, 0, 32+32, format_temp("mode: %s", editor_tool_mode_strings[editor.tool]), COLOR4F_WHITE); */
+        draw_text(test_font, 0, 0, format_temp("tiles present: %d\n", editor.tilemap.tile_count), active_colorscheme.text);
 
         /*"tool" bar*/
         {
             float font_height = font_size_aspect_ratio_independent(0.03);
             int frame_pad = 3;
             int frame_size = font_height+frame_pad;
-            draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, COLOR4F_BLUE);
-            draw_text(test_font, frame_size * 1.5, font_height, tile_type_strings[editor.placement_type], COLOR4F_WHITE);
+            draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, active_colorscheme.primary);
+            draw_text(test_font, frame_size * 1.5, font_height, tile_type_strings[editor.placement_type], active_colorscheme.text);
         }
     } end_graphics_frame();
 }

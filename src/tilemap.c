@@ -224,13 +224,17 @@ void draw_player_spawn(struct player_spawn* spawn) {
     draw_filled_rectangle(spawn->x+0.5-0.125, spawn->y+2, 0.25, 0.25, COLOR4F_WHITE);
 }
 
-void draw_tiles(struct tile* tiles, size_t count) {
+void draw_tiles(struct tile* tiles, size_t count, union color4f color) {
     for (unsigned index = 0; index < count; ++index) {
         struct tile* t = &tiles[index];
+
+        if (t->id == TILE_NONE)
+            continue;
+
         draw_texture(tile_textures[t->id],
                      t->x, t->y,
                      1, 1,
-                     active_colorscheme.primary);
+                     color);
     } 
 }
 
@@ -246,10 +250,6 @@ void draw_player_spawn_links(struct player_spawn_link* spawns, size_t count) {
         struct player_spawn_link* spawn = spawns + index;
         draw_player_spawn(spawn);
     }
-}
-
-void draw_tilemap(struct tilemap* tilemap) {
-    draw_tiles(tilemap->tiles, tilemap->height * tilemap->width);
 }
 
 local bool tile_intersects_rectangle(struct tile* t, float x, float y, float w, float h) {

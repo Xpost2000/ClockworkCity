@@ -8,6 +8,8 @@ struct game_colorscheme {
     union color4f primary;
     union color4f secondary;
     union color4f text;
+    union color4f primary_background;
+    union color4f primary_foreground;
 };
 
 struct game_colorscheme test1 = {
@@ -129,7 +131,7 @@ void initialize_colorscheme_database(struct memory_arena* arena) {
     colors_database = memory_arena_push(arena, 0);
     load_colorscheme_database(arena, "colors.txt");
 
-    use_colorscheme("MonoHard");
+    use_colorscheme("MonoRed0");
 }
 
 
