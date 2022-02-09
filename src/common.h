@@ -192,6 +192,7 @@ char* get_line_starting_from(char* text, int* starting_from);
 size_t copy_until_next_line(char* text, size_t starting_from, char* into, size_t into_buffer_size);
 char* format_temp(char* fmt, ...);
 
+size_t file_length(char* path);
 void read_file_into_buffer(char* path, char* dest, size_t length);
 char* load_entire_file(char* path);
 

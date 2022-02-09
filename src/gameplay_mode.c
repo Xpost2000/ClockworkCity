@@ -263,30 +263,6 @@ local void game_update_render_frame(float dt) {
             draw_filled_rectangle(player.x, player.y, player.w, player.h, active_colorscheme.primary);
             /* draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary); */
         }
-        /* 125 x 120 */
-        if (TEST_bool1) {
-            draw_texture(knight_twoview, player.x, (player.y+player.h) - (120/16.0f),
-                         125/16.0f,
-                         120/16.0f, color4f(1,0,0,1));
-            TEST_timer1 -= dt;
-
-            if (TEST_timer1 < 0) {
-                if (TEST_bool1) {
-                    TEST_bool1 = 0;
-                    struct particle_emitter* emitter = particle_emitter_allocate();
-                    emitter->x = player.x;
-                    emitter->y = (player.y + player.h) - (120/16.0f);
-                    emitter->from_texture = knight_twoview;
-                    emitter->emission_rate = 0;
-                    emitter->max_emissions = 1;
-                    emitter->particle_color = color4f(1, 1, 0, 1);
-                    emitter->particle_max_lifetime = 1;
-                    /* emitter->collides_with_world = true; */
-                }
-            }
-        } else {
-            
-        }
 
         draw_all_particle_systems();
         {

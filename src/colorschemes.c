@@ -126,15 +126,6 @@ void load_colorscheme_database(struct memory_arena* arena, char* filepath) {
     system_deallocate_memory(file_buffer);
 }
 
-void initialize_colorscheme_database(struct memory_arena* arena) {
-    /* Just for a base address. */
-    colors_database = memory_arena_push(arena, 0);
-    load_colorscheme_database(arena, "colors.txt");
-
-    use_colorscheme("MonoRed0");
-}
-
-
 void use_colorscheme(char* name) {
     bool found = false;
     struct game_colorscheme* colors = 0;
@@ -149,3 +140,13 @@ void use_colorscheme(char* name) {
     if (!found) console_printf("Missing colorscheme?\n");
     active_colorscheme = *colors;
 }
+
+void initialize_colorscheme_database(struct memory_arena* arena) {
+    /* Just for a base address. */
+    colors_database = memory_arena_push(arena, 0);
+    load_colorscheme_database(arena, "colors.txt");
+
+    use_colorscheme("MonoRed0");
+}
+
+

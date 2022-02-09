@@ -255,7 +255,7 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
 
 /* TODO(jerry): more parameterization */
 
-local emit_particles_from_image_source(struct particle_emitter* emitter) {
+local void emit_particles_from_image_source(struct particle_emitter* emitter) {
     /* image source particles will ignore most parameters except for particle kinematics. */
     /* I'm only just going to make sure we don't run out of particles though. */
     /* again assume 32 bit rgba image */
@@ -297,7 +297,7 @@ local emit_particles_from_image_source(struct particle_emitter* emitter) {
     }
 }
 
-local emit_particles(struct particle_emitter* emitter) {
+local void emit_particles(struct particle_emitter* emitter) {
     for (int emitted = 0; emitted < emitter->emission_count; ++emitted) {
         struct particle* emitted_particle = particle_emitter_allocate_particle(emitter);
 
@@ -346,8 +346,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
             */
 
             if (particle->colliding_with_world) {
-                do_particle_horizontal_collision_response(world, particle, dt);
-                do_particle_vertical_collision_response(world, particle, dt);
+                do_particle_horizontal_collision_response(world, (struct entity*) particle, dt);
+                do_particle_vertical_collision_response(world, (struct entity*) particle, dt);
             } else {
                 particle->x += particle->vx * dt;
                 particle->y += particle->vy * dt;

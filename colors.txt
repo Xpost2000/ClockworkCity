@@ -3,7 +3,7 @@ PurpleBlurb
 #ff7df6
 #4bad21
 #fa62f0
-#ad32a5
+#9c2194
 
 MonoDefault0
 #908DBA

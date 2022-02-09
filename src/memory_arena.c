@@ -17,7 +17,7 @@ void* memory_arena_push_top(struct memory_arena* arena, size_t amount) {
     assert(arena->used+arena->top_used <= arena->capacity && "Out of arena memory (does not grow!)");
     arena->top_used += amount;
     void* result = (arena->memory + arena->capacity) - arena->top_used;
-
+    zero_buffer_memory(result, amount);
     return result;
 }
 
@@ -25,7 +25,7 @@ void* memory_arena_push_bottom(struct memory_arena* arena, size_t amount) {
     assert(arena->used+arena->top_used <= arena->capacity && "Out of arena memory (does not grow!)");
     void* result = arena->memory + arena->used;
     arena->used += amount;
-
+    zero_buffer_memory(result, amount);
     return result;
 }
 

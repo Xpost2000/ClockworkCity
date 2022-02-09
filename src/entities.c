@@ -35,16 +35,6 @@
    have to pretend the ids always kept going up... Who knows?
 */
 
-/* NOTE(jerry):
-   These procedures are isolated from the world right now. Also
- */
-typedef void (*entity_physics_update_procedure)(struct entity* self, float dt);  /* not sure why this has to happen*/
-typedef void (*entity_update_procedure)(struct entity* self, float dt);
-/* NOTE(jerry):
-   We really shouldn't have to do this but okay.
- */
-typedef void (*entity_draw_procedure)(struct entity* self, float dt);
-
 enum entity_type {
     ENTITY_TYPE_NONE = 0,
     ENTITY_TYPE_PLAYER = 1,
@@ -57,18 +47,6 @@ char* entity_type_strings[] = {
     "Player",
     "Dummy(1) Entity",
     0
-};
-
-local entity_draw_procedure           draw_procedures[ENTITY_TYPE_COUNT] = {
-    
-};
-
-local entity_update_procedure         update_procedures[ENTITY_TYPE_COUNT] = {
-    
-};
-
-local entity_physics_update_procedure physics_update_procedures[ENTITY_TYPE_COUNT] = {
-
 };
 
 /*
@@ -87,6 +65,28 @@ struct entity {
 
     /* player specific */
     float jump_leniancy_timer;
+};
+
+/* NOTE(jerry):
+   These procedures are isolated from the world right now. Also
+ */
+typedef void (*entity_physics_update_procedure)(struct entity* self, float dt);  /* not sure why this has to happen*/
+typedef void (*entity_update_procedure)(struct entity* self, float dt);
+/* NOTE(jerry):
+   We really shouldn't have to do this but okay.
+ */
+typedef void (*entity_draw_procedure)(struct entity* self, float dt);
+
+local entity_draw_procedure           draw_procedures[ENTITY_TYPE_COUNT] = {
+    
+};
+
+local entity_update_procedure         update_procedures[ENTITY_TYPE_COUNT] = {
+    
+};
+
+local entity_physics_update_procedure physics_update_procedures[ENTITY_TYPE_COUNT] = {
+
 };
 
 void entity_halt_motion(struct entity* entity) {
