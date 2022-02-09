@@ -184,24 +184,24 @@ float random_float(void);
 float random_ranged_float(float min, float max);
 int random_ranged_integer(int min, int max);
 
-char* get_line_starting_from(char* text, int* starting_from);
+char* get_line_starting_from(const char* text, int* starting_from);
 /* 
    this is the "sane" version of get_line_starting_from.
    cstrings though, so it could be safer.
 */
-size_t copy_until_next_line(char* text, size_t starting_from, char* into, size_t into_buffer_size);
-char* format_temp(char* fmt, ...);
+size_t copy_until_next_line(const char* text, size_t starting_from, char* into, size_t into_buffer_size);
+char* format_temp(const char* fmt, ...);
 
-size_t file_length(char* path);
-void read_file_into_buffer(char* path, char* dest, size_t length);
-char* load_entire_file(char* path);
+size_t file_length(const char* path);
+void read_file_into_buffer(const char* path, char* dest, size_t length);
+char* load_entire_file(const char* path);
 
-int count_lines_of_cstring(char* string);
+int count_lines_of_cstringconst (char* string);
 
 void* system_allocate_memory(size_t amount);
 void  system_deallocate_memory(void* ptr);
 void* system_allocate_zeroed_memory(size_t amount);
-void* system_clone_buffer(void* buffer, size_t buffer_size);
+void* system_clone_buffer(const void* buffer, size_t buffer_size);
 
 inline shared_storage float degrees_to_radians(float deg) {
     return (deg * M_PI/180.0f);

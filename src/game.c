@@ -40,6 +40,9 @@ local font_id    test3_font;
 local sound_id   test_sound;
 local sound_id   test_sound2;
 
+void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
+void game_load_level_from_serializer(struct memory_arena* arena, struct binary_serializer* serializer, char* transition_link_to_spawn_at);
+
 enum game_mode {
     GAME_MODE_PLAYING,
     GAME_MODE_EDITOR,
@@ -108,7 +111,7 @@ enum game_mode mode = GAME_MODE_PLAYING;
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"
 
-void load_graphics_resources(void) {
+local void load_graphics_resources(void) {
     /* can change depending on resolution maybe... */
     knight_twoview      = load_texture("assets/knight_twoview.png");
     test_icon      = load_texture("assets/icon.png");

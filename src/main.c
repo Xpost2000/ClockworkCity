@@ -38,6 +38,7 @@ bool running = true;
 local void reload_all_graphics_resources();
 local void unload_all_graphics_resources(void);
 local void load_static_resources(void);
+local void load_graphics_resources(void);
 local void update_render_frame(float dt);
 local void register_console_commands();
 

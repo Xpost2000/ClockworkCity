@@ -341,9 +341,6 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
             particle->vx += particle->ax * dt;
             particle->vy += particle->ay * dt;
             particle->vy += GRAVITY_CONSTANT * dt;
-            /*
-              Threading would help I suppose.
-            */
 
             if (particle->colliding_with_world) {
                 do_particle_horizontal_collision_response(world, (struct entity*) particle, dt);

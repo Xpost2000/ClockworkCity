@@ -91,7 +91,9 @@ void draw_filled_rectangle(float x, float y, float w, float h, union color4f col
     if (w < 1) w = 1;
     if (h < 1) h = 1;
     _camera_transform_v2(_active_camera, &x, &y);
-    SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
+    if (within_screen_bounds(x, y, w, h)) {
+        SDL_RenderFillRect(global_renderer, &(SDL_Rect){x, y, w, h});
+    }
 }
 
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
@@ -210,7 +212,7 @@ void draw_text_scaled(font_id font, float x, float y, const char* cstr, float sc
     char* current_line;
 
     float y_cursor = 0;
-    while (current_line = get_line_starting_from(cstr, &line_starting_index)) {
+    while ((current_line = get_line_starting_from(cstr, &line_starting_index))) {
         float line_offset = _draw_text_line(font_object, x, y + y_cursor, current_line, scale, color);
         y_cursor += line_offset;
     }
@@ -247,7 +249,8 @@ texture_id load_texture(const char* texture_path) {
         /* lazy init implicit global object. Never free */
         local SDL_PixelFormat* rgba32_format = NULL;
 
-        if (!(rgba32_format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32)));
+        if (!(rgba32_format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32)))
+            ;
         assert(rgba32_format && "uh... wtf? SDL failed to make pixel format structure?");
 
         SDL_Surface* reformatted_as_rgba32 = SDL_ConvertSurface(image_surface, rgba32_format, 0);

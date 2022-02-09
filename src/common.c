@@ -118,7 +118,7 @@ enum intersection_edge rectangle_closest_intersection_edge(struct rectangle test
 /* starting from receives next line index.
    only unix line endings. fuck windows
  */
-char* get_line_starting_from(char* text, int* starting_from) {
+char* get_line_starting_from(const char* text, int* starting_from) {
     local char temporary_line_buffer[TEMPORARY_STORAGE_BUFFER_SIZE];
     zero_array(temporary_line_buffer);
 
@@ -141,7 +141,7 @@ char* get_line_starting_from(char* text, int* starting_from) {
     return temporary_line_buffer;
 }
 
-size_t copy_until_next_line(char* text, size_t starting_from, char* into, size_t into_buffer_size) {
+size_t copy_until_next_line(const char* text, size_t starting_from, char* into, size_t into_buffer_size) {
     size_t written = 0;
     size_t text_size = strlen(text);
 
@@ -159,7 +159,7 @@ size_t copy_until_next_line(char* text, size_t starting_from, char* into, size_t
     return written;
 }
 
-char* format_temp(char* fmt, ...) {
+char* format_temp(const char* fmt, ...) {
     local int current_buffer = 0;
     local char temporary_text_buffer[TEMPORARY_STORAGE_BUFFER_COUNT][TEMPORARY_STORAGE_BUFFER_SIZE] = {};
 
@@ -180,7 +180,7 @@ char* format_temp(char* fmt, ...) {
 }
 
 
-size_t file_length(char* path) {
+size_t file_length(const char* path) {
     size_t result = 0;
     FILE* f = fopen(path, "rb+");
 
@@ -193,7 +193,7 @@ size_t file_length(char* path) {
     return result;
 }
 
-void read_file_into_buffer(char* path, char* dest, size_t length) {
+void read_file_into_buffer(const char* path, char* dest, size_t length) {
     FILE* f = fopen(path, "rb+");
 
     if (f) {
@@ -202,7 +202,7 @@ void read_file_into_buffer(char* path, char* dest, size_t length) {
     }
 }
 
-char* load_entire_file(char* path) {
+char* load_entire_file(const char* path) {
     size_t file_size = file_length(path);
     char* new_buffer = system_allocate_zeroed_memory(file_size+1);
 
@@ -211,7 +211,7 @@ char* load_entire_file(char* path) {
     return new_buffer;
 }
 
-int count_lines_of_cstring(char* string) {
+int count_lines_of_cstring(const char* string) {
     size_t length = strlen(string);
     int count = 0;
 
@@ -232,7 +232,7 @@ void system_deallocate_memory(void* ptr) {
     free(ptr);
 }
 
-void* system_clone_buffer(void* buffer, size_t buffer_size) {
+void* system_clone_buffer(const void* buffer, size_t buffer_size) {
     void* clone = system_allocate_memory(buffer_size);
     memcpy(clone, buffer, buffer_size);
     return clone;

@@ -217,6 +217,8 @@ float tile_get_slope_height(struct tile* t, float x, float w, float h) {
             return ((tile_y + tile_h) - slope_x_offset);
         } break;
     }
+
+    return 0.0;
 }
 
 void draw_player_spawn(struct player_spawn* spawn) {
@@ -248,7 +250,7 @@ void draw_transitions(struct transition_zone* transitions, size_t count) {
 void draw_player_spawn_links(struct player_spawn_link* spawns, size_t count) {
     for (unsigned index = 0; index < count; ++index) {
         struct player_spawn_link* spawn = spawns + index;
-        draw_player_spawn(spawn);
+        draw_player_spawn((struct player_spawn*) spawn);
     }
 }
 
@@ -395,6 +397,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                         entity->vx = 0;
                                         continue;
                                     } break;
+                                    default: break;
                                 }
                             } else if (t->id == TILE_SLOPE_R) {
                                 switch (closest_edge) {
@@ -409,6 +412,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                         entity->vx = 0;
                                         continue;
                                     } break;
+                                    default: break;
                                 }
                             }
 
@@ -447,6 +451,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                         entity->vx = 0;
                                         continue;
                                     } break;
+                                    default: break;
                                 }
                             } else if (t->id == TILE_SLOPE_BL) {
                                 switch (closest_edge) {
@@ -462,6 +467,7 @@ void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, str
                                         entity->vx = 0;
                                         continue;
                                     } break;
+                                    default: break;
                                 }
                             }
 
@@ -631,6 +637,7 @@ void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct e
                                     entity->vx = 0;
                                     continue;
                                 } break;
+                                default: break;
                             }
                         } else if (t->id == TILE_SLOPE_R) {
                             switch (closest_edge) {
@@ -645,6 +652,7 @@ void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct e
                                     entity->vx = 0;
                                     continue;
                                 } break;
+                                default: break;
                             }
                         }
 
@@ -683,6 +691,7 @@ void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct e
                                     entity->vx = 0;
                                     continue;
                                 } break;
+                                default: break;
                             }
                         } else if (t->id == TILE_SLOPE_BL) {
                             switch (closest_edge) {
@@ -698,6 +707,7 @@ void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct e
                                     entity->vx = 0;
                                     continue;
                                 } break;
+                                default: break;
                             }
                         }
 
