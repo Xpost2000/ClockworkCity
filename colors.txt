@@ -1,16 +1,9 @@
-Test1
-#181294
-#3a31e0
-#e0c431
-*
-*
-
-MonoHard
-#FFFFFF
-#000000
-#FFFFFF
-*
-*
+PurpleBlurb
+#ad32a5
+#ff7df6
+#4bad21
+#fa62f0
+#ad32a5
 
 MonoDefault0
 #908DBA

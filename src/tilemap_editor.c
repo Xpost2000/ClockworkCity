@@ -16,6 +16,8 @@
   TODO(jerry): modal editing.
   NOTE(jerry): this suffers a lot from the lack of a real UI library lol.
   I really need a UI library. Dear god.
+  
+  Yeah anyways, this code is REALLY REALLY bad, but whatever. The rest of the engine has better code.
 */
 
 /*This data structure may be different from the game runtime, which is why it's duplicated*/
@@ -613,7 +615,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                       col_count * SCREENFUL_FILLS, 1, COLOR4F_DARKGRAY);
         }
 
-        /* world */
+        /* draw world */
         {
 
             {
@@ -624,7 +626,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                 for (unsigned index = 0; index < editor.tilemap.background_tile_count; ++index) {
                     struct tile* t = &background_tiles[index];
 
-                    if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                    if (editor.editting_tile_layer == TILE_LAYER_BACKGROUND && editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
                         continue;
 
                     union color4f color = active_colorscheme.primary_background;
@@ -634,7 +636,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                 for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
                     struct tile* t = &tiles[index];
 
-                    if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                    if (editor.editting_tile_layer == TILE_LAYER_PLAYABLE && editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
                         continue;
 
                     union color4f color = active_colorscheme.primary;
@@ -644,7 +646,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                 for (unsigned index = 0; index < editor.tilemap.foreground_tile_count; ++index) {
                     struct tile* t = &foreground_tiles[index];
 
-                    if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                    if (editor.editting_tile_layer == TILE_LAYER_FOREGROUND && editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
                         continue;
 
                     union color4f color = active_colorscheme.primary_foreground;
