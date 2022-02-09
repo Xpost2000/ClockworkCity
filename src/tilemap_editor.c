@@ -49,6 +49,14 @@ enum editor_tool_mode {
     EDITOR_TOOL_ESTABLISH_BOUNDS,
     EDITOR_TOOL_COUNT
 };
+enum editor_tile_layer {
+    TILE_LAYER_PLAYABLE,
+    TILE_LAYER_BACKGROUND,
+    TILE_LAYER_FOREGROUND,
+};
+const local char* editor_tile_layer_strings[] = {
+    "playable layer", "background layer", "foreground layer",
+};
 const local char* editor_tool_mode_strings[] = {
     "Paint Tile", "Edit Transitions", "Player Spawn Placement", "Establish Level Bounds", "?"
 };
@@ -69,6 +77,8 @@ struct editor_state {
     struct editable_tilemap tilemap;
 
     enum editor_tool_mode tool;
+    enum editor_tile_layer editting_tile_layer;
+
     void* context; /*depends on mode*/
     struct editor_text_edit text_edit;
 
@@ -100,9 +110,40 @@ local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, 
 }
 
 local struct tile* editor_allocate_block(void) {
-    assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
-    return &editor.tilemap.tiles[editor.tilemap.tile_count++];
+    switch (editor.editting_tile_layer) {
+        case TILE_LAYER_FOREGROUND: {
+            assert(editor.tilemap.foreground_tile_count < EDITOR_TILE_MAX_COUNT && "overrun foreground tiles?");
+            return &editor.tilemap.foreground_tiles[editor.tilemap.foreground_tile_count++];
+        } break;
+        case TILE_LAYER_BACKGROUND: {
+            assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT && "overrun background tiles?");
+            return &editor.tilemap.background_tiles[editor.tilemap.background_tile_count++];
+        } break;
+        case TILE_LAYER_PLAYABLE: {
+            assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT && "overrun playable tiles?");
+            return &editor.tilemap.tiles[editor.tilemap.tile_count++];
+        } break;
+    }
+
+    return NULL;
 }
+
+local editor_select_appropriate_tile_array(struct tile** tiles, size_t* count) {
+    switch (editor.editting_tile_layer) {
+        case TILE_LAYER_FOREGROUND: {
+            *count = editor.tilemap.foreground_tile_count;
+            *tiles = editor.tilemap.foreground_tiles;
+        } break;
+        case TILE_LAYER_BACKGROUND: {
+            *count = editor.tilemap.background_tile_count;
+            *tiles = editor.tilemap.background_tiles;
+        } break;
+        case TILE_LAYER_PLAYABLE: {
+            *count = editor.tilemap.tile_count;
+            *tiles = editor.tilemap.tiles;
+        } break;
+    }
+} 
 
 local struct transition_zone* editor_allocate_transition(void) {
     assert(editor.tilemap.transition_zone_count < EDITOR_TRANSITIONS_MAX_COUNT);
@@ -163,6 +204,24 @@ struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, i
     return NULL;
 }
 
+local bool editor_any_blocks_within_region(void) {
+    struct rectangle region = editor.selected_tile_region;
+
+    size_t count;
+    struct tile* tiles;
+    editor_select_appropriate_tile_array(&tiles, &count);
+
+    for (int y = 0; y < (int)region.h; ++y) {
+        for (int x = 0; x < (int)region.w; ++x) {
+            if (existing_block_at(tiles, count, x + region.x, y + region.y)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 /*yes this is different.*/
 struct tile* occupied_block_at(struct tile* tiles, int tile_count, int grid_x, int grid_y) {
     for (unsigned index = 0; index < tile_count; ++index) {
@@ -208,9 +267,13 @@ struct transition_zone* editor_existing_spawn_at(struct player_spawn_link* spawn
 local bool editor_has_tiles_within_selection(void) {
     struct rectangle tile_region = editor.selected_tile_region;
 
+    struct tile* tiles;
+    size_t tile_count;
+    editor_select_appropriate_tile_array(&tiles, &tile_count);
+
     for (int y = (int)tile_region.y; y < (int)(tile_region.y+tile_region.h); ++y) {
         for (int x = (int)tile_region.x; x < (int)(tile_region.x+tile_region.w); ++x) {
-            struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+            struct tile* t = existing_block_at(tiles, tile_count, x, y);
             if (t) {
                 return true;
             }
@@ -225,6 +288,10 @@ local struct tile* editor_yank_selected_tile_region(struct memory_arena* arena, 
     struct rectangle selected_region = editor.selection_region;
 
     float scale_factor = editor_camera.render_scale;
+
+    struct tile* tiles;
+    size_t tile_count;
+    editor_select_appropriate_tile_array(&tiles, &tile_count);
     
     struct tile* selected_region_tiles = memory_arena_push(arena, sizeof(*selected_region_tiles) * selected_region.w * selected_region.h);
     /*make temporary copy of the region, also empty it out at the same time*/ {
@@ -232,7 +299,7 @@ local struct tile* editor_yank_selected_tile_region(struct memory_arena* arena, 
 
         for (int y = (int)tile_region.y; y < (int)(tile_region.y+tile_region.h); ++y) {
             for (int x = (int)tile_region.x; x < (int)(tile_region.x+tile_region.w); ++x) {
-                struct tile* t = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x, y);
+                struct tile* t = existing_block_at(tiles, tile_count, x, y);
                 if (t) {
                     selected_region_tiles[(y - (int)tile_region.y) * (int)tile_region.w + (x - (int)tile_region.x)] = *t;
                     if (cut) t->id = TILE_NONE;
@@ -255,11 +322,15 @@ local void editor_move_selected_tile_region(struct memory_arena* arena) {
 
     struct tile* selected_region_tiles = editor_yank_selected_tile_region(arena, true);
 
+    struct tile* tiles;
+    size_t tile_count;
+    editor_select_appropriate_tile_array(&tiles, &tile_count);
+
     /*copy the selected_region_tiles into the right place*/ {
         for (int y = 0; y < (int)(tile_region.h); ++y) {
             for (int x = 0; x < (int)(tile_region.w); ++x) {
                 struct tile* block_to_copy = &selected_region_tiles[(y * (int)tile_region.w) + x];
-                struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + selected_region.x, y + selected_region.y);
+                struct tile* t = occupied_block_at(tiles, tile_count, x + selected_region.x, y + selected_region.y);
 
                 if (block_to_copy->id == TILE_NONE) continue;
 
@@ -287,11 +358,15 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
 
     struct tile* selected_region_tiles = editor_yank_selected_tile_region(arena, false);
 
+    struct tile* tiles;
+    size_t tile_count;
+    editor_select_appropriate_tile_array(&tiles, &tile_count);
+
     /*copy the selected_region_tiles into the right place*/ {
         for (int y = 0; y < (int)(tile_region.h); ++y) {
             for (int x = 0; x < (int)(tile_region.w); ++x) {
                 struct tile* block_to_copy = &selected_region_tiles[(y * (int)tile_region.w) + x];
-                struct tile* t = occupied_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + selected_region.x, y + selected_region.y);
+                struct tile* t = occupied_block_at(tiles, tile_count, x + selected_region.x, y + selected_region.y);
 
                 if (block_to_copy->id == TILE_NONE) continue;
 
@@ -308,9 +383,20 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
 }
 
 local void editor_try_to_place_block(int grid_x, int grid_y) {
-    assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT);
+    struct tile* tile;
 
-    struct tile* tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
+    switch (editor.editting_tile_layer) {
+        case TILE_LAYER_FOREGROUND: {
+            tile = existing_block_at(editor.tilemap.foreground_tiles, editor.tilemap.foreground_tile_count, grid_x, grid_y);
+        } break;
+        case TILE_LAYER_BACKGROUND: {
+            tile = existing_block_at(editor.tilemap.background_tiles, editor.tilemap.background_tile_count, grid_x, grid_y);
+        } break;
+        case TILE_LAYER_PLAYABLE: {
+            tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
+        } break;
+    }
+
     if (!tile) tile = editor_allocate_block();
 
     tile->x = grid_x;
@@ -320,7 +406,19 @@ local void editor_try_to_place_block(int grid_x, int grid_y) {
 }
 
 local void editor_erase_block(int grid_x, int grid_y) {
-    struct tile* tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
+    struct tile* tile = NULL;
+
+    switch (editor.editting_tile_layer) {
+        case TILE_LAYER_FOREGROUND: {
+            tile = existing_block_at(editor.tilemap.foreground_tiles, editor.tilemap.foreground_tile_count, grid_x, grid_y);
+        } break;
+        case TILE_LAYER_BACKGROUND: {
+            tile = existing_block_at(editor.tilemap.background_tiles, editor.tilemap.background_tile_count, grid_x, grid_y);
+        } break;
+        case TILE_LAYER_PLAYABLE: {
+            tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
+        } break;
+    }
 
     if (!tile) {
         return;
@@ -331,13 +429,15 @@ local void editor_erase_block(int grid_x, int grid_y) {
 
 local void editor_clear_all(void) {
     editor.tilemap.tile_count              = 0;
+    editor.tilemap.foreground_tile_count   = 0;
+    editor.tilemap.background_tile_count   = 0;
     editor.tilemap.transition_zone_count   = 0;
     editor.tilemap.player_spawn_link_count = 0;
     camera_reset_transform(&editor_camera);
-    editor.tilemap.bounds_min_x = 0;
-    editor.tilemap.bounds_min_y = 0;
-    editor.tilemap.bounds_max_x = 0;
-    editor.tilemap.bounds_max_y = 0;
+    editor.tilemap.bounds_min_x            = 0;
+    editor.tilemap.bounds_min_y            = 0;
+    editor.tilemap.bounds_max_x            = 0;
+    editor.tilemap.bounds_max_y            = 0;
 }
 
 local void load_tilemap_editor_resources(void) {
@@ -367,6 +467,10 @@ local void editor_serialize(struct binary_serializer* serializer) {
     serialize_f32(serializer, &editor.tilemap.bounds_max_y);
 
     Serialize_Fixed_Array(serializer, u32, editor.tilemap.tile_count, editor.tilemap.tiles);
+    if (version_id >= 2) {
+        Serialize_Fixed_Array(serializer, u32, editor.tilemap.foreground_tile_count, editor.tilemap.foreground_tiles);
+        Serialize_Fixed_Array(serializer, u32, editor.tilemap.background_tile_count, editor.tilemap.background_tiles);
+    }
     Serialize_Fixed_Array(serializer, u8, editor.tilemap.transition_zone_count, editor.tilemap.transitions);
     Serialize_Fixed_Array(serializer, u8, editor.tilemap.player_spawn_link_count, editor.tilemap.player_spawn_links);
 }
@@ -511,16 +615,45 @@ local void tilemap_editor_update_render_frame(float dt) {
 
         /* world */
         {
-            struct tile* tiles = editor.tilemap.tiles;
 
-            for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
-                struct tile* t = &tiles[index];
+            {
+                struct tile* tiles = editor.tilemap.tiles;
+                struct tile* foreground_tiles = editor.tilemap.foreground_tiles;
+                struct tile* background_tiles = editor.tilemap.background_tiles;
 
-                if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
-                    continue;
+                for (unsigned index = 0; index < editor.tilemap.background_tile_count; ++index) {
+                    struct tile* t = &background_tiles[index];
 
-                draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, active_colorscheme.primary);
-            } 
+                    if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                        continue;
+
+                    union color4f color = active_colorscheme.primary_background;
+                    draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, color);
+                } 
+
+                for (unsigned index = 0; index < editor.tilemap.tile_count; ++index) {
+                    struct tile* t = &tiles[index];
+
+                    if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                        continue;
+
+                    union color4f color = active_colorscheme.primary;
+                    draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, color);
+                } 
+
+                for (unsigned index = 0; index < editor.tilemap.foreground_tile_count; ++index) {
+                    struct tile* t = &foreground_tiles[index];
+
+                    if (editor.selection_region_exists && intersects_editor_selected_tile_region(t->x, t->y, 1, 1) && !is_key_down(KEY_Y))
+                        continue;
+
+                    union color4f color = active_colorscheme.primary_foreground;
+                    if (editor.editting_tile_layer != TILE_LAYER_FOREGROUND) {
+                        color.a /= 2;
+                    }
+                    draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, color);
+                } 
+            }
 
             draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
             draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
@@ -642,6 +775,16 @@ local void tilemap_editor_update_render_frame(float dt) {
 
 local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt) {
     float scale_factor = editor_camera.render_scale;
+
+    if (is_key_pressed(KEY_UP)) {
+        editor.editting_tile_layer++;
+    } else if (is_key_pressed(KEY_DOWN)) {
+        editor.editting_tile_layer--;
+    }
+
+    if (editor.editting_tile_layer <= TILE_LAYER_PLAYABLE) editor.editting_tile_layer = TILE_LAYER_PLAYABLE;
+    else if (editor.editting_tile_layer >= TILE_LAYER_FOREGROUND) editor.editting_tile_layer = TILE_LAYER_FOREGROUND;
+
     if (is_key_pressed(KEY_RIGHT)) {
         editor.placement_type++;
     } else if (is_key_pressed(KEY_LEFT)) {
@@ -679,19 +822,9 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
                 editor.selected_tile_region = editor.selection_region;
             }
         } else {
-            struct rectangle region = editor.selected_tile_region;
-
-            bool should_stop = true;
-            for (int y = 0; y < (int)region.h; ++y) {
-                for (int x = 0; x < (int)region.w; ++x) {
-                    if (existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, x + region.x, y + region.y)) {
-                        should_stop = false;
-                        goto end_of_loop_1;
-                    }
-                }
+            if (editor_any_blocks_within_region()) {
+                editor_end_selection_region();
             }
-        end_of_loop_1:
-            if (should_stop) editor_end_selection_region();
         }
 
         if (editor.selection_region_exists) {
@@ -766,8 +899,9 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
             float font_height = font_size_aspect_ratio_independent(0.03);
             int frame_pad = 3;
             int frame_size = font_height+frame_pad;
-            draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, active_colorscheme.primary);
+            draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, COLOR4F_WHITE);
             draw_text(test_font, frame_size * 1.5, font_height, tile_type_strings[editor.placement_type], active_colorscheme.text);
+            draw_text(test_font, frame_size * 1.5, font_height*2, editor_tile_layer_strings[editor.editting_tile_layer], active_colorscheme.text);
         }
     } end_graphics_frame();
 }

@@ -186,6 +186,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
         uint32_t tile_count;
         serialize_u32(serializer, &tile_count); assert(tile_count > 0);
         game_state->loaded_level->tiles = memory_arena_push_top(arena, game_state->loaded_level->width * game_state->loaded_level->height * sizeof(struct tile));;
+
         {
             struct temporary_arena temp = begin_temporary_memory(arena, tile_count);
             struct tile* tiles = memory_arena_push(&temp, sizeof(*tiles) * tile_count);
@@ -206,11 +207,14 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                 game_state->loaded_level->tiles[index_mapped] = *t;
             }
 
-            console_printf("sz: %d, %d : %d %d\n", min_x, min_y, e, f);
             end_temporary_memory(&temp);
         }
     }
 
+    if (version_id >= 2) {
+        Serialize_Fixed_Array(serializer, u32, editor.tilemap.foreground_tile_count, editor.tilemap.foreground_tiles);
+        Serialize_Fixed_Array(serializer, u32, editor.tilemap.background_tile_count, editor.tilemap.background_tiles);
+    }
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->transition_zone_count, game_state->loaded_level->transitions);
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->player_spawn_link_count, game_state->loaded_level->link_spawns);
 }
