@@ -20,12 +20,6 @@
 
 struct particle {
     KINEMATIC_ENITTY_BASE_BODY();
-
-    /* shared properties? */
-    texture_id texture; 
-    bool colliding_with_world;
-    /* particle specific */
-
     float last_x;
     float last_y;
 
@@ -229,25 +223,26 @@ struct particle_emitter* particle_emitter_allocate(void) {
 local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
     struct particle_chunk_list* list = &emitter->chunks;
 
-    for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
-        for (unsigned index = 0; index < chunk->used; ++index) {
-            struct particle* particle = chunk->storage + index;
-            if (particle->texture.id) {
-                draw_texture(particle->texture, particle->x, particle->y, particle->w, particle->h,
+    if (emitter->particle_texture.id) {
+        for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
+            for (unsigned index = 0; index < chunk->used; ++index) {
+                struct particle* particle = chunk->storage + index;
+                draw_texture(emitter->particle_texture, particle->x, particle->y, particle->w, particle->h,
                              color4f((float)particle->color.r / 256.0f,
                                      (float)particle->color.g / 256.0f,
                                      (float)particle->color.b / 256.0f,
-                                     particle->lifetime / particle->lifetime_max
-                                     /* 1.0 */
-                             ));
-            } else {
+                                     particle->lifetime / particle->lifetime_max));
+            }
+        }
+    } else {
+        for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
+            for (unsigned index = 0; index < chunk->used; ++index) {
+                struct particle* particle = chunk->storage + index;
                 draw_filled_rectangle(particle->x, particle->y, particle->w, particle->h,
                                       color4f((float)particle->color.r / 256.0f,
                                               (float)particle->color.g / 256.0f,
                                               (float)particle->color.b / 256.0f,
-                                              particle->lifetime / particle->lifetime_max
-                                              /* 1.0 */
-                                      ));
+                                              particle->lifetime / particle->lifetime_max));
             }
         }
     }
@@ -276,8 +271,6 @@ local void emit_particles_from_image_source(struct particle_emitter* emitter) {
 
                 if (a != 0) {
                     struct particle* emitted_particle = particle_emitter_allocate_particle(emitter);
-                    emitted_particle->colliding_with_world = emitter->collides_with_world;
-                    emitted_particle->texture = emitter->particle_texture;
                     {
                         emitted_particle->x = emitter->x + (float)x * pixel_scale_factor;
                         emitted_particle->y = emitter->y + (float)y * pixel_scale_factor;
@@ -300,9 +293,6 @@ local void emit_particles_from_image_source(struct particle_emitter* emitter) {
 local void emit_particles(struct particle_emitter* emitter) {
     for (int emitted = 0; emitted < emitter->emission_count; ++emitted) {
         struct particle* emitted_particle = particle_emitter_allocate_particle(emitter);
-
-        emitted_particle->texture = emitter->particle_texture;
-        emitted_particle->colliding_with_world = emitter->collides_with_world;
         /* lots of randomness :D */
         {
             emitted_particle->x = lerp(emitter->x, emitter->x1, random_float());
@@ -334,26 +324,42 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
     struct particle_chunk_list* list = &emitter->chunks;
 
-    for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
-        for (int index = chunk->used-1; index >= 0; --index) {
-            struct particle* particle = chunk->storage + index;
+    if (emitter->collides_with_world) {
+        for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
+            for (int index = chunk->used-1; index >= 0; --index) {
+                struct particle* particle = chunk->storage + index;
 
-            particle->vx += particle->ax * dt;
-            particle->vy += particle->ay * dt;
-            particle->vy += GRAVITY_CONSTANT * dt;
+                particle->vx += particle->ax * dt;
+                particle->vy += particle->ay * dt;
+                particle->vy += GRAVITY_CONSTANT * dt;
 
-            if (particle->colliding_with_world) {
                 do_particle_horizontal_collision_response(world, (struct entity*) particle, dt);
                 do_particle_vertical_collision_response(world, (struct entity*) particle, dt);
-            } else {
+
+                particle->lifetime -= dt;
+
+                if (particle->lifetime <= 0.0) {
+                    chunk->storage[index] = chunk->storage[--chunk->used];
+                }
+            }
+        }
+    } else {
+        for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
+            for (int index = chunk->used-1; index >= 0; --index) {
+                struct particle* particle = chunk->storage + index;
+
+                particle->vx += particle->ax * dt;
+                particle->vy += particle->ay * dt;
+                particle->vy += GRAVITY_CONSTANT * dt;
+
                 particle->x += particle->vx * dt;
                 particle->y += particle->vy * dt;
-            }
 
-            particle->lifetime -= dt;
+                particle->lifetime -= dt;
 
-            if (particle->lifetime <= 0.0) {
-                chunk->storage[index] = chunk->storage[--chunk->used];
+                if (particle->lifetime <= 0.0) {
+                    chunk->storage[index] = chunk->storage[--chunk->used];
+                }
             }
         }
     }

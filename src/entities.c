@@ -20,12 +20,14 @@ local void entity_do_ground_impact(struct entity* entity, float camera_influence
             splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
             splatter->particle_max_lifetime = 1;
         }
+
         entity->last_vy = 0;
     }
 }
 
 void entity_halt_motion(struct entity* entity) {
-    entity->ax = entity->ay = entity->vx = entity->vy = entity->last_vy = 0;
+    entity->last_vy = entity->vy;
+    entity->ax = entity->ay = entity->vx = entity->vy = 0;
 }
 
 /* end of general entity procedures */
@@ -58,6 +60,18 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
     }
 
     if (entity->dash) entity->vy = 0;
+
+    do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
+    do_moving_entity_vertical_collision_response(tilemap, entity, dt);
+}
+
+/* 
+   technically physics updates for all entities should nearly be identical...
+   However for now I only have the player so... I can't say.
+*/
+void do_generic_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity->vx += entity->ax * dt;
+    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
 
     do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
     do_moving_entity_vertical_collision_response(tilemap, entity, dt);
@@ -165,6 +179,9 @@ struct entity entity_create_player(float x, float y) {
 }
 
 void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
+    const float IMPACT_INFLUENCE_MAX_DISTANCE_SQ = 12.0f;
+    struct entity* player = &game_state->persistent_entities[0];
+
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
@@ -172,26 +189,23 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
             case ENTITY_TYPE_PLAYER: do_player_entity_physics_update(current_entity, tilemap, dt); break;
             default: break;
         }
+
+        {
+            float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);
+            impact_influence = clampf(impact_influence, 0, IMPACT_INFLUENCE_MAX_DISTANCE_SQ);
+            impact_influence = (IMPACT_INFLUENCE_MAX_DISTANCE_SQ - impact_influence) / IMPACT_INFLUENCE_MAX_DISTANCE_SQ;
+            entity_do_ground_impact(current_entity, impact_influence);
+        }
     }
 }
 
 void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
-    struct entity* player = &game_state->persistent_entities[0];
-    const float IMPACT_INFLUENCE_MAX_DISTANCE_SQ = 12.0f;
-
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
         switch (current_entity->type) {
             case ENTITY_TYPE_PLAYER: do_player_entity_update(current_entity, tilemap, dt); break;
-            default: break;
-        }
-
-        if (current_entity->last_vy > 0) {
-            float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);
-            impact_influence = clampf(impact_influence, 0, IMPACT_INFLUENCE_MAX_DISTANCE_SQ);
-            impact_influence = (IMPACT_INFLUENCE_MAX_DISTANCE_SQ - impact_influence) / IMPACT_INFLUENCE_MAX_DISTANCE_SQ;
-            entity_do_ground_impact(current_entity, impact_influence);
+            default: do_generic_entity_physics_update(current_entity, tilemap, dt); break;
         }
     }
 }
