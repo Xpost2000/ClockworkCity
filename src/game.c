@@ -18,10 +18,9 @@ local struct camera editor_camera = {};
 #include "colorschemes.c"
 
 bool noclip = false;
-
-/*TODO(jerry): move some game state globals into this.*/
 local struct memory_arena game_memory_arena;
 
+local texture_id playersizedblock; /* NOTE(jerry): This is exclusively for testing out a death screen! */
 local texture_id test_guy;
 local texture_id knight_twoview;
 local texture_id test_icon;
@@ -179,6 +178,7 @@ local void load_static_resources(void) {
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
     initialize_colorscheme_database(&game_memory_arena);
     initialize_particle_emitter_pool(&game_memory_arena);
+    playersizedblock = load_texture("assets/playersizedblock.png");
 
     load_tilemap_editor_resources();
     gameplay_initialize();

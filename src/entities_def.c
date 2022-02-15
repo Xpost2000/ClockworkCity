@@ -3,7 +3,7 @@
   the vast majority of their code.
 */
 
-#define KINEMATIC_ENITTY_BASE_BODY()            \
+#define KINEMATIC_ENTITY_BASE_BODY()            \
     float x;                                    \
     float y;                                    \
     float w;                                    \
@@ -20,6 +20,13 @@
    have to pretend the ids always kept going up... Who knows?
 */
 
+/* 
+   NOTE(jerry):
+   regarding animations! While technically most entities will die in the same way:
+   (play death animation, then turn into particles that blow away like ash. Some enemies will
+   have special animations... Like bosses or the player with more dramatic ones. Right now I'm planning
+   to hardcode all of these special animations...)
+*/
 enum entity_type {
     ENTITY_TYPE_NONE = 0,
     ENTITY_TYPE_PLAYER = 1,
@@ -119,8 +126,18 @@ char* entity_flag_strings[] = {
   smaller insignificant entities are specialized in their own types (props, or particles, or literally anything
   else that isn't living.)
  */
+enum death_state {
+    DEATH_STATE_ALIVE,
+    DEATH_STATE_DYING,
+    DEATH_STATE_DEAD,
+};
+shared_storage char* death_state_strings[] = {
+    [DEATH_STATE_ALIVE] = "alive",
+    [DEATH_STATE_DYING] = "dying",
+    [DEATH_STATE_DEAD] = "dead",
+};
 struct entity {
-    KINEMATIC_ENITTY_BASE_BODY();
+    KINEMATIC_ENTITY_BASE_BODY();
 
     /*
       NOTE(jerry):
@@ -134,6 +151,7 @@ struct entity {
     uint32_t type; 
 
     int32_t  health;
+    uint8_t  death_state; /* use this for animation setting. */
 
     /*temporary*/
     int facing_dir;

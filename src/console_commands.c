@@ -98,6 +98,12 @@ Define_Console_Command(use_color) {
     use_colorscheme(csmode.string);
 }
 
+Define_Console_Command(kill) {
+    console_printf("I hope it was worth it!");
+    struct entity* player = &game_state->persistent_entities[0];
+    player->health        = 0; /* We'll animate based off of this state */
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
     console_system_register_command(&cmd_noclip);
@@ -109,4 +115,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_editor_playtest);
     console_system_register_command(&cmd_load);
     console_system_register_command(&cmd_use_color);
+    console_system_register_command(&cmd_kill);
 }

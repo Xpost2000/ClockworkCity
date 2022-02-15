@@ -77,6 +77,14 @@ void do_generic_entity_physics_update(struct entity* entity, struct tilemap* til
     do_moving_entity_vertical_collision_response(tilemap, entity, dt);
 }
 
+void do_generic_entity_death_animation(struct entity* entity, float dt) {
+    entity->death_state = DEATH_STATE_DEAD;
+}
+
+void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    
+}
+
 void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     struct game_controller* gamepad = get_gamepad(gamepad_id);
 
@@ -150,6 +158,18 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     entity->jump_leniancy_timer -= dt;
 }
 
+void do_player_entity_death_animation(struct entity* entity, float dt) {
+    /*
+      NOTE(jerry):
+      Because of how I want this to work. This heavily hooks into the gamestate to control
+      stuff.
+      
+      and will requires lots of intrusive code to work properly. Sorry! I can't think of anything
+      else to do.
+    */
+    do_generic_entity_death_animation(entity, dt);
+}
+
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     do_player_entity_input(entity, 0, dt);
     /* game collisions, not physics */
@@ -186,8 +206,12 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
         switch (current_entity->type) {
-            case ENTITY_TYPE_PLAYER: do_player_entity_physics_update(current_entity, tilemap, dt); break;
-            default: break;
+            case ENTITY_TYPE_PLAYER:
+                do_player_entity_physics_update(current_entity, tilemap, dt);
+                break;
+            default:
+                do_generic_entity_physics_update(current_entity, tilemap, dt);
+                break;
         }
 
         {
@@ -203,9 +227,31 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
-        switch (current_entity->type) {
-            case ENTITY_TYPE_PLAYER: do_player_entity_update(current_entity, tilemap, dt); break;
-            default: do_generic_entity_physics_update(current_entity, tilemap, dt); break;
+        if (current_entity->health <= 0)  {
+            if (current_entity->death_state == DEATH_STATE_ALIVE) {
+                current_entity->death_state = DEATH_STATE_DYING;
+            }
+
+            if (current_entity->death_state == DEATH_STATE_DYING) {
+                switch (current_entity->type) {
+                    case ENTITY_TYPE_PLAYER:
+                        do_player_entity_death_animation(current_entity, dt);
+                        break;
+                    default:
+                        do_generic_entity_death_animation(current_entity, dt);
+                        break;
+                }
+            }
+        } else {
+            current_entity->death_state = DEATH_STATE_ALIVE;
+            switch (current_entity->type) {
+                case ENTITY_TYPE_PLAYER:
+                    do_player_entity_update(current_entity, tilemap, dt);
+                    break;
+                default:
+                    do_generic_entity_update(current_entity, tilemap, dt);
+                    break;
+            }
         }
     }
 }

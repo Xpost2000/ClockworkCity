@@ -19,7 +19,7 @@
 #define MAX_PARTICLE_EMITTER_COUNT (512) /* With the new particle storage system. GO NUTS!*/
 
 struct particle {
-    KINEMATIC_ENITTY_BASE_BODY();
+    KINEMATIC_ENTITY_BASE_BODY();
     float last_x;
     float last_y;
 
