@@ -165,8 +165,7 @@ local void load_graphics_resources(void) {
     game_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
     editor_camera.render_scale = ratio_with_screen_width(TILES_PER_SCREEN);
 
-    /* dynamic_scale_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(DYNAMIC_FONT_SIZE)); */
-    /* test2_font      = load_font("assets/TwentyOne-nRmJ.ttf", 64); */
+    load_all_particle_textures();
     load_gameplay_resources();
 }
 

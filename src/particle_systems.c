@@ -382,6 +382,18 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
     }
 }
 
+local texture_id particle_textures[3]       = {};
+local const char* particle_texture_paths[3] = {
+    "assets/testtiles/particle4.png",
+    "assets/testtiles/particle8.png",
+    "assets/testtiles/particle16.png",
+};
+void load_all_particle_textures(void) {
+    for (unsigned index = 0; index < array_count(particle_textures); ++index) {
+        particle_textures[index] = load_texture(particle_texture_paths[index]);
+    }
+}
+
 /*Allow per entity collision? Pixel collision detection *crying**/
 void update_all_particle_systems(struct tilemap* world, float dt) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
