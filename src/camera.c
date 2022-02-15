@@ -4,7 +4,7 @@ local float _camera_render_scale(struct camera* camera) {
     }
 
     if (camera->visual_zoom_level == 0.0) {
-        camera->visual_zoom_level = 1;
+        camera->target_zoom_level = camera->last_zoom_level = camera->visual_zoom_level = 1;
     }
 
     return camera->render_scale * camera->visual_zoom_level;
@@ -151,7 +151,8 @@ void camera_update(struct camera* camera, float dt) {
 
     camera->visual_position_x = lerp(camera->last_position_x, camera->target_position_x, interpolation_clamp(camera->interpolation_time[0])) + trauma_shake_x;
     camera->visual_position_y = lerp(camera->last_position_y, camera->target_position_y, interpolation_clamp(camera->interpolation_time[1])) + trauma_shake_y;
-    camera->visual_zoom_level = lerp(camera->last_zoom_level, camera->target_zoom_level, interpolation_clamp(camera->interpolation_time[2]));
+    /* camera->visual_zoom_level = lerp(camera->last_zoom_level, camera->target_zoom_level, interpolation_clamp(camera->interpolation_time[2])); */
+    camera->visual_zoom_level = cubic_ease_out(camera->last_zoom_level, camera->target_zoom_level - camera->last_zoom_level, 1, interpolation_clamp(camera->interpolation_time[2]));
 
     camera->trauma -= dt * 0.098;
 }

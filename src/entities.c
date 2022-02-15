@@ -82,8 +82,13 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
     if (is_key_down(KEY_T)) {
         camera_set_focus_zoom_level(&game_camera, 0.5);
+        camera_set_focus_speed_zoom(&game_camera, 0.75);
     } else if (is_key_down(KEY_G)) {
         camera_set_focus_zoom_level(&game_camera, 1.0);
+        camera_set_focus_speed_zoom(&game_camera, 1.15);
+    } else if (is_key_down(KEY_H)) {
+        camera_set_focus_zoom_level(&game_camera, 1.5);
+        camera_set_focus_speed_zoom(&game_camera, 1.15);
     }
 
     if (move_right) {

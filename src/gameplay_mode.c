@@ -117,7 +117,6 @@ local void game_update_render_frame(float dt) {
         test_emitter->y = test_emitter->y1 = player->y;
     }
 
-    camera_set_focus_speed_zoom(&game_camera, 5);
     camera_set_focus_speed_x(&game_camera, 3);
     camera_set_focus_speed_y(&game_camera, 2);
     camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
