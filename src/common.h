@@ -208,6 +208,17 @@ void  system_deallocate_memory(void* ptr);
 void* system_allocate_zeroed_memory(size_t amount);
 void* system_clone_buffer(const void* buffer, size_t buffer_size);
 
+inline shared_storage float distance_sq(float x1, float y1, float x2, float y2) {
+    float dy = y2 - y1;
+    float dx = x2 - x1;
+
+    return (dy)*(dy) + (dx)*(dx);
+}
+
+inline shared_storage float distance(float x1, float y1, float x2, float y2) {
+    return sqrtf(distance_sq(x1, y1, x2, y2));
+}
+
 inline shared_storage float degrees_to_radians(float deg) {
     return (deg * M_PI/180.0f);
 }

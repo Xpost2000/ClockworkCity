@@ -143,3 +143,63 @@ struct entity {
     /* player specific */
     float jump_leniancy_timer;
 };
+
+/*
+  A more optimal thing to do would have been to make an intrusive linked list,
+  but this is infinitely simpler.
+  
+  If you have more than this amount of disparate lists... Something might seriously be wrong with
+  the development system.
+*/
+#define ENTITY_ITERATOR_MAX_LISTS (16)
+struct entity_iterator_list {
+    uint32_t list_length;
+    struct entity* list;
+};
+
+struct entity_iterator {
+    uint8_t list_count;
+    uint8_t current_list_index;
+    uint32_t current_list_item_index;
+    struct entity_iterator_list lists[ENTITY_ITERATOR_MAX_LISTS];
+};
+
+void entity_iterator_push_array(struct entity_iterator* iterator, struct entity* list, size_t count) {
+    /* nocheck */
+    struct entity_iterator_list* new_list = &iterator->lists[iterator->list_count++];
+    new_list->list_length = count;
+    new_list->list        = list;
+}
+
+struct entity* entity_iterator_begin(struct entity_iterator* iterator) {
+    iterator->current_list_item_index = iterator->current_list_index = 0;
+    struct entity* result = &iterator->lists[iterator->current_list_index].list[iterator->current_list_item_index];
+    return result;
+}
+
+struct entity* entity_iterator_next(struct entity_iterator* iterator) {
+    {
+        struct entity_iterator_list* current_list = &iterator->lists[iterator->current_list_index];
+
+        if (iterator->current_list_item_index < current_list->list_length) {
+            iterator->current_list_item_index += 1; 
+        } else {
+            iterator->current_list_item_index = 0;
+            iterator->current_list_index     += 1;
+        }
+    }
+
+    struct entity* result = &iterator->lists[iterator->current_list_index].list[iterator->current_list_item_index];
+    return result;
+}
+
+bool entity_iterator_done(struct entity_iterator* iterator) {
+    if (iterator->current_list_index >= iterator->list_count) {
+        struct entity_iterator_list* current_list = &iterator->lists[iterator->current_list_index];
+        if (iterator->current_list_item_index >= current_list->list_length) {
+            return true;
+        }
+    }
+
+    return false;
+}

@@ -98,6 +98,7 @@ local int font_size_aspect_ratio_independent(float percentage) {
 #include "tilemap.c"
 #include "particle_systems.c"
 
+#define PERSISTENT_ENTITY_COUNT_MAX (256)
 struct game_state {
     uint8_t menu_mode;
     uint8_t menu_transition_state;
@@ -109,7 +110,32 @@ struct game_state {
 
     /*whoops this is an additional indirection. Fix this at the end of the night*/
     struct tilemap* loaded_level;
+
+    /* 
+       NOTE(jerry):
+       These are permenant storage entities, which include the player and
+       any projectiles or otherwise "generated" entities.
+       
+       Level entities are stored as part of the level they came from.
+    */
+    uint16_t entity_count;
+    struct entity persistent_entities[PERSISTENT_ENTITY_COUNT_MAX];
 };
+/*
+  Entity IDs are only going to be indices, I'm not currently expecting to
+  store references to anything.
+
+  The only state I need to keep track of will be manually kept.
+ */
+void game_state_add_persistent_entity(struct game_state* game_state, struct entity entity) {
+    if (game_state->entity_count < PERSISTENT_ENTITY_COUNT_MAX) {
+        game_state->persistent_entities[game_state->entity_count++] = entity;
+    }
+}
+
+void game_state_remove_persistent_entity(struct game_state* game_state, uint32_t index) {
+    game_state->persistent_entities[index] = game_state->persistent_entities[--game_state->entity_count];
+}
 
 local struct game_state* game_state;
 
@@ -237,23 +263,24 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
     game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
 
     game_serialize_level(arena, serializer);
+    struct entity* player = &game_state->persistent_entities[0];
 
     /*level is loaded, now setup player spawns*/
     if (transition_link_to_spawn_at) {
         for (unsigned index = 0; index < game_state->loaded_level->player_spawn_link_count; ++index) {
             struct player_spawn_link* spawn = game_state->loaded_level->link_spawns + index;
             if (strncmp(spawn->identifier, transition_link_to_spawn_at, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH) == 0) {
-                player.x = spawn->x;
-                player.y = spawn->y;
+                player->x = spawn->x;
+                player->y = spawn->y;
                 break;
             }
         }
     } else {
-        player.x = game_state->loaded_level->default_spawn.x;
-        player.y = game_state->loaded_level->default_spawn.y;
+        player->x = game_state->loaded_level->default_spawn.x;
+        player->y = game_state->loaded_level->default_spawn.y;
     }
 
-    camera_set_position(&game_camera, player.x, player.y);
+    camera_set_position(&game_camera, player->x, player->y);
     camera_force_clamp_to_bounds(&game_camera);
 }
 

@@ -53,9 +53,11 @@ Define_Console_Command(editor_clear) {
 }
 
 Define_Console_Command(editor_playtest) {
+    struct entity* player = &game_state->persistent_entities[0];
+
     console_printf("loading current editor map into game... As if new spawn\n");
     editor_serialize_into_game_memory();
-    entity_halt_motion(&player);
+    entity_halt_motion(player);
     mode = GAME_MODE_PLAYING;
 }
 

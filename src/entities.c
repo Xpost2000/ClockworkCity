@@ -1,9 +1,11 @@
 /* general entity procedures */
 /*
   Camera influence is determined by distance to the player.
+  
+  TODO(jerry): Draw
 */
 local void entity_do_ground_impact(struct entity* entity, float camera_influence) {
-    if (entity->last_vy >= (20)) {
+    if (entity->last_vy >= (15)) {
         float g_force_count = (entity->last_vy / (GRAVITY_CONSTANT));
         float shake_factor = pow(0.02356, 1.10 / (g_force_count)) * camera_influence;
 
@@ -31,8 +33,9 @@ void entity_halt_motion(struct entity* entity) {
 /* type procedures */
 void do_player_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     if (noclip) {
-        entity->vx = entity->ax;
-        entity->vy = entity->ay;
+        entity->vx      = entity->ax;
+        entity->vy      = entity->ay;
+        entity->last_vy = entity->vy;
     }
 
     entity->vx += entity->ax * dt;
@@ -141,17 +144,49 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
             }
         }
     }
+}
 
-    if (entity->last_vy > 0 && !noclip) {
-        entity_do_ground_impact(entity, 1.0f);
+struct entity entity_create_player(float x, float y) {
+    struct entity result = {
+        .x = x, .y = y,
+        .type = ENTITY_TYPE_PLAYER,
+        .w = (0.5),
+        .h = 1,
+        .health = 5,
+        .flags = ENTITY_FLAGS_PERMENANT,
+    };
+
+    return result;
+}
+
+void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
+    for (struct entity* current_entity = entity_iterator_begin(entities);
+         !entity_iterator_done(entities);
+         current_entity = entity_iterator_next(entities)) {
+        switch (current_entity->type) {
+            case ENTITY_TYPE_PLAYER: do_player_entity_physics_update(current_entity, tilemap, dt); break;
+            default: break;
+        }
     }
 }
-/* end of type procedures */
 
-struct entity player = {
-    // no units, prolly pixels
-    .x = -4,
-    .y = -5,
-    .w = 1/2.0f,
-    .h = 1,
-};
+void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
+    struct entity* player = &game_state->persistent_entities[0];
+    const float IMPACT_INFLUENCE_MAX_DISTANCE_SQ = 12.0f;
+
+    for (struct entity* current_entity = entity_iterator_begin(entities);
+         !entity_iterator_done(entities);
+         current_entity = entity_iterator_next(entities)) {
+        switch (current_entity->type) {
+            case ENTITY_TYPE_PLAYER: do_player_entity_update(current_entity, tilemap, dt); break;
+            default: break;
+        }
+
+        if (current_entity->last_vy > 0) {
+            float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);
+            impact_influence = clampf(impact_influence, 0, IMPACT_INFLUENCE_MAX_DISTANCE_SQ);
+            impact_influence = (IMPACT_INFLUENCE_MAX_DISTANCE_SQ - impact_influence) / IMPACT_INFLUENCE_MAX_DISTANCE_SQ;
+            entity_do_ground_impact(current_entity, impact_influence);
+        }
+    }
+}
