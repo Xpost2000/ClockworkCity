@@ -3,17 +3,13 @@
 */
 
 /*
-  As I'm converting to vector based rendering soon, the definition
-  of "pixel" is kind of arbitrary.
-
-  However I want characters of 16x16 to be one unit tall, one unit wide, which
-  is probably the best my artistic ability will allow me to draw, and that might even
-  be stretching it.
+  Will I ever do the vector renderer? We'll see since thankfully the "placeholder" graphics and
+  final artstyle are relatively simple (monochrome "shapes", not 1 bit art per say (well characters are 1 bit art...)).
   
-  If I such at pixel art even more... Just decrease the number!
+  Anyways, resolve to do auto-save since Dark Souls is cool
 */
 #define VPIXELS_PER_METER (16)
-#define TILES_PER_SCREEN (33)
+#define TILES_PER_SCREEN (35)
 #define GRAVITY_CONSTANT (20)
 
 local struct camera game_camera   = {};
