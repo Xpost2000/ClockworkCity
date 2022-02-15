@@ -208,6 +208,30 @@ void  system_deallocate_memory(void* ptr);
 void* system_allocate_zeroed_memory(size_t amount);
 void* system_clone_buffer(const void* buffer, size_t buffer_size);
 
+inline shared_storage uint64_t hash_bytes64(char* bytes, size_t byte_count) {
+    uint64_t fnv_prime   = 0x100000001b3;
+    uint64_t hash_result = 0xcbf29ce484222325;
+
+    for (size_t byte_index = 0; byte_index < byte_count; ++byte_index) {
+        hash_result *= fnv_prime;
+        hash_result ^= bytes[byte_index];
+    }
+
+    return hash_result;
+}
+
+inline shared_storage uint32_t hash_bytes32(char* bytes, size_t byte_count) {
+    uint32_t fnv_prime   = 16777619;
+    uint32_t hash_result = 2166136261;
+
+    for (size_t byte_index = 0; byte_index < byte_count; ++byte_index) {
+        hash_result *= fnv_prime;
+        hash_result ^= bytes[byte_index];
+    }
+
+    return hash_result;
+}
+
 inline shared_storage float distance_sq(float x1, float y1, float x2, float y2) {
     float dy = y2 - y1;
     float dx = x2 - x1;

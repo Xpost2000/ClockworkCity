@@ -92,11 +92,13 @@ local int font_size_aspect_ratio_independent(float percentage) {
    Cause C can't correct references to types that haven't been declared
    yet :/
 */
+#include "persistent_state_def.c"
 #include "entities_def.c"
 #include "game_menus_defs.c"
 
 #include "tilemap.c"
 #include "particle_systems.c"
+#include "persistent_state.c"
 
 #define PERSISTENT_ENTITY_COUNT_MAX (256)
 struct game_state {
@@ -119,7 +121,8 @@ struct game_state {
        Level entities are stored as part of the level they came from.
     */
     uint16_t entity_count;
-    struct entity persistent_entities[PERSISTENT_ENTITY_COUNT_MAX];
+    struct entity             persistent_entities[PERSISTENT_ENTITY_COUNT_MAX];
+    struct persistent_changes persistent_changes;
 };
 /*
   Entity IDs are only going to be indices, I'm not currently expecting to
