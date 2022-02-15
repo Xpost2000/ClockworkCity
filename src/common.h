@@ -30,6 +30,7 @@
 #define TEMPORARY_STORAGE_BUFFER_SIZE (4096)
 #define TEMPORARY_STORAGE_BUFFER_COUNT (4)
 
+#define BIT(x) (1 << x)
 
 #define array_count(x) (sizeof(x) / sizeof(*x))
 #define zero_buffer_memory(x, l) memset(x, 0, l)

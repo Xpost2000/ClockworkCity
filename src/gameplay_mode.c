@@ -1,5 +1,3 @@
-#include "game_menus.c"
-
 local struct particle_emitter* test_emitter = 0x12345;
 local struct particle_emitter* test_emitter2 = 0x12345;
 
@@ -40,147 +38,10 @@ local void gameplay_initialize(void) {
     }
 }
 
-/*
-  Camera influence is determined by distance to the player.
-*/
-local void entity_do_ground_impact(struct entity* entity, float camera_influence) {
-    if (entity->last_vy >= (20)) {
-        float g_force_count = (entity->last_vy / (GRAVITY_CONSTANT));
-        float shake_factor = pow(0.02356, 1.10 / (g_force_count)) * camera_influence;
-
-        camera_traumatize(&game_camera, shake_factor);
-        {
-            struct particle_emitter* splatter = particle_emitter_allocate();
-            splatter->x = splatter->x1 = entity->x;
-            splatter->y = splatter->y1 = entity->y + entity->h;
-            splatter->emission_rate = 0;
-            splatter->emission_count = minf(ceilf(164 * shake_factor), 40);
-            splatter->max_emissions = 1;
-            splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
-            splatter->particle_max_lifetime = 1;
-        }
-        entity->last_vy = 0;
-    }
-}
 
 local void do_physics(float dt) {
-    if (noclip) {
-        /*stupid*/
-        player.vx = player.ax;
-        player.vy = player.ay;
-        /* player.x += player.vx * dt; */
-        /* player.y += player.vy * dt; */
-    }
-
     struct tilemap* tilemap = game_state->loaded_level;
-
-    player.vx += player.ax * dt;
-    if (player.dash) {
-        player.vx -= (player.vx * 40 * dt);
-    } else {
-        player.vx -= (player.vx * 3 * dt);
-    }
-
-    const int MAX_SPEED = 500;
-    if (fabs(player.vx) > MAX_SPEED) {
-        float sgn = float_sign(player.vx);
-        player.vx = MAX_SPEED * sgn;
-    }
-
-    if (fabs(player.vx) < (30)) {
-        player.dash = false;
-    }
-
-    player.vy += (player.ay + GRAVITY_CONSTANT) * dt;
-    if (player.dash) player.vy = 0;
-
-    do_moving_entity_horizontal_collision_response(tilemap, &player, dt);
-    do_moving_entity_vertical_collision_response(tilemap, &player, dt);
-
-    /* game collisions, not physics */
-    /* check if I hit transition then change level */
-    {
-        for (unsigned index = 0; index < tilemap->transition_zone_count; ++index) {
-            struct transition_zone t = (tilemap->transitions[index]);
-            if (rectangle_intersects_v(player.x, player.y, player.w, player.h, t.x, t.y, t.w, t.h)) {
-                game_load_level(&game_memory_arena, t.zone_filename, t.zone_link);
-                break;
-            }
-        }
-    }
-
-    if (player.last_vy > 0 && !noclip) {
-        entity_do_ground_impact(&player, 1.0f);
-    }
-}
-
-local void do_player_input(float dt) {
-    struct game_controller* gamepad = get_gamepad(0);
-
-    bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
-    bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
-
-    player.ax = 0;
-
-    const int MAX_ACCELERATION = 30;
-
-    if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
-        game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
-        game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_PAUSE;
-        game_state->ingame_transition_timer[0] = INGAME_PAN_OUT_TIMER;
-        game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
-    }
-
-    if (is_key_down(KEY_T)) {
-        camera_set_focus_zoom_level(&game_camera, 0.5);
-    } else if (is_key_down(KEY_G)) {
-        camera_set_focus_zoom_level(&game_camera, 1.0);
-    }
-
-    if (move_right) {
-        player.ax = MAX_ACCELERATION;
-        player.facing_dir = 1;
-    } else if (move_left) {
-        player.ax = -MAX_ACCELERATION;
-        player.facing_dir = -1;
-    }
-
-    if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
-        player.ax = MAX_ACCELERATION * gamepad->left_stick.axes[0];
-        player.facing_dir = (int)float_sign(player.ax);
-    }
-
-    if (noclip) {
-        player.ay = 0;
-        if (fabs(gamepad->left_stick.axes[1]) >= 0.1) {
-            player.ay = MAX_ACCELERATION * gamepad->left_stick.axes[1];
-        }
-    }
-
-    if (roundf(player.vy) == 0) {
-        player.jump_leniancy_timer = 0.3;
-    }
-
-    if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
-        if (!player.dash) {
-            player.vy = 0;
-            const int MAX_SPEED = 300;
-            player.vx = MAX_SPEED * player.facing_dir;
-            player.vy = MAX_SPEED * player.facing_dir;
-            camera_traumatize(&game_camera, 0.0675);
-            player.dash = true;
-        }
-    }
-
-    if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
-        if (player.onground) {
-            /* player.vy = -GRAVITY_CONSTANT; */
-            player.vy = -10;
-            player.onground = false;
-        }
-    }
-
-    player.jump_leniancy_timer -= dt;
+    do_player_entity_physics_update(&player, tilemap, dt);
 }
 
 local void DEBUG_draw_debug_stuff(void) {
@@ -223,8 +84,6 @@ local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
 
     if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
-        do_player_input(dt);
-
         {
             local float physics_accumulation_timer = 0;
             const int PHYSICS_FRAMERATE = 300;
@@ -236,6 +95,10 @@ local void game_update_render_frame(float dt) {
             }
 
             physics_accumulation_timer += dt;
+        }
+        {
+            struct tilemap* tilemap = game_state->loaded_level;
+            do_player_entity_update(&player, tilemap, dt);
         }
 
         {

@@ -20,7 +20,6 @@ local struct camera game_camera   = {};
 local struct camera editor_camera = {};
 
 #include "colorschemes.c"
-#include "entities.c"
 
 bool noclip = false;
 
@@ -88,6 +87,14 @@ local int font_size_aspect_ratio_independent(float percentage) {
     return font_size_based_on_screen_width_percentage(maxf(percentage - SCALING_EPISILON, 0.0f));
 }
 
+/* 
+   This is seriously making me consider a types.h approach.
+   Cause C can't correct references to types that haven't been declared
+   yet :/
+*/
+#include "entities_def.c"
+#include "game_menus_defs.c"
+
 #include "tilemap.c"
 #include "particle_systems.c"
 
@@ -108,6 +115,8 @@ local struct game_state* game_state;
 
 enum game_mode mode = GAME_MODE_PLAYING;
 
+#include "entities.c"
+#include "game_menus.c"
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"
 
