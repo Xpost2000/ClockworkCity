@@ -40,6 +40,29 @@ local void gameplay_initialize(void) {
     }
 }
 
+/*
+  Camera influence is determined by distance to the player.
+*/
+local void entity_do_ground_impact(struct entity* entity, float camera_influence) {
+    if (entity->last_vy >= (20)) {
+        float g_force_count = (entity->last_vy / (GRAVITY_CONSTANT));
+        float shake_factor = pow(0.02356, 1.10 / (g_force_count)) * camera_influence;
+
+        camera_traumatize(&game_camera, shake_factor);
+        {
+            struct particle_emitter* splatter = particle_emitter_allocate();
+            splatter->x = splatter->x1 = entity->x;
+            splatter->y = splatter->y1 = entity->y + entity->h;
+            splatter->emission_rate = 0;
+            splatter->emission_count = minf(ceilf(164 * shake_factor), 40);
+            splatter->max_emissions = 1;
+            splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
+            splatter->particle_max_lifetime = 1;
+        }
+        entity->last_vy = 0;
+    }
+}
+
 local void do_physics(float dt) {
     if (noclip) {
         /*stupid*/
@@ -87,23 +110,7 @@ local void do_physics(float dt) {
     }
 
     if (player.last_vy > 0 && !noclip) {
-        if (player.last_vy >= (20)) {
-            float g_force_count = (player.last_vy / (GRAVITY_CONSTANT));
-            float shake_factor = pow(0.02356, 1.10 / (g_force_count));
-
-            camera_traumatize(&game_camera, shake_factor);
-            {
-                struct particle_emitter* splatter = particle_emitter_allocate();
-                splatter->x = splatter->x1 = player.x;
-                splatter->y = splatter->y1 = player.y + player.h;
-                splatter->emission_rate = 0;
-                splatter->emission_count = minf(ceilf(128 * shake_factor), 32);
-                splatter->max_emissions = 1;
-                splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
-                splatter->particle_max_lifetime = 1;
-            }
-            player.last_vy = 0;
-        }
+        entity_do_ground_impact(&player, 1.0f);
     }
 }
 
