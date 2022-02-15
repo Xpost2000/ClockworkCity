@@ -48,11 +48,14 @@ struct camera {
 /*normalized values from 0 - 1.0!*/
 void camera_traumatize(struct camera* camera, float amount);
 void camera_set_position(struct camera* camera, float x, float y);
+void camera_set_zoom(struct camera* camera, float level);
 void camera_offset_position(struct camera* camera, float x, float y);
 void camera_set_focus_speed(struct camera* camera, float speed);
 void camera_set_focus_speed_x(struct camera* camera, float speed);
 void camera_set_focus_speed_y(struct camera* camera, float speed);
+void camera_set_focus_speed_zoom(struct camera* camera, float speed);
 void camera_set_focus_position(struct camera* camera, float x, float y);
+void camera_set_focus_zoom_level(struct camera* camera, float level);
 void camera_update(struct camera* camera, float dt);
 void camera_force_clamp_to_bounds(struct camera* camera);
 void camera_reset_transform(struct camera* camera);

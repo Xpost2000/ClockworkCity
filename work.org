@@ -49,7 +49,7 @@
     Pretty sure that'll look okay enough for what I need.
 *** TODO Editor undo / redo (probably don't need...)
 *** TODO Trails Rendering! (probably part of particles)
-*** TODO Background tiles or something
+*** DONE Background tiles or something
     Support multiple tile layers. This is actually important.
 *** TODO Background Sprites?
 *** TODO Moveable tilemap "islands" / platforms
@@ -282,7 +282,7 @@
    Wow I actually did what I said I would do. Good job me!
 ** <2022-02-07 Mon>
 *** TODO Vector Field
-*** TODO Multiple Layer Tilemaps
+*** DONE Multiple Layer Tilemaps
 *** TODO Basic Health System
 *** TODO OpenGL Rendering (sprite mode)
 *** TODO Improve the Menu System?

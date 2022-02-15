@@ -124,12 +124,11 @@ local void do_player_input(float dt) {
         game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
     }
 
-    #if 0
     if (is_key_down(KEY_T)) {
-        TEST_timer1 = TEST_timer1_max;
-        TEST_bool1 = 1;
+        camera_set_focus_zoom_level(&game_camera, 0.5);
+    } else if (is_key_down(KEY_G)) {
+        camera_set_focus_zoom_level(&game_camera, 1.0);
     }
-    #endif
 
     if (move_right) {
         player.ax = MAX_ACCELERATION;
@@ -171,7 +170,6 @@ local void do_player_input(float dt) {
             /* player.vy = -GRAVITY_CONSTANT; */
             player.vy = -10;
             player.onground = false;
-            fprintf(stderr, "jump?\n");
         }
     }
 
@@ -243,6 +241,7 @@ local void game_update_render_frame(float dt) {
         test_emitter->y = test_emitter->y1 = player.y;
     }
 
+    camera_set_focus_speed_zoom(&game_camera, 5);
     camera_set_focus_speed_x(&game_camera, 3);
     camera_set_focus_speed_y(&game_camera, 2);
     camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,

@@ -146,6 +146,10 @@ shared_storage float clampf(float v, float a, float b) {
     return v;
 }
 
+shared_storage float interpolation_clamp(float v) {
+    return clampf(v, 0, 1);
+}
+
 shared_storage int clampi(int v, int a, int b) {
     if (v < a) v = a;
     else if (v > b) v = b;

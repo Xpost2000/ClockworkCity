@@ -3,7 +3,11 @@ local float _camera_render_scale(struct camera* camera) {
         camera->render_scale = 1;
     }
 
-    return camera->render_scale;
+    if (camera->visual_zoom_level == 0.0) {
+        camera->visual_zoom_level = 1;
+    }
+
+    return camera->render_scale * camera->visual_zoom_level;
 }
 
 local void _camera_transform_v2(struct camera* camera, float* x, float* y) {
@@ -36,7 +40,20 @@ void camera_set_focus_position(struct camera* camera, float x, float y) {
     camera->last_position_y = camera->visual_position_y;
     camera->target_position_y = y;
 
-    zero_array(camera->interpolation_time);
+    camera->interpolation_time[0] = camera->interpolation_time[1] = 0;
+}
+
+
+void camera_set_zoom(struct camera* camera, float level) {
+    camera->visual_zoom_level = camera->target_zoom_level = camera->last_zoom_level = level;
+    camera->interpolation_time[2] = 1.0;
+}
+
+void camera_set_focus_zoom_level(struct camera* camera, float level) {
+    camera->last_zoom_level = camera->visual_zoom_level;
+    camera->target_zoom_level = level;
+
+    camera->interpolation_time[2] = 0.0;
 }
 
 void camera_set_focus_speed_x(struct camera* camera, float speed) {
@@ -45,6 +62,10 @@ void camera_set_focus_speed_x(struct camera* camera, float speed) {
 
 void camera_set_focus_speed_y(struct camera* camera, float speed) {
     camera->interpolation_speed[1] = speed;
+}
+
+void camera_set_focus_speed_zoom(struct camera* camera, float speed) {
+    camera->interpolation_speed[2] = speed;
 }
 
 void camera_set_focus_speed(struct camera* camera, float speed) {
@@ -128,12 +149,9 @@ void camera_update(struct camera* camera, float dt) {
         }
     }
 
-    camera->visual_position_x =
-        lerp(camera->last_position_x, camera->target_position_x,
-             clampf(camera->interpolation_time[0], 0, 1)) + trauma_shake_x;
-    camera->visual_position_y =
-        lerp(camera->last_position_y, camera->target_position_y,
-             clampf(camera->interpolation_time[1], 0, 1)) + trauma_shake_y;
+    camera->visual_position_x = lerp(camera->last_position_x, camera->target_position_x, interpolation_clamp(camera->interpolation_time[0])) + trauma_shake_x;
+    camera->visual_position_y = lerp(camera->last_position_y, camera->target_position_y, interpolation_clamp(camera->interpolation_time[1])) + trauma_shake_y;
+    camera->visual_zoom_level = lerp(camera->last_zoom_level, camera->target_zoom_level, interpolation_clamp(camera->interpolation_time[2]));
 
     camera->trauma -= dt * 0.098;
 }
