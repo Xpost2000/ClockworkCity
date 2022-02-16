@@ -97,12 +97,23 @@ local int font_size_aspect_ratio_independent(float percentage) {
 #include "persistent_state.c"
 
 #define PERSISTENT_ENTITY_COUNT_MAX (256)
+enum player_death_animation_state {
+    DEATH_ANIMATION_NOT_STARTED,
+    DEATH_ANIMATION_STAGE1,
+    DEATH_ANIMATION_STAGE2,
+    DEATH_ANIMATION_STAGE3,
+    DEATH_ANIMATION_STATE_COUNT,
+};
+
 struct game_state {
     uint8_t menu_mode;
     uint8_t menu_transition_state;
 
     float quit_transition_timer[2];
     float ingame_transition_timer[2];
+
+    uint8_t player_death_animation_state;
+    float player_death_animation_timer[3];
 
     uint8_t selected_menu_option;
 

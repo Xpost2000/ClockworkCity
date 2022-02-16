@@ -1,0 +1,22 @@
+The influences are mainly Hollow Knight and Souls like.
+
+* Movement Abilities
+  These are in the order I want the progression to be.
+  *Sprinting is already unlocked!*
+  *Object Bouncing / Pogo is already unlocked!*
+  
+  Dash (Omni directional) (or eight directional on a keyboard),
+  (Jump -> Double -> Triple)
+  Wall Jumping | Gliding  (can get them at approximately the same time.)
+  Deathfall (Allows falling in areas that are capable of killing players. (for later areas secrets))
+
+* Offense Abilities
+  Attack (and sprint attack)
+  Dash Attack (Unlock later)
+  "Parry" (Time correctly, for a free counter and no damage, Only usable against small enemies or same size bosses)
+
+* Areas
+  Check cooresponding milton files for drafts :)
+  Not necessarily to scale.
+
+  RED LINE is transition zone!

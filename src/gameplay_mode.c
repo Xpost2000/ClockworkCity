@@ -148,20 +148,14 @@ local void game_update_render_frame(float dt) {
             draw_tiles(tilemap->background_tiles, tilemap->background_tile_count, active_colorscheme.primary_background);
         }
 
-        {
-            draw_filled_rectangle(entity_lerp_x(player, physics_interpolation_value),
-                                  entity_lerp_y(player, physics_interpolation_value),
-                                  player->w, player->h, active_colorscheme.primary);
-            /* draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary); */
-        }
-
+        struct entity_iterator entities = game_state_entity_iterator(game_state);
+        draw_all_entities(&entities, dt, physics_interpolation_value);
         draw_all_particle_systems(particle_interpolation_value);
         {
             draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
         }
-        for (int i = 0; i < 5; ++i)
-        {
+        for (int i = 0; i < 5; ++i) {
             draw_bresenham_filled_rectangle_line(player->x + i * (VPIXEL_SZ*3), player->y,
                                                  0, 0,
                                                  5 + normalized_sinf(global_elapsed_time * 45 * (i/4.0f)) * 3.0f, -10,

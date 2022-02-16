@@ -236,3 +236,25 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
         }
     }
 }
+
+/*and visually update*/
+void draw_all_entities(struct entity_iterator* entities, float dt, float interpolation_value) {
+    for (struct entity* current_entity = entity_iterator_begin(entities);
+         !entity_iterator_done(entities);
+         current_entity = entity_iterator_next(entities)) {
+        switch (current_entity->type) {
+            case ENTITY_TYPE_PLAYER: {
+                if (current_entity->death_state == DEATH_STATE_ALIVE) {
+                    draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
+                                          entity_lerp_y(current_entity, interpolation_value),
+                                          current_entity->w, current_entity->h, active_colorscheme.primary);
+                }
+            } break;
+            default: {
+                draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
+                                      entity_lerp_y(current_entity, interpolation_value),
+                                      current_entity->w, current_entity->h, active_colorscheme.primary);
+            } break;
+        }
+    }
+}
