@@ -20,9 +20,6 @@
 
 struct particle {
     KINEMATIC_ENTITY_BASE_BODY();
-    float last_x;
-    float last_y;
-
     float lifetime;
     float lifetime_max;
 
@@ -220,14 +217,17 @@ struct particle_emitter* particle_emitter_allocate(void) {
     return NULL;
 }
 
-local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
+local void draw_particle_emitter_particles(struct particle_emitter* emitter, float interpolation) {
     struct particle_chunk_list* list = &emitter->chunks;
 
     if (emitter->particle_texture.id) {
         for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
             for (unsigned index = 0; index < chunk->used; ++index) {
                 struct particle* particle = chunk->storage + index;
-                draw_texture(emitter->particle_texture, particle->x, particle->y, particle->w, particle->h,
+                draw_texture(emitter->particle_texture,
+                             entity_lerp_x(particle, interpolation),
+                             entity_lerp_y(particle, interpolation),
+                             particle->w, particle->h,
                              color4f((float)particle->color.r / 256.0f,
                                      (float)particle->color.g / 256.0f,
                                      (float)particle->color.b / 256.0f,
@@ -238,7 +238,9 @@ local void draw_particle_emitter_particles(struct particle_emitter* emitter) {
         for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
             for (unsigned index = 0; index < chunk->used; ++index) {
                 struct particle* particle = chunk->storage + index;
-                draw_filled_rectangle(particle->x, particle->y, particle->w, particle->h,
+                draw_filled_rectangle(entity_lerp_x(particle, interpolation),
+                                      entity_lerp_y(particle, interpolation),
+                                      particle->w, particle->h,
                                       color4f((float)particle->color.r / 256.0f,
                                               (float)particle->color.g / 256.0f,
                                               (float)particle->color.b / 256.0f,
@@ -352,7 +354,9 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
                 particle->vy += particle->ay * dt;
                 particle->vy += GRAVITY_CONSTANT * dt;
 
+                particle->last_x = particle->x;
                 particle->x += particle->vx * dt;
+                particle->last_y = particle->y;
                 particle->y += particle->vy * dt;
 
                 particle->lifetime -= dt;
@@ -411,12 +415,12 @@ void update_all_particle_systems(struct tilemap* world, float dt) {
     }
 }
 
-void draw_all_particle_systems(void) {
+void draw_all_particle_systems(float interpolation) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
 
         if (emitter->alive) {
-            draw_particle_emitter_particles(emitter);
+            draw_particle_emitter_particles(emitter, interpolation);
         }
     }
 }

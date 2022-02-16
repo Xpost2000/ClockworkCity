@@ -4,8 +4,8 @@
 */
 
 #define KINEMATIC_ENTITY_BASE_BODY()            \
-    float x;                                    \
-    float y;                                    \
+    float x, last_x;                            \
+    float y, last_y;                            \
     float w;                                    \
     float h;                                    \
     float vx;                                   \
@@ -161,6 +161,9 @@ struct entity {
     /* player specific */
     float jump_leniancy_timer;
 };
+
+float entity_lerp_x(struct entity* entity, float t);
+float entity_lerp_y(struct entity* entity, float t);
 
 /*
   A more optimal thing to do would have been to make an intrusive linked list,

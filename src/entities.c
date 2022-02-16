@@ -4,6 +4,14 @@
   
   TODO(jerry): Draw
 */
+float entity_lerp_x(struct entity* entity, float t) {
+    return lerp(entity->last_x, entity->x, t);
+}
+
+float entity_lerp_y(struct entity* entity, float t) {
+    return lerp(entity->last_y, entity->y, t);
+}
+
 local void entity_do_ground_impact(struct entity* entity, float camera_influence) {
     if (entity->last_vy >= (15)) {
         float g_force_count = (entity->last_vy / (GRAVITY_CONSTANT));

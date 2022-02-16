@@ -16,8 +16,8 @@ local void gameplay_initialize(void) {
     test_emitter2 = particle_emitter_allocate();
 
     {
-        test_emitter->emission_rate = 0.01;
-        test_emitter->emission_count = 16;
+        test_emitter->emission_rate = 0.001;
+        test_emitter->emission_count = 8;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_texture = particle_textures[0];
         test_emitter->particle_max_lifetime = 1;
@@ -25,9 +25,9 @@ local void gameplay_initialize(void) {
     }
 
     {
-        test_emitter2->emission_rate = 0.01;
-        test_emitter2->emission_count = 16;
-        test_emitter2->particle_color = color4f(0.12, 0.2, 0.85, 1.0);
+        test_emitter2->emission_rate = 0.005;
+        test_emitter2->emission_count = 32;
+        test_emitter2->particle_color = color4f(0.32, 0.3, 0.85, 1.0);
         test_emitter2->particle_texture = particle_textures[0];
         test_emitter2->particle_max_lifetime = 8;
         test_emitter2->collides_with_world = false;
@@ -92,6 +92,9 @@ local void game_update_render_frame(float dt) {
     struct entity* player = &game_state->persistent_entities[0];
     struct tilemap* tilemap = game_state->loaded_level;
 
+    float physics_interpolation_value;
+    float particle_interpolation_value;
+
     if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
         {
             local float physics_accumulation_timer = 0;
@@ -99,18 +102,33 @@ local void game_update_render_frame(float dt) {
             const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
             struct entity_iterator entities = game_state_entity_iterator(game_state);
-            while (physics_accumulation_timer > 0.0f) {
+
+            physics_accumulation_timer += dt;
+            while (physics_accumulation_timer >= PHYSICS_TIMESTEP) {
                 do_entity_physics_updates(&entities, tilemap, PHYSICS_TIMESTEP);
                 physics_accumulation_timer -= PHYSICS_TIMESTEP;
             }
 
-            physics_accumulation_timer += dt;
+            physics_interpolation_value = physics_accumulation_timer / PHYSICS_TIMESTEP;
         }
         {
             struct entity_iterator entities = game_state_entity_iterator(game_state);
 
             do_entity_updates(&entities, tilemap, dt);
-            update_all_particle_systems(game_state->loaded_level, dt);
+
+            {
+                local float particle_accumulation_timer = 0;
+                const int PARTICLES_FRAMERATE = 30;
+                const float PARTICLES_TIMESTEP = 1.0f / (float)(PARTICLES_FRAMERATE);
+
+                particle_accumulation_timer += dt;
+                while (particle_accumulation_timer >= PARTICLES_TIMESTEP) {
+                    update_all_particle_systems(game_state->loaded_level, PARTICLES_TIMESTEP);
+                    particle_accumulation_timer -= PARTICLES_TIMESTEP;
+                }
+
+                particle_interpolation_value = particle_accumulation_timer / PARTICLES_TIMESTEP;
+            }
         }
     }
 
@@ -135,11 +153,13 @@ local void game_update_render_frame(float dt) {
         }
 
         {
-            draw_filled_rectangle(player->x, player->y, player->w, player->h, active_colorscheme.primary);
+            draw_filled_rectangle(entity_lerp_x(player, physics_interpolation_value),
+                                  entity_lerp_y(player, physics_interpolation_value),
+                                  player->w, player->h, active_colorscheme.primary);
             /* draw_texture(test_guy, player.x, player.y+player.h - (32.0f/16.0f), 16/16, (32.0f/16), active_colorscheme.primary); */
         }
 
-        draw_all_particle_systems();
+        draw_all_particle_systems(particle_interpolation_value);
         {
             draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
