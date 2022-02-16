@@ -745,7 +745,7 @@ local void tilemap_editor_update_render_frame(float dt) {
     }
 
     /* text widget */
-    {
+    begin_graphics_frame(NULL); {
         int dimens[2];
         get_screen_dimensions(dimens, dimens+1);
         if (editor.text_edit.open) {
@@ -770,7 +770,7 @@ local void tilemap_editor_update_render_frame(float dt) {
                 editor.text_edit.open = false;
             }
         }
-    }
+    } end_graphics_frame();
 
     end_temporary_memory(&frame_arena);
 }

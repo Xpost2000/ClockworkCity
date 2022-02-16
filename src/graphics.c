@@ -124,11 +124,11 @@ void draw_bresenham_filled_rectangle_line(float x_off, float y_off,
        
        This is never really going to look perfect, but it's as good as I can get...
     */
-    const float FILL_EPSILON = 0.013387f;
+    const float FILL_EPSILON = 0.023f;
 
     for (;;) {
-        draw_filled_rectangle(x_off + x1 * square_size,
-                              y_off + y1 * square_size,
+        draw_filled_rectangle(x_off + (x1 - FILL_EPSILON/2) * square_size,
+                              y_off + (y1 - FILL_EPSILON/2) * square_size,
                               square_size+FILL_EPSILON, square_size+FILL_EPSILON, color);
 
         if (x1 == x2 && y1 == y2) return;

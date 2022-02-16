@@ -145,8 +145,6 @@ void initialize_colorscheme_database(struct memory_arena* arena) {
     /* Just for a base address. */
     colors_database = memory_arena_push(arena, 0);
     load_colorscheme_database(arena, "colors.txt");
-
-    use_colorscheme("MonoRed0");
 }
 
 

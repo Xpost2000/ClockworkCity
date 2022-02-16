@@ -148,16 +148,11 @@ union color4u8 color4u8_from_color4f(union color4f color) {
 }
 
 float ratio_with_screen_width(float dividend) {
-    int rounded = floorf((float)screen_dimensions[0] / dividend);
-    int difference_from_two = rounded % 2;
-    return rounded + difference_from_two;
+    return ((float)screen_dimensions[0] / dividend);
 }
 
 float ratio_with_screen_height(float dividend) {
-    int rounded = floorf((float)screen_dimensions[1] / dividend);
-    int difference_from_two = rounded % 2;
-    console_printf(rounded + difference_from_two);
-    return rounded + difference_from_two;
+    return ((float)screen_dimensions[1] / dividend);
 }
 
 bool within_screen_bounds(int x, int y, int w, int h) {

@@ -10,7 +10,7 @@
 */
 #define VPIXELS_PER_METER (16)
 #define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))
-#define TILES_PER_SCREEN (33)
+#define TILES_PER_SCREEN (22)
 #define GRAVITY_CONSTANT (20)
 
 local struct camera game_camera   = {};
@@ -149,13 +149,10 @@ local void load_graphics_resources(void) {
     /* can change depending on resolution maybe... */
     knight_twoview      = load_texture("assets/knight_twoview.png");
     test_icon      = load_texture("assets/icon.png");
-    test_font           = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.03));
+    test_font           = load_font("assets/LiberationMono-Regular.ttf", font_size_aspect_ratio_independent(0.03));
     test_guy  = load_texture("assets/guy.png");
     _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
     test3_font          = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.04));
-    /* test2_font      = load_font("assets/Exoplanetaria-gxxJ5.ttf", 64); */
-    /* test2_font      = load_font("assets/charissilbold.ttf", 64); */
-    /* test2_font      = load_font("assets/Helmet-lWZV.otf", 64); */
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", font_size_aspect_ratio_independent(0.07));
 
@@ -180,6 +177,8 @@ local void load_static_resources(void) {
     initialize_colorscheme_database(&game_memory_arena);
     initialize_particle_emitter_pool(&game_memory_arena);
     playersizedblock = load_texture("assets/playersizedblock.png");
+
+    use_colorscheme("MonoDefault0");
 
     load_tilemap_editor_resources();
     gameplay_initialize();
