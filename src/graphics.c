@@ -96,6 +96,60 @@ void draw_filled_rectangle(float x, float y, float w, float h, union color4f col
     }
 }
 
+/*
+  NOTE(jerry):
+  This is an unusually specific rendering procedure...
+  
+  the line coordinates are in relative coordinates to x_off and y_off. Implictly
+  scaled by square_size. (x1 y1 x2 y2 are in "squares" not pixels.)
+*/
+void draw_bresenham_filled_rectangle_line(float x_off, float y_off,
+                                          int x1, int y1, int x2, int y2,
+                                          float square_size, union color4f color) {
+    int delta_x = abs(x2 - x1);
+    int delta_y = -abs(y2 - y1);
+    int sign_x  = 0;
+    int sign_y  = 0;
+
+    if (x1 < x2) sign_x = 1;
+    else         sign_x = -1;
+
+    if (y1 < y2) sign_y = 1;
+    else         sign_y = -1;
+
+    int error_accumulator = delta_x + delta_y;
+
+    /* 
+       removes gaps 
+       
+       This is never really going to look perfect, but it's as good as I can get...
+    */
+    const float FILL_EPSILON = 0.013387f;
+
+    for (;;) {
+        draw_filled_rectangle(x_off + x1 * square_size,
+                              y_off + y1 * square_size,
+                              square_size+FILL_EPSILON, square_size+FILL_EPSILON, color);
+
+        if (x1 == x2 && y1 == y2) return;
+
+        int old_error_x2 = 2 * error_accumulator;
+        if (old_error_x2 >= delta_y) {
+            if (x1 != x2) {
+                error_accumulator += delta_y;
+                x1 += sign_x;
+            }
+        }
+
+        if (old_error_x2 <= delta_x) {
+            if (y1 != y2) {
+                error_accumulator += delta_x;
+                y1 += sign_y;
+            }
+        }
+    }
+}
+
 void draw_rectangle(float x, float y, float w, float h, union color4f color) {
     _set_draw_color(color);
     x *= _camera_render_scale(_active_camera);

@@ -9,7 +9,8 @@
   Anyways, resolve to do auto-save since Dark Souls is cool
 */
 #define VPIXELS_PER_METER (16)
-#define TILES_PER_SCREEN (35)
+#define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))
+#define TILES_PER_SCREEN (33)
 #define GRAVITY_CONSTANT (20)
 
 local struct camera game_camera   = {};

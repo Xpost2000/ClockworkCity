@@ -94,6 +94,7 @@ void end_graphics_frame(void);
 void draw_filled_rectangle(float x, float y, float w, float h, union color4f color);
 /* draw as a line buffer lol */
 void draw_rectangle(float x, float y, float w, float h, union color4f color);
+void draw_bresenham_filled_rectangle_line(float x_off, float y_off, int x1, int y1, int x2, int y2, float square_size, union color4f color);
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color);
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color);
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);

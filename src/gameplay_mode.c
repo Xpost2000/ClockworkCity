@@ -1,10 +1,6 @@
 local struct particle_emitter* test_emitter = 0x12345;
 local struct particle_emitter* test_emitter2 = 0x12345;
 
-#define TEST_timer1_max 2
-float TEST_timer1 = 0;
-bool TEST_bool1 = 0;
-
 local void load_gameplay_resources(void) {
     load_all_tile_assets();
 }
@@ -163,6 +159,13 @@ local void game_update_render_frame(float dt) {
         {
             draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
+        }
+        for (int i = 0; i < 5; ++i)
+        {
+            draw_bresenham_filled_rectangle_line(player->x + i * (VPIXEL_SZ*3), player->y,
+                                                 0, 0,
+                                                 5 + normalized_sinf(global_elapsed_time * 45 * (i/4.0f)) * 3.0f, -10,
+                                                 1.0f/(float)VPIXELS_PER_METER, COLOR4F_WHITE);
         }
 
         DEBUG_draw_debug_stuff();
