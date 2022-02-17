@@ -4,6 +4,7 @@
   Right now this is a minimal flashy menu, that might actually survive
   to ship considering how cool it looks.
 */
+#define GAME_TITLE_CSTR "SINGLE ASCENT"
 
 local void do_gameplay_ui(struct game_controller* controller, float dt) {
     
@@ -81,7 +82,7 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
 
             /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
                pass as a basic menu system.*/
-            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", active_colorscheme.text);
+            draw_text(game_title_font, x_cursor, y_cursor, GAME_TITLE_CSTR, active_colorscheme.text);
             y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
 
             for (unsigned index = 0; index < array_count(menu_option_strings); ++index) {
@@ -201,7 +202,7 @@ local void do_pausemenu_ui(struct game_controller* controller, float dt) {
 
             /* this part will be moved out of the way in the "ingame" transition code which is hardcoded. Looks good enough to
                pass as a basic menu system.*/
-            draw_text(game_title_font, x_cursor, y_cursor, "Mplusplus", active_colorscheme.text);
+            draw_text(game_title_font, x_cursor, y_cursor, GAME_TITLE_CSTR, active_colorscheme.text);
             y_cursor += GAME_UI_TITLE_FONT_SIZE * 4.3;
 
             for (unsigned index = 0; index < array_count(menu_pause_option_strings); ++index) {

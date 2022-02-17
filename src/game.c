@@ -21,6 +21,8 @@ local struct camera editor_camera = {};
 bool noclip = false;
 local struct memory_arena game_memory_arena;
 
+#include "prompt_font_info.h"
+
 local texture_id playersizedblock; /* NOTE(jerry): This is exclusively for testing out a death screen! */
 local texture_id test_guy;
 local texture_id knight_twoview;
@@ -166,6 +168,10 @@ local void load_graphics_resources(void) {
     test3_font          = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.04));
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", font_size_aspect_ratio_independent(0.07));
+
+    for (unsigned index = 0; index < array_count(controller_prompt_font); ++index) {
+        controller_prompt_font[index] = load_font("assets/promptfont/PromptFont.otf", font_size_aspect_ratio_independent(prompt_font_sizes[index]));
+    }
 
     game_title_font   = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_TITLE_FONT_SIZE);
     game_ui_menu_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_MENU_FONT_SIZE);
