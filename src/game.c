@@ -154,6 +154,7 @@ local struct game_state* game_state;
 enum game_mode mode = GAME_MODE_PLAYING;
 
 #include "entities.c"
+#include "game_message_prompts.c"
 #include "game_menus.c"
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"

@@ -8,7 +8,7 @@ enum prompt_font_size {
     PROMPT_FONT_SIZE_COUNT,
 };
 local const float prompt_font_sizes[PROMPT_FONT_SIZE_COUNT] = {
-    0.03, 0.06, 0.09,
+    0.06*3, 0.09*3, 0.12*3,
 };
 local font_id controller_prompt_font[PROMPT_FONT_SIZE_COUNT];
 
