@@ -268,7 +268,7 @@ local void initialize(void) {
         WINDOW_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         DEFAULT_RESOLUTION_X, DEFAULT_RESOLUTION_Y,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
+        SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_FULLSCREEN_DESKTOP */
     );
 
     {
@@ -302,6 +302,7 @@ local void initialize(void) {
     console_printf("Welcome to xvania\na C metroidvania game engine thing for\nMetroidvania Jam 15.\n");
     register_console_commands();
     load_static_resources();
+    SDL_ShowWindow(global_window);
 }
 
 local void deinitialize(void) {
