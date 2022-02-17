@@ -12,13 +12,19 @@ enum tile_id {
     TILE_SLOPE_BL,
     TILE_SLOPE_R,
     TILE_SLOPE_L,
-    TILE_SPIKE,
+    TILE_SPIKE_UP,
+    TILE_SPIKE_DOWN,
+    TILE_SPIKE_LEFT,
+    TILE_SPIKE_RIGHT,
     TILE_ID_COUNT,
 };
 
 shared_storage char* tile_id_filestrings[] = {
     0,
-    [TILE_SPIKE] = "assets/testtiles/spikehazard.png",
+    [TILE_SPIKE_UP] = "assets/testtiles/spikehazard.png",
+    [TILE_SPIKE_DOWN] = "assets/testtiles/spikehazard_vertical.png",
+    [TILE_SPIKE_LEFT] = "assets/testtiles/spikehazard_left.png",
+    [TILE_SPIKE_RIGHT] = "assets/testtiles/spikehazard_right.png",
     [TILE_SOLID] = "assets/testtiles/block.png",
     [TILE_SLOPE_BL] = "assets/testtiles/slope45degbl.png",
     [TILE_SLOPE_BR] = "assets/testtiles/slope45degbr.png",
@@ -27,7 +33,10 @@ shared_storage char* tile_id_filestrings[] = {
 };
 shared_storage char* tile_type_strings[] = {
     0,
-    [TILE_SPIKE] = "(hazard) spike",
+    [TILE_SPIKE_UP]    = "(hazard) spike (up)",
+    [TILE_SPIKE_DOWN]  = "(hazard) spike (down)",
+    [TILE_SPIKE_LEFT]  = "(hazard) spike (left)",
+    [TILE_SPIKE_RIGHT] = "(hazard) spike (right)",
     [TILE_SOLID] = "solid",
     [TILE_SLOPE_BL] = "bottom left slope(45 deg)",
     [TILE_SLOPE_BR] = "bottom right slope(45 deg)",
