@@ -1,4 +1,7 @@
-#define TILEMAP_CURRENT_VERSION 2 
+#define TILEMAP_CURRENT_VERSION (2) 
+#define GRASS_DENSITY_PER_TILE  (8) /* in blades */
+#define GRASS_BLADE_WIDTH       (VPIXEL_SZ) / ((GRASS_DENSITY_PER_TILE) + 0.02)
+#define GRASS_BLADE_MAX_HEIGHT  (-10) /* in "vpixels" */
 
 const int TILE_TEX_SIZE = 1.0f;
 const float PHYSICS_EPSILION = 0.0345;
@@ -51,6 +54,13 @@ struct tilemap_sample_interval {
     int min_y;
     int max_x;
     int max_y;
+};
+
+/* these are animated separately*/
+/* grass tiles only plant on up facing tiles for now. */
+struct grass_tile {
+    int32_t x; 
+    int32_t y;
 };
 
 struct tile {
@@ -111,8 +121,11 @@ struct tilemap {
     */
     uint32_t foreground_tile_count;
     uint32_t background_tile_count;
+    uint32_t grass_tile_count;
+
     struct tile* foreground_tiles;
     struct tile* background_tiles;
+    struct grass_tile* animated_grass_tiles;
 
     uint8_t transition_zone_count;
     uint8_t player_spawn_link_count;
@@ -233,6 +246,23 @@ float tile_get_slope_height(struct tile* t, float x, float w, float h) {
 void draw_player_spawn(struct player_spawn* spawn) {
     draw_rectangle(spawn->x, spawn->y, 1, 2, COLOR4F_GREEN);
     draw_filled_rectangle(spawn->x+0.5-0.125, spawn->y+2, 0.25, 0.25, COLOR4F_WHITE);
+}
+
+/* should seed these from a random number generator to make them look okay? */
+void draw_grass_tiles(struct grass_tile* tiles, size_t count, union color4f color) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct grass_tile* t = &tiles[index];
+
+        /* ignore direction for now. */
+        for (unsigned blade_index = 0; blade_index < GRASS_DENSITY_PER_TILE; ++blade_index) {
+            int blade_x = t->x + blade_index * (GRASS_BLADE_WIDTH);
+            int blade_y = t->y + 1;
+
+            draw_bresenham_filled_rectangle_line(blade_x, blade_y,
+                                                 0, 0, 5 + normalized_sinf(global_elapsed_time * 45 * (blade_index/4.0f)) * 3.0f,
+                                                 GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, color);
+        }
+    }
 }
 
 void draw_tiles(struct tile* tiles, size_t count, union color4f color) {
