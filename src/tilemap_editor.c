@@ -1,6 +1,7 @@
 #include "memory_arena.h"
-#define EDITOR_TILE_MAX_COUNT (32768)
-#define EDITOR_TRANSITIONS_MAX_COUNT (64)
+#define EDITOR_TILE_GRASS_MAX_COUNT   (16384)
+#define EDITOR_TILE_MAX_COUNT         (32768)
+#define EDITOR_TRANSITIONS_MAX_COUNT  (64)
 #define EDITOR_PLAYER_SPAWN_MAX_COUNT (EDITOR_TRANSITIONS_MAX_COUNT)
 
 /*
@@ -31,6 +32,7 @@ struct editable_tilemap {
 
     uint32_t foreground_tile_count;
     uint32_t background_tile_count;
+    uint32_t grass_tile_count;
 
     float bounds_min_x;
     float bounds_min_y;
@@ -38,11 +40,12 @@ struct editable_tilemap {
     float bounds_max_y;
 
     struct player_spawn_link* player_spawn_links;
-    struct tile* tiles;
-    struct tile* foreground_tiles;
-    struct tile* background_tiles;
-    struct transition_zone* transitions;
-    struct player_spawn default_spawn;
+    struct tile*              tiles;
+    struct tile*              foreground_tiles;
+    struct tile*              background_tiles;
+    struct grass_tile*        grass_tiles;
+    struct transition_zone*   transitions;
+    struct player_spawn       default_spawn;
 };
 enum editor_tool_mode {
     EDITOR_TOOL_PAINT_TILE,
@@ -70,6 +73,7 @@ struct editor_text_edit {
 };
 struct editor_state {
     struct memory_arena arena;
+    bool initialized;
 
     float editor_tool_change_fade_timer;
     /*
@@ -80,6 +84,7 @@ struct editor_state {
 
     enum editor_tool_mode tool;
     enum editor_tile_layer editting_tile_layer;
+    bool painting_grass;
 
     void* context; /*depends on mode*/
     struct editor_text_edit text_edit;
@@ -112,38 +117,49 @@ local void editor_open_text_edit_prompt(char* prompt_name, char* target_buffer, 
 }
 
 local struct tile* editor_allocate_block(void) {
-    switch (editor.editting_tile_layer) {
-        case TILE_LAYER_FOREGROUND: {
-            assert(editor.tilemap.foreground_tile_count < EDITOR_TILE_MAX_COUNT && "overrun foreground tiles?");
-            return &editor.tilemap.foreground_tiles[editor.tilemap.foreground_tile_count++];
-        } break;
-        case TILE_LAYER_BACKGROUND: {
-            assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT && "overrun background tiles?");
-            return &editor.tilemap.background_tiles[editor.tilemap.background_tile_count++];
-        } break;
-        case TILE_LAYER_PLAYABLE: {
-            assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT && "overrun playable tiles?");
-            return &editor.tilemap.tiles[editor.tilemap.tile_count++];
-        } break;
+    if (editor.painting_grass) {
+        assert(editor.tilemap.grass_tile_count < EDITOR_TILE_GRASS_MAX_COUNT && "overrun grass tiles?");
+        return &editor.tilemap.grass_tiles[editor.tilemap.grass_tile_count++];
+    } else {
+        switch (editor.editting_tile_layer) {
+            case TILE_LAYER_FOREGROUND: {
+                assert(editor.tilemap.foreground_tile_count < EDITOR_TILE_MAX_COUNT && "overrun foreground tiles?");
+                return &editor.tilemap.foreground_tiles[editor.tilemap.foreground_tile_count++];
+            } break;
+            case TILE_LAYER_BACKGROUND: {
+                assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT && "overrun background tiles?");
+                return &editor.tilemap.background_tiles[editor.tilemap.background_tile_count++];
+            } break;
+            case TILE_LAYER_PLAYABLE: {
+                assert(editor.tilemap.tile_count < EDITOR_TILE_MAX_COUNT && "overrun playable tiles?");
+                return &editor.tilemap.tiles[editor.tilemap.tile_count++];
+            } break;
+        }
     }
+
 
     return NULL;
 }
 
 local editor_select_appropriate_tile_array(struct tile** tiles, size_t* count) {
-    switch (editor.editting_tile_layer) {
-        case TILE_LAYER_FOREGROUND: {
-            *count = editor.tilemap.foreground_tile_count;
-            *tiles = editor.tilemap.foreground_tiles;
-        } break;
-        case TILE_LAYER_BACKGROUND: {
-            *count = editor.tilemap.background_tile_count;
-            *tiles = editor.tilemap.background_tiles;
-        } break;
-        case TILE_LAYER_PLAYABLE: {
-            *count = editor.tilemap.tile_count;
-            *tiles = editor.tilemap.tiles;
-        } break;
+    if (editor.painting_grass) {
+        *count = editor.tilemap.grass_tile_count;
+        *tiles = editor.tilemap.grass_tiles;
+    } else {
+        switch (editor.editting_tile_layer) {
+            case TILE_LAYER_FOREGROUND: {
+                *count = editor.tilemap.foreground_tile_count;
+                *tiles = editor.tilemap.foreground_tiles;
+            } break;
+            case TILE_LAYER_BACKGROUND: {
+                *count = editor.tilemap.background_tile_count;
+                *tiles = editor.tilemap.background_tiles;
+            } break;
+            case TILE_LAYER_PLAYABLE: {
+                *count = editor.tilemap.tile_count;
+                *tiles = editor.tilemap.tiles;
+            } break;
+        }
     }
 } 
 
@@ -197,7 +213,10 @@ struct tile* existing_block_at(struct tile* tiles, int tile_count, int grid_x, i
     for (unsigned index = 0; index < tile_count; ++index) {
         struct tile* t = tiles + index;
 
-        if (t->id == TILE_NONE) continue;
+        if (!editor.painting_grass) {
+            if (t->id == TILE_NONE) continue;  
+        } 
+
         if (t->x == grid_x && t->y == grid_y) {
             return t;
         }
@@ -385,29 +404,51 @@ local void editor_copy_selected_tile_region(struct memory_arena* arena) {
 }
 
 local void editor_try_to_place_block(int grid_x, int grid_y) {
-    struct tile* tile;
+    if (editor.painting_grass) {
+        struct tile* tile;
+        
+        tile = existing_block_at(editor.tilemap.grass_tiles, editor.tilemap.grass_tile_count, grid_x, grid_y);
+        if (!tile) tile = editor_allocate_block();
+        
+        tile->x = grid_x;
+        tile->y = grid_y;
+    } else {
+        struct tile* tile;
 
-    switch (editor.editting_tile_layer) {
-        case TILE_LAYER_FOREGROUND: {
-            tile = existing_block_at(editor.tilemap.foreground_tiles, editor.tilemap.foreground_tile_count, grid_x, grid_y);
-        } break;
-        case TILE_LAYER_BACKGROUND: {
-            tile = existing_block_at(editor.tilemap.background_tiles, editor.tilemap.background_tile_count, grid_x, grid_y);
-        } break;
-        case TILE_LAYER_PLAYABLE: {
-            tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
-        } break;
+        switch (editor.editting_tile_layer) {
+            case TILE_LAYER_FOREGROUND: {
+                tile = existing_block_at(editor.tilemap.foreground_tiles, editor.tilemap.foreground_tile_count, grid_x, grid_y);
+            } break;
+            case TILE_LAYER_BACKGROUND: {
+                tile = existing_block_at(editor.tilemap.background_tiles, editor.tilemap.background_tile_count, grid_x, grid_y);
+            } break;
+            case TILE_LAYER_PLAYABLE: {
+                tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
+            } break;
+        }
+
+        if (!tile) tile = editor_allocate_block();
+
+        tile->x = grid_x;
+        tile->y = grid_y;
+
+        tile->id = editor.placement_type;
     }
 
-    if (!tile) tile = editor_allocate_block();
-
-    tile->x = grid_x;
-    tile->y = grid_y;
-
-    tile->id = editor.placement_type;
 }
 
 local void editor_erase_block(int grid_x, int grid_y) {
+    if (editor.painting_grass) {
+        for (unsigned to_remove = 0; to_remove < editor.tilemap.grass_tile_count; ++to_remove) {
+            struct grass_tile* t = editor.tilemap.grass_tiles + to_remove;
+
+            if (t->x == grid_x && t->y == grid_y) {
+                editor.tilemap.grass_tiles[to_remove] = editor.tilemap.grass_tiles[--editor.tilemap.grass_tile_count];
+                return;
+            }
+        }
+    }
+
     struct tile* tile = NULL;
 
     switch (editor.editting_tile_layer) {
@@ -443,14 +484,19 @@ local void editor_clear_all(void) {
 }
 
 local void load_tilemap_editor_resources(void) {
-    editor.arena = allocate_memory_arena(Megabyte(4));
-    editor.arena.name = "Editor Arena";
+    if (!editor.initialized) {
+        editor.arena = allocate_memory_arena(Megabyte(16));
+        editor.arena.name = "Editor Arena";
 
-    editor.tilemap.tiles            = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
-    editor.tilemap.foreground_tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
-    editor.tilemap.background_tiles = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT * sizeof(*editor.tilemap.tiles));
-    editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT * sizeof(*editor.tilemap.transitions));
-    editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
+        editor.tilemap.tiles              = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT         * sizeof(*editor.tilemap.tiles));
+        editor.tilemap.foreground_tiles   = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT         * sizeof(*editor.tilemap.tiles));
+        editor.tilemap.background_tiles   = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT         * sizeof(*editor.tilemap.tiles));
+        editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT  * sizeof(*editor.tilemap.transitions));
+        editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
+        editor.tilemap.grass_tiles        = memory_arena_push(&editor.arena, EDITOR_TILE_GRASS_MAX_COUNT   * sizeof(*editor.tilemap.grass_tiles));
+
+        editor.initialized = true;
+    }
 }
 
 local void editor_serialize(struct binary_serializer* serializer) {
@@ -552,6 +598,9 @@ local void editor_switch_tool(enum editor_tool_mode mode) {
 }
 
 local void tilemap_editor_update_render_frame(float dt) {
+    /* lazy init to avoid hogging resources */
+    load_tilemap_editor_resources();
+
     float scale_factor = editor_camera.render_scale;
     struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(600));
 
@@ -642,6 +691,8 @@ local void tilemap_editor_update_render_frame(float dt) {
                     union color4f color = active_colorscheme.primary;
                     draw_texture(tile_textures[t->id], t->x, t->y, 1, 1, color);
                 } 
+
+                draw_grass_tiles(editor.tilemap.grass_tiles, editor.tilemap.grass_tile_count, active_colorscheme.primary);
 
                 for (unsigned index = 0; index < editor.tilemap.foreground_tile_count; ++index) {
                     struct tile* t = &foreground_tiles[index];
@@ -778,22 +829,34 @@ local void tilemap_editor_update_render_frame(float dt) {
 local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_arena, float dt) {
     float scale_factor = editor_camera.render_scale;
 
+    if (is_key_pressed(KEY_G)) {
+        Toggle_Boolean(editor.painting_grass);
+    }
+
     if (is_key_pressed(KEY_UP)) {
         editor.editting_tile_layer++;
     } else if (is_key_pressed(KEY_DOWN)) {
         editor.editting_tile_layer--;
     }
 
-    if (editor.editting_tile_layer <= TILE_LAYER_PLAYABLE) editor.editting_tile_layer = TILE_LAYER_PLAYABLE;
-    else if (editor.editting_tile_layer >= TILE_LAYER_FOREGROUND) editor.editting_tile_layer = TILE_LAYER_FOREGROUND;
+    if (!editor.painting_grass) {
+        if (editor.editting_tile_layer <= TILE_LAYER_PLAYABLE)        editor.editting_tile_layer = TILE_LAYER_PLAYABLE;
+        else if (editor.editting_tile_layer >= TILE_LAYER_FOREGROUND) editor.editting_tile_layer = TILE_LAYER_FOREGROUND;
 
-    if (is_key_pressed(KEY_RIGHT)) {
-        editor.placement_type++;
-    } else if (is_key_pressed(KEY_LEFT)) {
-        editor.placement_type--;
+        if (is_key_pressed(KEY_RIGHT)) {
+            editor.placement_type++;
+        } else if (is_key_pressed(KEY_LEFT)) {
+            editor.placement_type--;
+        }
     }
 
-    {
+    if (editor.painting_grass) {
+        /* 
+           NOTE(jerry):
+           Disallow region selection of grass. It just doesn't transport the same way.
+         */
+        editor_end_selection_region();
+    } else {
         if (is_key_pressed(KEY_ESCAPE)) {
             editor_end_selection_region();
         }
@@ -878,9 +941,20 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
                           ((sinf(global_elapsed_time*4) + 1)/2.0f) * 2.f + 1.f, COLOR4F_BLUE);
             }
 
-            draw_texture(tile_textures[editor.placement_type],
-                         mouse_position[0], mouse_position[1], 1, 1,
-                         color4f(1, 1, 1, 0.5 + 0.5 * ((sinf(global_elapsed_time) + 1) / 2.0f)));
+            if (editor.painting_grass) {
+                for (unsigned blade_index = 0; blade_index < GRASS_DENSITY_PER_TILE; ++blade_index) {
+                    int blade_x = mouse_position[0] + blade_index * (GRASS_BLADE_WIDTH);
+                    int blade_y = mouse_position[1] + 1;
+
+                    draw_bresenham_filled_rectangle_line(blade_x, blade_y,
+                                                         0, 0, 5 + normalized_sinf(global_elapsed_time * 45 * (blade_index/4.0f)) * 3.0f,
+                                                         GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, active_colorscheme.primary_foreground);
+                }
+            } else {
+                draw_texture(tile_textures[editor.placement_type],
+                             mouse_position[0], mouse_position[1], 1, 1,
+                             color4f(1, 1, 1, 0.5 + 0.5 * ((sinf(global_elapsed_time) + 1) / 2.0f)));
+            }
 
             if (left_click) {
                 editor_try_to_place_block(mouse_position[0], mouse_position[1]);
@@ -894,16 +968,20 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
         int mouse_position[2];
         get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
 
-        draw_text(test_font, 0, 0, format_temp("tiles present: %d\n", editor.tilemap.tile_count), active_colorscheme.text);
+        if (!editor.painting_grass) {
+            draw_text(test_font, 0, 0, format_temp("tiles present: %d\n", editor.tilemap.tile_count), active_colorscheme.text);
 
-        /*"tool" bar*/
-        {
-            float font_height = font_size_aspect_ratio_independent(0.03);
-            int frame_pad = 3;
-            int frame_size = font_height+frame_pad;
-            draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, COLOR4F_WHITE);
-            draw_text(test_font, frame_size * 1.5, font_height, tile_type_strings[editor.placement_type], active_colorscheme.text);
-            draw_text(test_font, frame_size * 1.5, font_height*2, editor_tile_layer_strings[editor.editting_tile_layer], active_colorscheme.text);
+            /*"tool" bar*/
+            {
+                float font_height = font_size_aspect_ratio_independent(0.03);
+                int frame_pad = 3;
+                int frame_size = font_height+frame_pad;
+                draw_texture(tile_textures[editor.placement_type], frame_pad, font_height+frame_pad, frame_size, frame_size, COLOR4F_WHITE);
+                draw_text(test_font, frame_size * 1.5, font_height, tile_type_strings[editor.placement_type], active_colorscheme.text);
+                draw_text(test_font, frame_size * 1.5, font_height*2, editor_tile_layer_strings[editor.editting_tile_layer], active_colorscheme.text);
+            }
+        } else {
+            draw_text(test_font, 0, 0, format_temp("grass present: %d\n", editor.tilemap.grass_tile_count), active_colorscheme.text);
         }
     } end_graphics_frame();
 }

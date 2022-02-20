@@ -153,6 +153,7 @@ local void game_update_render_frame(float dt) {
         draw_all_particle_systems(particle_interpolation_value);
         {
             draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
+            draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
         }
         for (int i = 0; i < 5; ++i) {

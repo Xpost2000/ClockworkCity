@@ -56,13 +56,6 @@ struct tilemap_sample_interval {
     int max_y;
 };
 
-/* these are animated separately*/
-/* grass tiles only plant on up facing tiles for now. */
-struct grass_tile {
-    int32_t x; 
-    int32_t y;
-};
-
 struct tile {
     /*tiles will store relative positions (in the case of moving tile islands)*/
     /*this is redundant, but this'll allow me to use a different storage method if I want.*/
@@ -70,6 +63,18 @@ struct tile {
     int32_t x;
     int32_t y;
     uint32_t id;
+};
+
+/* NOTE(jerry):
+   cleverly arranged so we can use it polymorphically with struct tile* functions.
+   
+   Debatable reason to separate it but I'd rather not have an additional special case...
+*/
+/* these are animated separately*/
+/* grass tiles only plant on up facing tiles for now. */
+struct grass_tile {
+    int32_t x; 
+    int32_t y;
 };
 
 #define TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH (16)
@@ -125,7 +130,7 @@ struct tilemap {
 
     struct tile* foreground_tiles;
     struct tile* background_tiles;
-    struct grass_tile* animated_grass_tiles;
+    struct grass_tile* grass_tiles;
 
     uint8_t transition_zone_count;
     uint8_t player_spawn_link_count;

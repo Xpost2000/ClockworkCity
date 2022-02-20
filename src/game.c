@@ -198,7 +198,6 @@ local void load_static_resources(void) {
 
     use_colorscheme("MonoDefault0");
 
-    load_tilemap_editor_resources();
     gameplay_initialize();
     console_execute_cstr("load 1.lvl");
     /* console_execute_cstr("noclip"); */
