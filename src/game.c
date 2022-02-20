@@ -269,6 +269,10 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
     if (version_id >= 2) {
         Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u32, game_state->loaded_level->foreground_tile_count, game_state->loaded_level->foreground_tiles);
         Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u32, game_state->loaded_level->background_tile_count, game_state->loaded_level->background_tiles);
+
+        if (version_id >= 3) {
+            Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u32, game_state->loaded_level->grass_tile_count, game_state->loaded_level->grass_tiles);
+        }
     }
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->transition_zone_count, game_state->loaded_level->transitions);
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->player_spawn_link_count, game_state->loaded_level->link_spawns);

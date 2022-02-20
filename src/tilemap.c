@@ -1,7 +1,7 @@
-#define TILEMAP_CURRENT_VERSION (2) 
+#define TILEMAP_CURRENT_VERSION (3) 
 #define GRASS_DENSITY_PER_TILE  (5) /* in blades */
 #define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
-#define GRASS_BLADE_MAX_HEIGHT  (16) /* in "vpixels" */
+#define GRASS_BLADE_MAX_HEIGHT  (8) /* in "vpixels" */
 
 const int TILE_TEX_SIZE = 1.0f;
 const float PHYSICS_EPSILION = 0.0345;

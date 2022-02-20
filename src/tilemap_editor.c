@@ -518,6 +518,10 @@ local void editor_serialize(struct binary_serializer* serializer) {
     if (version_id >= 2) {
         Serialize_Fixed_Array(serializer, u32, editor.tilemap.foreground_tile_count, editor.tilemap.foreground_tiles);
         Serialize_Fixed_Array(serializer, u32, editor.tilemap.background_tile_count, editor.tilemap.background_tiles);
+
+        if (version_id >= 3) {
+            Serialize_Fixed_Array(serializer, u32, editor.tilemap.grass_tile_count, editor.tilemap.grass_tiles);
+        }
     }
     Serialize_Fixed_Array(serializer, u8, editor.tilemap.transition_zone_count, editor.tilemap.transitions);
     Serialize_Fixed_Array(serializer, u8, editor.tilemap.player_spawn_link_count, editor.tilemap.player_spawn_links);
