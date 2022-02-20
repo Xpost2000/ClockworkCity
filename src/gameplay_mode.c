@@ -47,6 +47,7 @@ struct entity_iterator game_state_entity_iterator(struct game_state* game_state)
 }
 
 local void DEBUG_draw_debug_stuff(void) {
+#if 1
     /*add debug rendering code here*/
 
     /*boundaries of the loaded world*/
@@ -57,6 +58,10 @@ local void DEBUG_draw_debug_stuff(void) {
 
         draw_rectangle(tilemap->bounds_min_x, tilemap->bounds_min_y,
                        bounds_width, bounds_height, COLOR4F_BLUE);
+
+        if (game_state->have_a_good_grounded_position) {
+            draw_rectangle(game_state->last_good_grounded_position_x, game_state->last_good_grounded_position_y, 0.5, 1.5, COLOR4F_RED);
+        }
     }
 
     /* Camera bounds */
@@ -68,9 +73,11 @@ local void DEBUG_draw_debug_stuff(void) {
         draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, COLOR4F_BLUE);
     }
     #endif
+#endif
 }
 
 local void DEBUG_draw_debug_ui_stuff(void) {
+#if 1
     begin_graphics_frame(NULL); {
         {
             struct entity* player = &game_state->persistent_entities[0];
@@ -81,6 +88,7 @@ local void DEBUG_draw_debug_ui_stuff(void) {
             draw_text(_console_font, 0, 0, arena_msg, COLOR4F_GREEN);
         }
     } end_graphics_frame();
+#endif
 }
 
 local void try_and_record_player_grounded_position(float dt) {
@@ -96,6 +104,7 @@ local void try_and_record_player_grounded_position(float dt) {
             game_state->last_good_grounded_position_x = (int32_t)floorf(player->x);
             game_state->last_good_grounded_position_y = (int32_t)floorf(player->y);
             game_state->last_good_grounded_position_recording_timer = LAST_GROUNDED_POSITION_RECORD_TIMER_MAX;
+            game_state->have_a_good_grounded_position = true;
         } else {
             game_state->last_good_grounded_position_recording_timer -= dt;
         }
@@ -105,6 +114,9 @@ local void try_and_record_player_grounded_position(float dt) {
 }
 
 local void restore_player_to_last_good_grounded(void) {
+    if (!game_state->have_a_good_grounded_position)
+        return;
+
     struct entity* player = &game_state->persistent_entities[0];
     player->x = game_state->last_good_grounded_position_x;
     player->y = game_state->last_good_grounded_position_y;
@@ -126,7 +138,7 @@ local void game_update_render_frame(float dt) {
 
             struct entity_iterator entities = game_state_entity_iterator(game_state);
 
-            physics_accumulation_timer += dt;
+            physics_accumulation_timer += dt * game_timescale;
             while (physics_accumulation_timer >= PHYSICS_TIMESTEP) {
                 do_entity_physics_updates(&entities, tilemap, PHYSICS_TIMESTEP);
                 physics_accumulation_timer -= PHYSICS_TIMESTEP;
@@ -136,22 +148,20 @@ local void game_update_render_frame(float dt) {
         }
         {
             struct entity_iterator entities = game_state_entity_iterator(game_state);
+            do_entity_updates(&entities, tilemap, dt * game_timescale);
+        }
+        {
+            local float particle_accumulation_timer = 0;
+            const int PARTICLES_FRAMERATE = 30;
+            const float PARTICLES_TIMESTEP = 1.0f / (float)(PARTICLES_FRAMERATE);
 
-            do_entity_updates(&entities, tilemap, dt);
-
-            {
-                local float particle_accumulation_timer = 0;
-                const int PARTICLES_FRAMERATE = 30;
-                const float PARTICLES_TIMESTEP = 1.0f / (float)(PARTICLES_FRAMERATE);
-
-                particle_accumulation_timer += dt;
-                while (particle_accumulation_timer >= PARTICLES_TIMESTEP) {
-                    update_all_particle_systems(game_state->loaded_level, PARTICLES_TIMESTEP);
-                    particle_accumulation_timer -= PARTICLES_TIMESTEP;
-                }
-
-                particle_interpolation_value = particle_accumulation_timer / PARTICLES_TIMESTEP;
+            particle_accumulation_timer += dt * game_timescale;
+            while (particle_accumulation_timer >= PARTICLES_TIMESTEP) {
+                update_all_particle_systems(game_state->loaded_level, PARTICLES_TIMESTEP);
+                particle_accumulation_timer -= PARTICLES_TIMESTEP;
             }
+
+            particle_interpolation_value = particle_accumulation_timer / PARTICLES_TIMESTEP;
         }
     }
 
@@ -191,6 +201,7 @@ local void game_update_render_frame(float dt) {
         switch (game_state->menu_mode) {
             case GAMEPLAY_UI_INGAME: {
                 do_gameplay_ui(gamepad, dt);
+                try_and_record_player_grounded_position(dt);
             } break;
             case GAMEPLAY_UI_MAINMENU: {
                 do_mainmenu_ui(gamepad, dt);

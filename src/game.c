@@ -13,10 +13,12 @@
 #define TILES_PER_SCREEN (22)
 #define GRAVITY_CONSTANT (20)
 
-#define LAST_GROUNDED_POSITION_RECORD_TIMER_MAX (5f) /* seconds */
+#define LAST_GROUNDED_POSITION_RECORD_TIMER_MAX (5.0f) /* seconds */
 
 local struct camera game_camera   = {};
 local struct camera editor_camera = {};
+
+local float game_timescale = 0.7;
 
 #include "colorschemes.c"
 
@@ -136,6 +138,7 @@ struct game_state {
     struct persistent_changes persistent_changes;
 
     /* use this! Then a fade out mayhaps? */
+    bool  have_a_good_grounded_position;
     float last_good_grounded_position_recording_timer;
     int   last_good_grounded_position_x;
     int   last_good_grounded_position_y;
@@ -289,6 +292,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
 void game_load_level_from_serializer(struct memory_arena* arena, struct binary_serializer* serializer, char* transition_link_to_spawn_at) {
     memory_arena_clear_top(arena);
     game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
+    game_state->have_a_good_grounded_position = false;
 
     game_serialize_level(arena, serializer);
     struct entity* player = &game_state->persistent_entities[0];
