@@ -83,6 +83,33 @@ local void DEBUG_draw_debug_ui_stuff(void) {
     } end_graphics_frame();
 }
 
+local void try_and_record_player_grounded_position(float dt) {
+    /* 
+       This should really just be based off of global elapsed time 
+       so we can just eliminate the parameter, but out of habit I do it in terms
+       of dt when I actually don't need to in this case.
+    */
+    struct entity* player = &game_state->persistent_entities[0];
+
+    if (player->onground) {
+        if (game_state->last_good_grounded_position_recording_timer <= 0) {
+            game_state->last_good_grounded_position_x = (int32_t)floorf(player->x);
+            game_state->last_good_grounded_position_y = (int32_t)floorf(player->y);
+            game_state->last_good_grounded_position_recording_timer = LAST_GROUNDED_POSITION_RECORD_TIMER_MAX;
+        } else {
+            game_state->last_good_grounded_position_recording_timer -= dt;
+        }
+    } else {
+        game_state->last_good_grounded_position_recording_timer = 0;
+    }
+}
+
+local void restore_player_to_last_good_grounded(void) {
+    struct entity* player = &game_state->persistent_entities[0];
+    player->x = game_state->last_good_grounded_position_x;
+    player->y = game_state->last_good_grounded_position_y;
+}
+
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
     struct entity* player = &game_state->persistent_entities[0];

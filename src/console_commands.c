@@ -104,6 +104,11 @@ Define_Console_Command(kill) {
     player->health        = 0; /* We'll animate based off of this state */
 }
 
+Define_Console_Command(badfall) {
+    console_printf("bad fall... restoring to last good onground position");
+    restore_player_to_last_good_grounded();
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
     console_system_register_command(&cmd_noclip);
@@ -116,4 +121,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_load);
     console_system_register_command(&cmd_use_color);
     console_system_register_command(&cmd_kill);
+    console_system_register_command(&cmd_badfall);
 }

@@ -13,6 +13,8 @@
 #define TILES_PER_SCREEN (22)
 #define GRAVITY_CONSTANT (20)
 
+#define LAST_GROUNDED_POSITION_RECORD_TIMER_MAX (5f) /* seconds */
+
 local struct camera game_camera   = {};
 local struct camera editor_camera = {};
 
@@ -132,6 +134,11 @@ struct game_state {
     uint16_t entity_count;
     struct entity             persistent_entities[PERSISTENT_ENTITY_COUNT_MAX];
     struct persistent_changes persistent_changes;
+
+    /* use this! Then a fade out mayhaps? */
+    float last_good_grounded_position_recording_timer;
+    int   last_good_grounded_position_x;
+    int   last_good_grounded_position_y;
 };
 /*
   Entity IDs are only going to be indices, I'm not currently expecting to
