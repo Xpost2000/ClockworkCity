@@ -1,6 +1,6 @@
 #define TILEMAP_CURRENT_VERSION (2) 
-#define GRASS_DENSITY_PER_TILE  (8) /* in blades */
-#define GRASS_BLADE_WIDTH       (VPIXEL_SZ) / ((GRASS_DENSITY_PER_TILE) + 0.02)
+#define GRASS_DENSITY_PER_TILE  (6) /* in blades */
+#define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE))
 #define GRASS_BLADE_MAX_HEIGHT  (-10) /* in "vpixels" */
 
 const int TILE_TEX_SIZE = 1.0f;
@@ -260,11 +260,11 @@ void draw_grass_tiles(struct grass_tile* tiles, size_t count, union color4f colo
 
         /* ignore direction for now. */
         for (unsigned blade_index = 0; blade_index < GRASS_DENSITY_PER_TILE; ++blade_index) {
-            int blade_x = t->x + blade_index * (GRASS_BLADE_WIDTH);
-            int blade_y = t->y + 1;
+            float blade_x = t->x + blade_index * (GRASS_BLADE_WIDTH);
+            float blade_y = t->y + 1;
 
             draw_bresenham_filled_rectangle_line(blade_x, blade_y,
-                                                 0, 0, 5 + normalized_sinf(global_elapsed_time * 45 * (blade_index/4.0f)) * 3.0f,
+                                                 0, 0, 5 + normalized_sinf(global_elapsed_time * 10 * (blade_index/GRASS_DENSITY_PER_TILE)) * 4.0f,
                                                  GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, color);
         }
     }

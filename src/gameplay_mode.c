@@ -156,13 +156,6 @@ local void game_update_render_frame(float dt) {
             draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
         }
-        for (int i = 0; i < 5; ++i) {
-            draw_bresenham_filled_rectangle_line(player->x + i * (VPIXEL_SZ*3), player->y,
-                                                 0, 0,
-                                                 5 + normalized_sinf(global_elapsed_time * 45 * (i/4.0f)) * 3.0f, -10,
-                                                 1.0f/(float)VPIXELS_PER_METER, COLOR4F_WHITE);
-        }
-
         DEBUG_draw_debug_stuff();
     } end_graphics_frame();
 

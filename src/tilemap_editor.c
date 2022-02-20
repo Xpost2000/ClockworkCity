@@ -943,12 +943,11 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
 
             if (editor.painting_grass) {
                 for (unsigned blade_index = 0; blade_index < GRASS_DENSITY_PER_TILE; ++blade_index) {
-                    int blade_x = mouse_position[0] + blade_index * (GRASS_BLADE_WIDTH);
-                    int blade_y = mouse_position[1] + 1;
+                    float blade_x = mouse_position[0] + blade_index * (GRASS_BLADE_WIDTH);
+                    float blade_y = mouse_position[1] + 1;
 
                     draw_bresenham_filled_rectangle_line(blade_x, blade_y,
-                                                         0, 0, 5 + normalized_sinf(global_elapsed_time * 45 * (blade_index/4.0f)) * 3.0f,
-                                                         GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, active_colorscheme.primary_foreground);
+                                                         0, 0, 0, GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, active_colorscheme.primary);
                 }
             } else {
                 draw_texture(tile_textures[editor.placement_type],
