@@ -947,7 +947,7 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
                     float blade_y = mouse_position[1] + 1;
 
                     draw_bresenham_filled_rectangle_line(blade_x, blade_y,
-                                                         0, 0, 0, GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, active_colorscheme.primary);
+                                                         0, 0, 0, -GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, active_colorscheme.primary);
                 }
             } else {
                 draw_texture(tile_textures[editor.placement_type],

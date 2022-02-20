@@ -200,6 +200,8 @@ local void load_static_resources(void) {
 
     gameplay_initialize();
     console_execute_cstr("load 1.lvl");
+
+    initialize_grass_visual_tables();
     /* console_execute_cstr("noclip"); */
 }
 /*

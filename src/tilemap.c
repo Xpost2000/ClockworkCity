@@ -1,7 +1,7 @@
 #define TILEMAP_CURRENT_VERSION (2) 
-#define GRASS_DENSITY_PER_TILE  (6) /* in blades */
-#define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE))
-#define GRASS_BLADE_MAX_HEIGHT  (-10) /* in "vpixels" */
+#define GRASS_DENSITY_PER_TILE  (5) /* in blades */
+#define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
+#define GRASS_BLADE_MAX_HEIGHT  (16) /* in "vpixels" */
 
 const int TILE_TEX_SIZE = 1.0f;
 const float PHYSICS_EPSILION = 0.0345;
@@ -138,6 +138,21 @@ struct tilemap {
     struct player_spawn_link* link_spawns;
 };
 
+#define GRASS_VISUAL_INFO_TABLE_SIZE (64)
+
+shared_storage int32_t grass_visual_height_table[GRASS_VISUAL_INFO_TABLE_SIZE]                     = {};
+shared_storage float   grass_visual_period_table[GRASS_VISUAL_INFO_TABLE_SIZE]                     = {};
+shared_storage int32_t  grass_visual_initial_horizontal_offset_table[GRASS_VISUAL_INFO_TABLE_SIZE] = {};
+
+void initialize_grass_visual_tables(void) {
+    console_printf("grass table init\n");
+    for (unsigned index = 0; index < GRASS_VISUAL_INFO_TABLE_SIZE; ++index) {
+        grass_visual_height_table[index]                    = random_ranged_integer(GRASS_BLADE_MAX_HEIGHT/2, GRASS_BLADE_MAX_HEIGHT);
+        grass_visual_period_table[index]                    = random_ranged_float(3.5, 6.284);
+        grass_visual_initial_horizontal_offset_table[index] = random_ranged_integer(4, 7);
+    }
+}
+
 void load_all_tile_assets(void) {
     for (unsigned i = TILE_NONE+1; i < TILE_ID_COUNT; ++i) {
         char* fstring = tile_id_filestrings[i];
@@ -253,7 +268,11 @@ void draw_player_spawn(struct player_spawn* spawn) {
     draw_filled_rectangle(spawn->x+0.5-0.125, spawn->y+2, 0.25, 0.25, COLOR4F_WHITE);
 }
 
-/* should seed these from a random number generator to make them look okay? */
+/*
+  NOTE(jerry):
+  Will source from a randomized table. I don't know if I have the time to make decent looking "wind".
+  It just need to not look terribly stupid and this'll probably pass the test.
+*/
 void draw_grass_tiles(struct grass_tile* tiles, size_t count, union color4f color) {
     for (unsigned index = 0; index < count; ++index) {
         struct grass_tile* t = &tiles[index];
@@ -263,9 +282,21 @@ void draw_grass_tiles(struct grass_tile* tiles, size_t count, union color4f colo
             float blade_x = t->x + blade_index * (GRASS_BLADE_WIDTH);
             float blade_y = t->y + 1;
 
+            uint32_t visual_table_index;
+            {
+                int temporary_bytes[4] = {blade_x, blade_y, blade_index, index};
+                visual_table_index = hash_bytes32(temporary_bytes, sizeof(temporary_bytes));
+            }
+            visual_table_index %= GRASS_VISUAL_INFO_TABLE_SIZE; /* please be power of two */
+
+            float period_amplitude        = grass_visual_period_table[visual_table_index];
+            int initial_horizontal_offset = grass_visual_initial_horizontal_offset_table[visual_table_index];
+            int blade_height              = -grass_visual_height_table[visual_table_index];
+
             draw_bresenham_filled_rectangle_line(blade_x, blade_y,
-                                                 0, 0, 5 + normalized_sinf(global_elapsed_time * 10 * (blade_index/GRASS_DENSITY_PER_TILE)) * 4.0f,
-                                                 GRASS_BLADE_MAX_HEIGHT, VPIXEL_SZ, color);
+                                                 0, 0,
+                                                 initial_horizontal_offset + normalized_sinf(global_elapsed_time * period_amplitude) * 5.0f,
+                                                 blade_height, VPIXEL_SZ, color);
         }
     }
 }
