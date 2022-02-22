@@ -136,6 +136,8 @@ shared_storage char* death_state_strings[] = {
     [DEATH_STATE_DYING] = "dying",
     [DEATH_STATE_DEAD] = "dead",
 };
+
+#define ENTITY_COYOTE_JUMP_TIMER_MAX (0.12)
 struct entity {
     KINEMATIC_ENTITY_BASE_BODY();
 
@@ -158,8 +160,9 @@ struct entity {
     bool dash;
     /*end temporary*/
 
-    /* player specific */
-    float jump_leniancy_timer;
+    float   coyote_jump_timer;
+    uint8_t current_jump_count;
+    uint8_t max_allowed_jump_count;
 };
 
 float entity_lerp_x(struct entity* entity, float t);

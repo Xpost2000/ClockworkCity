@@ -18,7 +18,7 @@
 local struct camera game_camera   = {};
 local struct camera editor_camera = {};
 
-local float game_timescale = 0.7;
+local float game_timescale = 1;
 
 #include "colorschemes.c"
 

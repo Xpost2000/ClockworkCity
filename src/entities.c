@@ -97,8 +97,6 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
     entity->ax = 0;
 
-    const int MAX_ACCELERATION = 30;
-
     if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
         game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_PAUSE;
@@ -117,28 +115,32 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         camera_set_focus_speed_zoom(&game_camera, 1.15);
     }
 
-    if (move_right) {
-        entity->ax = MAX_ACCELERATION;
-        entity->facing_dir = 1;
-    } else if (move_left) {
-        entity->ax = -MAX_ACCELERATION;
-        entity->facing_dir = -1;
-    }
+    /* basic movements */
+    const int MAX_ACCELERATION = 30;
+    {
+        if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
+            entity->ax = MAX_ACCELERATION * gamepad->left_stick.axes[0];
+            entity->facing_dir = (int)float_sign(entity->ax);
+        }
 
-    if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
-        entity->ax = MAX_ACCELERATION * gamepad->left_stick.axes[0];
-        entity->facing_dir = (int)float_sign(entity->ax);
-    }
-
-    if (noclip) {
-        entity->ay = 0;
-        if (fabs(gamepad->left_stick.axes[1]) >= 0.1) {
-            entity->ay = MAX_ACCELERATION * gamepad->left_stick.axes[1];
+        if (move_right) {
+            entity->ax = MAX_ACCELERATION;
+            entity->facing_dir = 1;
+        } else if (move_left) {
+            entity->ax = -MAX_ACCELERATION;
+            entity->facing_dir = -1;
         }
     }
 
-    if (roundf(entity->vy) == 0) {
-        entity->jump_leniancy_timer = 0.3;
+
+    /* debug code */
+    {
+        if (noclip) {
+            entity->ay = 0;
+            if (fabs(gamepad->left_stick.axes[1]) >= 0.1) {
+                entity->ay = MAX_ACCELERATION * gamepad->left_stick.axes[1];
+            }
+        }
     }
 
     if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
@@ -152,17 +154,38 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         }
     }
 
-    if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
-        if (entity->onground) {
-            entity->vy = -10;
-            entity->onground = false;
-        }
+    if (entity->onground) {
+        entity->coyote_jump_timer  = ENTITY_COYOTE_JUMP_TIMER_MAX;
+        entity->current_jump_count = 0;
+    } else {
+        entity->coyote_jump_timer -= dt;
     }
 
-    entity->jump_leniancy_timer -= dt;
+    if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
+        if (entity->onground || entity->coyote_jump_timer > 0 || entity->current_jump_count < entity->max_allowed_jump_count) {
+            entity->vy                  = -10;
+            entity->current_jump_count += 1;
+
+            /* jump particles */
+            if (!entity->onground) {
+                struct particle_emitter* splatter = particle_emitter_allocate();
+                splatter->x = splatter->x1 = entity->x;
+                splatter->y = splatter->y1 = entity->y + entity->h;
+                splatter->emission_rate = 0;
+                splatter->emission_count = 7;
+                splatter->max_emissions = 1;
+                splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
+                splatter->particle_max_lifetime = 1;
+            }
+
+            entity->onground            = false;
+        }
+    }
 }
 
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
+
     do_player_entity_input(entity, 0, dt);
     /* game collisions, not physics */
     /* check if I hit transition then change level */
@@ -185,6 +208,7 @@ struct entity entity_create_player(float x, float y) {
         .h = 1,
         .health = 5,
         .flags = ENTITY_FLAGS_PERMENANT,
+        .max_allowed_jump_count = 2,
     };
 
     return result;

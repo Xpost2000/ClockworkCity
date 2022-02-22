@@ -134,6 +134,7 @@ void draw_bresenham_filled_rectangle_line(float x_off, float y_off,
         if (x1 == x2 && y1 == y2) return;
 
         int old_error_x2 = 2 * error_accumulator;
+
         if (old_error_x2 >= delta_y) {
             if (x1 != x2) {
                 error_accumulator += delta_y;
