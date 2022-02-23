@@ -143,9 +143,11 @@ void camera_update(struct camera* camera, float dt) {
         }
     }
 
-    for (int index = 0; index < array_count(camera->interpolation_time); ++index) {
-        if (camera->interpolation_time[index] < 1.0) {
-            camera->interpolation_time[index] += dt * camera->interpolation_speed[index];
+    if (!camera->paused) {
+        for (int index = 0; index < array_count(camera->interpolation_time); ++index) {
+            if (camera->interpolation_time[index] < 1.0) {
+                camera->interpolation_time[index] += dt * camera->interpolation_speed[index];
+            }
         }
     }
 
@@ -161,6 +163,14 @@ void camera_reset_transform(struct camera* camera) {
     (*camera) = (struct camera) {
         .interpolation_speed[0] = 1.0, .interpolation_speed[1] = 1.0
     };
+}
+
+void camera_stop_tracking(struct camera* camera) {
+    camera->paused = true;
+}
+
+void camera_resume_tracking(struct camera* camera) {
+    camera->paused = false;
 }
 
 void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y) {

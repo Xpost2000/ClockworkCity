@@ -129,6 +129,32 @@ local int font_size_aspect_ratio_independent(float percentage) {
 #include "particle_systems.c"
 #include "persistent_state.c"
 
+/*
+  NOTE(jerry):
+  This is measured in half times.
+  
+  (Fade in & Fade out)
+*/
+#define QUEUE_LEVEL_LOAD_FADE_TIMER_MAX (1.2)
+#define QUEUE_LEVEL_LOAD_FADE_TIMER_LINGER_MAX (0.2)
+struct queued_load_level {
+    bool queued;
+    bool loaded;
+
+    struct memory_arena* arena;
+    char transition_link_to_spawn_at[TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH];
+    char filename[FILENAME_MAX_LENGTH];
+
+    float fade_timer;
+};
+
+struct queued_load_level queued_level_transition = {};
+
+local bool queued_load_level_loaded(void) {
+    return queued_level_transition.loaded;
+}
+
+
 #define PERSISTENT_ENTITY_COUNT_MAX (256)
 struct game_state {
     uint8_t menu_mode;
@@ -179,6 +205,7 @@ local struct game_state* game_state;
 
 enum game_mode mode = GAME_MODE_PLAYING;
 
+void game_queue_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
 #include "entities.c"
 #include "game_message_prompts.c"
 #include "game_menus.c"
@@ -332,10 +359,23 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
     camera_force_clamp_to_bounds(&game_camera);
 }
 
+void game_queue_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
+    /* fprintf(stderr, "before?: %s, %s\n", queued_level_transition.filename, queued_level_transition.transition_link_to_spawn_at); */
+    if (!queued_level_transition.queued) {
+        queued_level_transition.arena                       = arena;
+        strncpy(queued_level_transition.filename, filename, FILENAME_MAX_LENGTH);
+        strncpy(queued_level_transition.transition_link_to_spawn_at, transition_link_to_spawn_at, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH);
+        queued_level_transition.fade_timer                  = 0;
+        queued_level_transition.queued                      = true;
+        queued_level_transition.loaded                      = false;
+        animation_id                                        = GAME_ANIMATION_ID_CHANGE_LEVEL;
+        fprintf(stderr, "queued: %s, %s\n", queued_level_transition.filename, queued_level_transition.transition_link_to_spawn_at);
+    }
+}
+
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     struct binary_serializer file = open_read_file_serializer(filename);
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
-
     serializer_finish(&file);
 }
 

@@ -77,6 +77,7 @@ struct grass_tile {
     int32_t y;
 };
 
+/* TODO(jerry): typo */
 #define TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH (16)
 struct transition_zone {
     int32_t x;

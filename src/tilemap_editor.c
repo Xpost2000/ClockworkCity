@@ -141,7 +141,7 @@ local struct tile* editor_allocate_block(void) {
     return NULL;
 }
 
-local editor_select_appropriate_tile_array(struct tile** tiles, size_t* count) {
+local void editor_select_appropriate_tile_array(struct tile** tiles, size_t* count) {
     if (editor.painting_grass) {
         *count = editor.tilemap.grass_tile_count;
         *tiles = editor.tilemap.grass_tiles;

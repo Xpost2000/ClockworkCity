@@ -158,6 +158,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         entity->coyote_jump_timer  = ENTITY_COYOTE_JUMP_TIMER_MAX;
         entity->current_jump_count = 0;
     } else {
+        /* interesting coyote jump bug. Actually I don't even know what expected behavior should be... */
         entity->coyote_jump_timer -= dt;
     }
 
@@ -186,14 +187,19 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
 
-    do_player_entity_input(entity, 0, dt);
+    if (animation_id == GAME_ANIMATION_ID_NONE) {
+        do_player_entity_input(entity, 0, dt);
+    }
     /* game collisions, not physics */
     /* check if I hit transition then change level */
     {
+        /* NOTE(jerry): I store string pointers in the "queue"... So this has to be a pointer inside of the loop. */
         for (unsigned index = 0; index < tilemap->transition_zone_count; ++index) {
-            struct transition_zone t = (tilemap->transitions[index]);
-            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, t.x, t.y, t.w, t.h)) {
-                game_load_level(&game_memory_arena, t.zone_filename, t.zone_link);
+            struct transition_zone* t = (&tilemap->transitions[index]);
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, t->w, t->h)) {
+                game_queue_load_level(&game_memory_arena,
+                                      t->zone_filename,
+                                      t->zone_link);
                 break;
             }
         }
