@@ -80,22 +80,41 @@ typedef void (*prompt_proc)(struct game_controller* controller, float dt);
 
 /* NOTE(jerry): Example templates for prompts */
 /* simple non-pausing, time based fade */
+
+/* 
+   automatically does page fading. 
+   
+   (ONLY WORKS IF TIMER >= time_per_page),
+
+   so it results in kind of weird looking code but whatever.
+   
+   outputs alpha and whether a page advance is possible
+*/
+bool do_prompt_page_advancing(float* prompt_alpha, float time_per_page, float fade_in_time, float linger_time) {
+    /* nocheck prompt_alpha */
+    if (global_prompt_state.timer >= time_per_page) {
+        /* fade out! */
+        *prompt_alpha = interpolation_clamp((1 + linger_time)
+                                            -
+                                            (global_prompt_state.timer - (time_per_page)) / fade_in_time);
+
+        if (global_prompt_state.timer >= (time_per_page + fade_in_time)) {
+            if (*prompt_alpha <= 0.0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 Define_Prompt(DEVTEST_prompt1) {
     float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
     union color4f prompt_color = COLOR4F_BLACK;
     union color4f text_color   = COLOR4F_WHITE;
 
-    if (global_prompt_state.timer >= PROMPT_TIME_PER_PAGE_GENERIC) {
-        /* fade out! */
-        prompt_alpha = interpolation_clamp((1 + PROMPT_TIME_LINGER_TIME_GENERIC)
-                                           -
-                                           (global_prompt_state.timer - (PROMPT_TIME_PER_PAGE_GENERIC)) / PROMPT_FADE_IN_TIMER_GENERIC);
-
-        if (global_prompt_state.timer >= (PROMPT_TIME_PER_PAGE_GENERIC + PROMPT_FADE_IN_TIMER_GENERIC)) {
-            if (prompt_alpha <= 0.0) {
-                game_close_prompt();
-            }
-        }
+    if (do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC)) {
+        game_close_prompt();
     }
 
     if (game_no_prompt()) return;
