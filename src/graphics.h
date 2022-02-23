@@ -99,6 +99,9 @@ void draw_texture(texture_id texture, float x, float y, float w, float h, union 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color);
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
 void draw_text_right_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color);
+void draw_text_center_justified(font_id font, float x, float y, float w, float h, const char* cstr, union color4f color);
+void draw_text_horizontal_center_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color);
+void draw_text_vertical_center_justified(font_id font, float x, float y, float h, const char* cstr, union color4f color);
 
 #if 0
 /* I'm not adding an explicit shader api yet... */

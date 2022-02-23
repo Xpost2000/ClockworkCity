@@ -279,6 +279,21 @@ void draw_text_right_justified(font_id font, float x, float y, float w, const ch
     draw_text(font, x + (w-width), y, cstr, color);
 }
 
+void draw_text_center_justified(font_id font, float x, float y, float w, float h, const char* cstr, union color4f color) {
+    fprintf(stderr, "center justify\n");
+    unimplemented();
+}
+
+void draw_text_horizontal_center_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color) {
+    fprintf(stderr, "horizontal center justify\n");
+    unimplemented();
+}
+
+void draw_text_vertical_center_justified(font_id font, float x, float y, float h, const char* cstr, union color4f color) {
+    fprintf(stderr, "vertical center justify\n");
+    unimplemented();
+}
+
 struct image_buffer get_texture_buffer(texture_id id) {
     struct texture* texture_object = &textures[id.id];
 

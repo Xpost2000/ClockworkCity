@@ -109,6 +109,28 @@ Define_Console_Command(badfall) {
     restore_player_to_last_good_grounded();
 }
 
+Define_Console_Command(prompt) {
+    if (argument_count != 1) {
+        console_printf("provide prompt id\n");
+        return;
+    } 
+
+    struct console_system_variant promptid = parameters[0];
+
+    if (!(promptid.type & CONSOLE_VARIABLE_TYPE_NUMBER)) {
+        console_printf("id is a number\n");
+        return;
+    }
+
+    if (!(promptid.type & CONSOLE_VARIABLE_TYPE_NUMBER_INTEGER)) {
+        console_printf("id is an integer\n");
+        return;
+    }
+
+    int id = promptid.integer;
+    game_activate_prompt(id);
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
     console_system_register_command(&cmd_noclip);
@@ -122,4 +144,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_use_color);
     console_system_register_command(&cmd_kill);
     console_system_register_command(&cmd_badfall);
+    console_system_register_command(&cmd_prompt);
 }

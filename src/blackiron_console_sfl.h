@@ -1129,44 +1129,38 @@ void console_system_execute(char* line, size_t line_size) {
                 }
             }
 
-            switch (type) {
-                case CONSOLE_VARIABLE_TYPE_NUMBER: {
-                    // I'm assuming that atof and atoi actually stop at the end of a valid number
-                    if (type & CONSOLE_VARIABLE_TYPE_NUMBER_REAL) {
-                        float value = _internal_console_atof(words.word);
-                        current_parameter->real = value;
-                    } else if (type & CONSOLE_VARIABLE_TYPE_NUMBER_INTEGER) {
-                        int value = _internal_console_atoi(words.word);
-                        current_parameter->integer = value;
-                    }
-                } break;
-                case CONSOLE_VARIABLE_TYPE_STRING: {
-                    // not case insensitive.
-                    // whoops.
-                    bool is_true  = _internal_console_strncmp(words.word, "true", CONSOLE_SYSTEM_VARIABLE_STRING_SIZE) == 0;
-                    bool is_false = _internal_console_strncmp(words.word, "false", CONSOLE_SYSTEM_VARIABLE_STRING_SIZE) == 0;
+            if (type & CONSOLE_VARIABLE_TYPE_NUMBER) {
+                if (type & CONSOLE_VARIABLE_TYPE_NUMBER_REAL) {
+                    float value = _internal_console_atof(words.word);
+                    current_parameter->real = value;
+                } else if (type & CONSOLE_VARIABLE_TYPE_NUMBER_INTEGER) {
+                    int value = _internal_console_atoi(words.word);
+                    current_parameter->integer = value;
+                }
+            } else {
+                bool is_true  = _internal_console_strncmp(words.word, "true", CONSOLE_SYSTEM_VARIABLE_STRING_SIZE) == 0;
+                bool is_false = _internal_console_strncmp(words.word, "false", CONSOLE_SYSTEM_VARIABLE_STRING_SIZE) == 0;
 
-                    if (is_true || is_false) {
-                        type = CONSOLE_VARIABLE_TYPE_BOOLEAN;
+                if (is_true || is_false) {
+                    type = CONSOLE_VARIABLE_TYPE_BOOLEAN;
 
-                        bool value;
-                        // LOL, pretty sure this doesn't need to be like that but hahaha.
-                        if (is_false) {
-                            value = false;                            
-                        } else {
-                            value = true;
-                        }
-
-                        current_parameter->boolean = value;
+                    bool value;
+                    // LOL, pretty sure this doesn't need to be like that but hahaha.
+                    if (is_false) {
+                        value = false;                            
                     } else {
-                        size_t copy_length = words.word_length;
-                        if (copy_length > CONSOLE_SYSTEM_VARIABLE_STRING_SIZE) {
-                            copy_length = CONSOLE_SYSTEM_VARIABLE_STRING_SIZE;
-                        }
-
-                        strncpy(current_parameter->string, words.word, words.word_length);
+                        value = true;
                     }
-                } break;
+
+                    current_parameter->boolean = value;
+                } else {
+                    size_t copy_length = words.word_length;
+                    if (copy_length > CONSOLE_SYSTEM_VARIABLE_STRING_SIZE) {
+                        copy_length = CONSOLE_SYSTEM_VARIABLE_STRING_SIZE;
+                    }
+
+                    strncpy(current_parameter->string, words.word, words.word_length);
+                }
             }
 
             current_parameter->type = type;
