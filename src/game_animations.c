@@ -11,6 +11,7 @@
 
 local void game_animation_id_change_level(float dt) {
     const float HALF_QUEUED_LEVEL_LOAD_TIME = QUEUE_LEVEL_LOAD_FADE_TIMER_MAX/2;
+    const float TOTAL_ANIMATION_TIME = QUEUE_LEVEL_LOAD_FADE_TIMER_MAX + QUEUE_LEVEL_LOAD_FADE_TIMER_LINGER_MAX; 
     union color4f fade_color = COLOR4F_BLACK;
 
     if (queued_level_transition.fade_timer < HALF_QUEUED_LEVEL_LOAD_TIME) {
@@ -31,9 +32,14 @@ local void game_animation_id_change_level(float dt) {
         fade_color.a = interpolation_clamp(1.0 - (adjusted_time / HALF_QUEUED_LEVEL_LOAD_TIME));
     }
 
-    if (queued_level_transition.fade_timer >= QUEUE_LEVEL_LOAD_FADE_TIMER_MAX + QUEUE_LEVEL_LOAD_FADE_TIMER_LINGER_MAX) {
+
+    if (queued_level_transition.fade_timer >= TOTAL_ANIMATION_TIME) {
         queued_level_transition.queued = false;
         animation_id = GAME_ANIMATION_ID_NONE;
+        camera_resume_tracking(&game_camera);
+    }
+
+    if (queued_level_transition.fade_timer >= (0.523 * TOTAL_ANIMATION_TIME)) {
         camera_resume_tracking(&game_camera);
     } else {
         camera_stop_tracking(&game_camera);
