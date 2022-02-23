@@ -3,6 +3,8 @@
 #define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
 #define GRASS_BLADE_MAX_HEIGHT  (12) /* in "vpixels" */
 
+#define DEV
+
 const int TILE_TEX_SIZE = 1.0f;
 const float PHYSICS_EPSILION = 0.0345;
 /*these aren't really tile ids, these are more like flags/properties*/

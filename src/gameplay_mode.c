@@ -47,7 +47,7 @@ struct entity_iterator game_state_entity_iterator(struct game_state* game_state)
 }
 
 local void DEBUG_draw_debug_stuff(void) {
-#if 1
+#ifdef DEV
     /*add debug rendering code here*/
 
     /*boundaries of the loaded world*/
@@ -122,53 +122,7 @@ local void restore_player_to_last_good_grounded(void) {
     player->y = game_state->last_good_grounded_position_y;
 }
 
-/* 
-   lots of special casing for some features. This one is kind of painful to implement
-   without any actual animation infrastructure... :/
-*/
-local void do_render_game_global_animations(float dt) {
-    switch (animation_id) {
-        case GAME_ANIMATION_ID_CHANGE_LEVEL: {
-            const float HALF_QUEUED_LEVEL_LOAD_TIME = QUEUE_LEVEL_LOAD_FADE_TIMER_MAX/2;
-            union color4f fade_color = COLOR4F_BLACK;
-
-            if (queued_level_transition.fade_timer < HALF_QUEUED_LEVEL_LOAD_TIME) {
-                /* fade in */
-                float adjusted_time = queued_level_transition.fade_timer - QUEUE_LEVEL_LOAD_FADE_TIMER_LINGER_MAX;
-                fade_color.a = interpolation_clamp(adjusted_time / HALF_QUEUED_LEVEL_LOAD_TIME);
-            } else {
-                /* load here and unset everything */
-                if (!queued_load_level_loaded()) {
-                    game_load_level(queued_level_transition.arena,
-                                    queued_level_transition.filename,
-                                    queued_level_transition.transition_link_to_spawn_at);
-                    queued_level_transition.loaded = true;
-                }
-
-                /* fade out */
-                float adjusted_time = queued_level_transition.fade_timer - HALF_QUEUED_LEVEL_LOAD_TIME;
-                fade_color.a = interpolation_clamp(1.0 - (adjusted_time / HALF_QUEUED_LEVEL_LOAD_TIME));
-            }
-
-            if (queued_level_transition.fade_timer >= QUEUE_LEVEL_LOAD_FADE_TIMER_MAX + QUEUE_LEVEL_LOAD_FADE_TIMER_LINGER_MAX) {
-                queued_level_transition.queued = false;
-                animation_id = GAME_ANIMATION_ID_NONE;
-            }
-
-            begin_graphics_frame(NULL); {
-                draw_filled_rectangle(0, 0, 9999, 9999, fade_color);
-            } end_graphics_frame();
-
-            queued_level_transition.fade_timer += dt;
-        } break;
-        case GAME_ANIMATION_ID_PLAYER_DEATH: {
-            
-        } break;
-        case GAME_ANIMATION_ID_PLAYER_BADFALL: {
-            
-        } break;
-    }
-}
+#include "game_animations.c"
 
 local void game_update_render_frame(float dt) {
     struct game_controller* gamepad = get_gamepad(0);
