@@ -41,8 +41,11 @@ enum prompt_id {
 
    this should all basically be self-contained.
 */
-#define PROMPT_FADE_IN_TIMER_GENERIC (0.2)
-#define PROMPT_TIME_PER_PAGE_GENERIC (1.0)
+#define PROMPT_FADE_IN_TIMER_GENERIC (0.3)
+#define PROMPT_TIME_LINGER_TIME_GENERIC (1)
+#define PROMPT_TIME_PER_PAGE_GENERIC (1.3)
+
+#define PROMPT_TOTAL_TIME_PER_PAGE_GENERIC (PROMPT_TIME_PER_PAGE_GENERIC + PROMPT_TIME_LINGER_TIME_GENERIC + PROMPT_FADE_IN_TIMER_GENERIC)
 
 struct prompt_state {
     uint32_t id;
@@ -67,6 +70,10 @@ local void game_activate_prompt(uint32_t id) {
     global_prompt_state.timer = 0;
 }
 
+local bool game_no_prompt(void) {
+    return global_prompt_state.id == PROMPT_ID_NONE;
+}
+
 /* could use xmacros...? */
 #define Define_Prompt(name) local void name(struct game_controller* controller, float dt)
 typedef void (*prompt_proc)(struct game_controller* controller, float dt);
@@ -74,19 +81,24 @@ typedef void (*prompt_proc)(struct game_controller* controller, float dt);
 /* NOTE(jerry): Example templates for prompts */
 /* simple non-pausing, time based fade */
 Define_Prompt(DEVTEST_prompt1) {
-    console_printf("PROMPT1\n");
     float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
     union color4f prompt_color = COLOR4F_BLACK;
     union color4f text_color   = COLOR4F_WHITE;
 
     if (global_prompt_state.timer >= PROMPT_TIME_PER_PAGE_GENERIC) {
-        /* end here */
-        prompt_alpha = interpolation_clamp(1.2 - global_prompt_state.timer - (PROMPT_TIME_PER_PAGE_GENERIC));
+        /* fade out! */
+        prompt_alpha = interpolation_clamp((1 + PROMPT_TIME_LINGER_TIME_GENERIC)
+                                           -
+                                           (global_prompt_state.timer - (PROMPT_TIME_PER_PAGE_GENERIC)) / PROMPT_FADE_IN_TIMER_GENERIC);
 
-        if (prompt_alpha <= 0.0) {
-            game_close_prompt();
+        if (global_prompt_state.timer >= (PROMPT_TIME_PER_PAGE_GENERIC + PROMPT_FADE_IN_TIMER_GENERIC)) {
+            if (prompt_alpha <= 0.0) {
+                game_close_prompt();
+            }
         }
     }
+
+    if (game_no_prompt()) return;
 
     prompt_color.a = prompt_alpha * 0.6;
     text_color.a   = prompt_alpha;
@@ -115,7 +127,7 @@ local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {
 };
 
 local void update_render_game_prompt(struct game_controller* controller, float dt) {
-    if (global_prompt_state.id != PROMPT_ID_NONE) {
+    if (!game_no_prompt()) {
         prompt_proc prompt_procedure = game_prompt_update_renders[global_prompt_state.id];
 
         if (!prompt_procedure) {
