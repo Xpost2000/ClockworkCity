@@ -184,10 +184,11 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     }
 }
 
+local bool block_player_input = false;
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
 
-    if (animation_id == GAME_ANIMATION_ID_NONE) {
+    if (animation_id == GAME_ANIMATION_ID_NONE && !block_player_input) {
         do_player_entity_input(entity, 0, dt);
     }
     /* game collisions, not physics */

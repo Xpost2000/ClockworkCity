@@ -93,6 +93,27 @@ void get_text_dimensions(font_id font, const char* cstr, int* width, int* height
     safe_assignment(height) = max_height;
 }
 
+/*
+  NOTE(jerry):
+  I know this is technically wrong, but I only need this for layout purposes.
+  This isn't actually the codepoint dimensions as per glyph metrics.
+*/
+void get_codepoint_dimensions(font_id font, uint32_t codepoint, int* width, int* height) {
+    assert((font.id > 0 && font.id < RENDERER_MAX_FONTS+1) && "wtf? bad font id??");
+    TTF_Font* font_object = fonts[font.id].font_object;
+
+    int _width;
+    int _height = TTF_FontHeight(font_object);
+    {
+        int advance;
+        TTF_GlyphMetrics(font_object, codepoint, 0,0,0,0, &advance);
+        _width = advance;
+    }
+
+    safe_assignment(width) = _width;
+    safe_assignment(height) = _height;
+}
+
 void unload_all_textures(void) {
     for (unsigned index = texture_count; index != 0; --index) {
         unload_texture((texture_id){ .id = index });

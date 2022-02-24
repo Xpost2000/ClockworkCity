@@ -21,12 +21,48 @@
   could just be turned into a file format.
   
   It's way easier to just code it as data.
+  
+  NOTE(jerry):
+  I have no idea how I managed to come up an inane way of producing slide-show prompts.
+  If I still wanted to retain similar behavior honestly, I could just do.
+  
+  enum {
+  EFFECT_FADE_IN, EFFECT_FADE_OUT,
+  };
+  struct prompt_slide {
+  float slide_duration;
+  float effect_time;
+  int effects;
+  };
+  
+  struct prompt_slide slides[] = {
+  something_with_fade_in,
+  ... insert slides,
+  something_with_fade_out,
+  }
+  
+  int current = 0;
+  
+  get current slide, and render it's generic properties (fade in or whatever)
+  switch (current) {
+  do my thing here.
+  }
+  
+  Oh well.
 */
 enum prompt_id {
     PROMPT_ID_NONE = 0,
+    PROMPT_ID_CONTROL_SCHEME_OVERVIEW,
+/*
+  This prompt shows an overview of all controls, but there are more "in-depth" tutorials
+  when actually needed.
+*/
+    PROMPT_ID_EXPOSITION_STORY1,
+    PROMPT_ID_FIRSTDEATH_STORY2,
+    /*
+     * what it sounds like
+     */
 
-    PROMPT_ID_STANDARD_START,
-    PROMPT_ID_TUTORIAL_PROMPT_START,
 
     /* developer test prompts */
     PROMPT_ID_TEST_PROMPT = 700000,
@@ -46,6 +82,8 @@ enum prompt_id {
 #define PROMPT_TIME_PER_PAGE_GENERIC (1.3)
 
 #define PROMPT_TOTAL_TIME_PER_PAGE_GENERIC (PROMPT_TIME_PER_PAGE_GENERIC + PROMPT_TIME_LINGER_TIME_GENERIC + PROMPT_FADE_IN_TIMER_GENERIC)
+
+local font_id controls_prompt_font;
 
 struct prompt_state {
     uint32_t id;
@@ -171,17 +209,177 @@ Define_Prompt(DEVTEST_prompt3) {
 
     begin_graphics_frame(NULL); {
         draw_filled_rectangle(0, 0, 9999, 9999, prompt_color);
-        /* switch (global_prompt_state.page) { */
-        /* } */
         draw_text(test3_font, 0, 0, "Hello World", text_color);
     } end_graphics_frame();
 
 }
 
+struct control_scheme_description {
+    uint32_t button_glyph[2]; /* 2 for joystick or dpad */
+    uint32_t key;
+    char*    description;
+};
+
+/* this is really for polish reasons, not really much. */
+local struct control_scheme_description default_controls_prompt[] = {
+    {
+        .button_glyph[0] = FONT_GLYPH_DPAD_LEFT,
+        .button_glyph[1] = FONT_GLYPH_LEFT_ANALOG_LEFT,
+        .key = 'A',
+        .description = "Move Left"
+    },
+    {
+        .button_glyph[0] = FONT_GLYPH_DPAD_RIGHT,
+        .button_glyph[1] = FONT_GLYPH_LEFT_ANALOG_RIGHT,
+        .key = 'D',
+        .description = "Move Right"
+    },
+    {
+        .button_glyph[0] = FONT_GLYPH_BUTTON_A,
+        .key = FONT_GLYPH_SPACE,
+        .description = "Jump"
+    },
+    {
+        .button_glyph[0] = FONT_GLYPH_RT,
+        .key = FONT_GLYPH_SHIFT,
+        .description = "Dash & Dash Attack"
+    },
+    {
+        .button_glyph[0] = FONT_GLYPH_BUTTON_X,
+        .key = 'J',
+        .description = "Attack"
+    },
+    {
+        .button_glyph[0] = FONT_GLYPH_BUTTON_Y,
+        .key = 'R',
+        .description = "(hold) Recall"
+    },
+};
+
+Define_Prompt(prompt_control_scheme_overview) {
+    float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
+
+    const int LAST_PAGE = 0;
+    union color4f prompt_color = COLOR4F_BLACK;
+    union color4f text_color   = COLOR4F_WHITE;
+
+    do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC*3, PROMPT_FADE_IN_TIMER_GENERIC*1.4, PROMPT_TIME_LINGER_TIME_GENERIC*1.2, LAST_PAGE);
+    prompt_color.a = do_prompt_multipage_alpha(prompt_alpha, PROMPT_FADE_IN_TIMER_GENERIC*1.4, LAST_PAGE) * 0.6;
+
+    if (game_no_prompt()) return;
+
+    text_color.a   = prompt_alpha;
+
+    float y_cursor = 0;
+    begin_graphics_frame(NULL); {
+        draw_filled_rectangle(0, 0, 9999, 9999, prompt_color);
+        {
+            char* title_text = "Controls";
+            int dimens[2];
+            get_screen_dimensions(dimens, dimens+1);
+            int tdimens[2];
+            get_text_dimensions(game_title_font, title_text, tdimens, tdimens+1);
+            draw_text(game_title_font, dimens[0]/2 - tdimens[0]/2, 0, title_text, text_color);
+
+            y_cursor += tdimens[1] * 1.35;
+        }
+
+        int space_width;
+        int text_height;
+        get_text_dimensions(controls_prompt_font, " ", &space_width, &text_height);
+
+        int widest_advance = 0;
+        for (unsigned index = 0; index < array_count(default_controls_prompt); ++index) {
+            struct control_scheme_description* control_description = default_controls_prompt + index;
+            int current_widest_advance = 0;
+            if (control_description->button_glyph[0]) {
+                int advance;
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[1], &advance, 0);
+                current_widest_advance += advance * 1.1;
+            }
+
+            if (control_description->button_glyph[1]) {
+                int advance;
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[1], &advance, 0);
+                current_widest_advance += advance * 1.1;
+            }
+
+            if (widest_advance < current_widest_advance) widest_advance = current_widest_advance;
+        }
+
+        for (unsigned index = 0; index < array_count(default_controls_prompt); ++index) {
+            struct control_scheme_description* control_description = default_controls_prompt + index;
+            float x_cursor = space_width * 8;
+
+            if (control_description->button_glyph[0]) {
+                int advance;
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[1], &advance, 0);
+                draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], x_cursor, y_cursor - text_height*0.5, control_description->button_glyph[0], text_color);
+                x_cursor += advance * 1.1;
+            }
+
+            if (control_description->button_glyph[1]) {
+                int advance;
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[1], &advance, 0);
+                draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], x_cursor, y_cursor - text_height*0.5, control_description->button_glyph[1], text_color);
+                x_cursor += advance * 1.1;
+            }
+
+            x_cursor = space_width * 8 + widest_advance;
+            draw_text(controls_prompt_font, x_cursor, y_cursor, control_description->description, text_color);
+            y_cursor += text_height * 1.5;
+        }
+    } end_graphics_frame();
+}
+
+/* byebye localization efforts. */
+/* code as data? data as code? who knows anymore */
+Define_Prompt(prompt_story1) {
+    float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
+    local char* story1_prompt_text[] = {
+        "Death is a new beginning.",
+        "A fresh start.",
+        "Destroy the guardians.",
+        "Become whole.",
+        "Ascend.",
+        "Free from this unlife."
+    };
+
+    const int LAST_PAGE = array_count(story1_prompt_text)-1;
+    union color4f prompt_color = COLOR4F_BLACK;
+    union color4f text_color   = COLOR4F_WHITE;
+
+    do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC*3, PROMPT_FADE_IN_TIMER_GENERIC*1, PROMPT_TIME_LINGER_TIME_GENERIC, LAST_PAGE);
+    prompt_color.a = do_prompt_multipage_alpha(prompt_alpha, PROMPT_FADE_IN_TIMER_GENERIC*1, LAST_PAGE) * 0.85;
+
+    if (game_no_prompt()) {
+        block_player_input = false;
+        return;   
+    } else {
+        block_player_input = true;
+    }
+
+    text_color.a   = prompt_alpha;
+
+    begin_graphics_frame(NULL); {
+        draw_filled_rectangle(0, 0, 9999, 9999, prompt_color);
+        {
+            char* text = story1_prompt_text[global_prompt_state.page];
+            int dimens[2];
+            get_screen_dimensions(dimens, dimens+1);
+            int tdimens[2];
+            get_text_dimensions(game_ui_menu_font, text, tdimens, tdimens+1);
+            draw_text(game_ui_menu_font, dimens[0]/2 - tdimens[0]/2, dimens[1]/2 - tdimens[1]/2, text, text_color);
+        }
+    } end_graphics_frame();
+}
+
 local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {
-    [PROMPT_ID_TEST_PROMPT]  = DEVTEST_prompt1,
-    [PROMPT_ID_TEST1_PROMPT] = DEVTEST_prompt2,
-    [PROMPT_ID_TEST2_PROMPT] = DEVTEST_prompt3,
+    [PROMPT_ID_TEST_PROMPT]          = DEVTEST_prompt1,
+    [PROMPT_ID_TEST1_PROMPT]         = DEVTEST_prompt2,
+    [PROMPT_ID_TEST2_PROMPT]         = DEVTEST_prompt3,
+    [PROMPT_ID_CONTROL_SCHEME_OVERVIEW] = prompt_control_scheme_overview,
+    [PROMPT_ID_EXPOSITION_STORY1]       = prompt_story1,
 };
 
 local void update_render_game_prompt(struct game_controller* controller, float dt) {
@@ -198,3 +396,7 @@ local void update_render_game_prompt(struct game_controller* controller, float d
     }
 }
 
+void load_all_resources_for_prompts(void) {
+    /* TODO(jerry): fonts... Get rid of test fonts */
+    controls_prompt_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(prompt_font_sizes[PROMPT_FONT_SIZE_SMALL]* 0.7));
+}

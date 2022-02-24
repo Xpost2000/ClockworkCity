@@ -3,6 +3,7 @@ local struct particle_emitter* test_emitter2 = 0x12345;
 
 local void load_gameplay_resources(void) {
     load_all_tile_assets();
+    load_all_resources_for_prompts();
 }
 
 local void gameplay_initialize(void) {

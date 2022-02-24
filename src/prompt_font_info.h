@@ -8,7 +8,7 @@ enum prompt_font_size {
     PROMPT_FONT_SIZE_COUNT,
 };
 local const float prompt_font_sizes[PROMPT_FONT_SIZE_COUNT] = {
-    0.06*3, 0.09*3, 0.12*3,
+    0.04*3, 0.07*3, 0.10*3,
 };
 local font_id controller_prompt_font[PROMPT_FONT_SIZE_COUNT];
 
@@ -49,6 +49,12 @@ enum {
     FONT_GLYPH_BUTTON_UP    = 0x21A5,
     FONT_GLYPH_BUTTON_RIGHT = 0x21A6,
     FONT_GLYPH_BUTTON_DOWN  = 0x21A7,
+
+    FONT_GLYPH_SHIFT        = 0x2429,
+    FONT_GLYPH_TAB          = 0x242B,
+    FONT_GLYPH_ESCAPE       = 0x242F,
+    FONT_GLYPH_RETURN       = 0x242E,
+    FONT_GLYPH_SPACE        = 0x243A,
 
     /* xbox buttons */
     FONT_GLYPH_BUTTON_X = 0x21D0,

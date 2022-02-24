@@ -68,6 +68,7 @@ void get_texture_dimensions(texture_id texture, int* width, int* height);
 
 /*no _scaled version, you can just scale afterwards yourself.*/
 void get_text_dimensions(font_id font, const char* cstr, int* width, int* height); 
+void get_codepoint_dimensions(font_id font, uint32_t codepoint, int* width, int* height); 
 
 font_id    load_font(const char* font_path, int size);
 

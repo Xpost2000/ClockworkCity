@@ -174,6 +174,7 @@ local void load_graphics_resources(void) {
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", font_size_aspect_ratio_independent(0.07));
 
+    /* base kind? */
     for (unsigned index = 0; index < array_count(controller_prompt_font); ++index) {
         controller_prompt_font[index] = load_font("assets/promptfont/PromptFont.otf", font_size_aspect_ratio_independent(prompt_font_sizes[index]));
     }
