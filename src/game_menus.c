@@ -7,12 +7,6 @@
 #define GAME_TITLE_CSTR "SINGLE ASCENT"
 
 local void do_gameplay_ui(struct game_controller* controller, float dt) {
-    begin_graphics_frame(0); {
-        draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], 300, 200, FONT_GLYPH_GAMEPAD, active_colorscheme.text);
-        draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_MEDIUM], 300, 300, FONT_GLYPH_KEYBOARD, active_colorscheme.text);
-        draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_LARGE], 300, 350, FONT_GLYPH_GAMEPAD, active_colorscheme.text);
-    } end_graphics_frame();
-
     update_render_game_prompt(controller, dt);
 }
 

@@ -294,7 +294,7 @@ Define_Prompt(prompt_control_scheme_overview) {
             int current_widest_advance = 0;
             if (control_description->button_glyph[0]) {
                 int advance;
-                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[1], &advance, 0);
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[0], &advance, 0);
                 current_widest_advance += advance * 1.1;
             }
 
@@ -304,16 +304,22 @@ Define_Prompt(prompt_control_scheme_overview) {
                 current_widest_advance += advance * 1.1;
             }
 
+            if (control_description->key) {
+                int advance;
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->key, &advance, 0);
+                current_widest_advance += advance * 1.3;
+            }
+
             if (widest_advance < current_widest_advance) widest_advance = current_widest_advance;
         }
 
         for (unsigned index = 0; index < array_count(default_controls_prompt); ++index) {
             struct control_scheme_description* control_description = default_controls_prompt + index;
-            float x_cursor = space_width * 8;
+            float x_cursor = space_width * 4;
 
             if (control_description->button_glyph[0]) {
                 int advance;
-                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[1], &advance, 0);
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->button_glyph[0], &advance, 0);
                 draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], x_cursor, y_cursor - text_height*0.5, control_description->button_glyph[0], text_color);
                 x_cursor += advance * 1.1;
             }
@@ -325,7 +331,14 @@ Define_Prompt(prompt_control_scheme_overview) {
                 x_cursor += advance * 1.1;
             }
 
-            x_cursor = space_width * 8 + widest_advance;
+            if (control_description->key) {
+                int advance;
+                get_codepoint_dimensions(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], control_description->key, &advance, 0);
+                draw_codepoint(controller_prompt_font[PROMPT_FONT_SIZE_SMALL], x_cursor, y_cursor - text_height*0.5, control_description->key, text_color);
+                x_cursor += advance * 1.3;
+            }
+
+            x_cursor = space_width * 6 + widest_advance;
             draw_text(controls_prompt_font, x_cursor, y_cursor, control_description->description, text_color);
             y_cursor += text_height * 1.5;
         }
