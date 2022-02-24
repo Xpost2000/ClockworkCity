@@ -77,7 +77,7 @@ local void DEBUG_draw_debug_stuff(void) {
 }
 
 local void DEBUG_draw_debug_ui_stuff(void) {
-#if 1
+#ifdef DEV
     begin_graphics_frame(NULL); {
         {
             struct entity* player = &game_state->persistent_entities[0];

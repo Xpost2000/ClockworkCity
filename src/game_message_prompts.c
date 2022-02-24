@@ -84,22 +84,26 @@ typedef void (*prompt_proc)(struct game_controller* controller, float dt);
 /* 
    automatically does page fading. 
    
-   (ONLY WORKS IF TIMER >= time_per_page),
-
-   so it results in kind of weird looking code but whatever.
-   
-   outputs alpha and whether a page advance is possible
+   return true on page change. This allows you to handle things based on the page it just
+   went to.
 */
-bool do_prompt_page_advancing(float* prompt_alpha, float time_per_page, float fade_in_time, float linger_time) {
+bool do_prompt_page_advancing(float* prompt_alpha, float time_per_page, float fade_in_time, float linger_time, int last_page) {
     /* nocheck prompt_alpha */
     if (global_prompt_state.timer >= time_per_page) {
-        /* fade out! */
+        /* fade out! NOTE(jerry): fade in is handled else where. */
         *prompt_alpha = interpolation_clamp((1 + linger_time)
                                             -
                                             (global_prompt_state.timer - (time_per_page)) / fade_in_time);
 
         if (global_prompt_state.timer >= (time_per_page + fade_in_time)) {
             if (*prompt_alpha <= 0.0) {
+                global_prompt_state.page += 1;
+                global_prompt_state.timer = 0;
+
+                if (global_prompt_state.page > last_page) {
+                    game_close_prompt();
+                }
+
                 return true;
             }
         }
@@ -108,15 +112,31 @@ bool do_prompt_page_advancing(float* prompt_alpha, float time_per_page, float fa
     return false;
 }
 
+/* An overglorified clamp of some kind. */
+float do_prompt_multipage_alpha(float original_alpha, float fade_in_time, int last_page) {
+    if (global_prompt_state.page == 0) {
+        if (global_prompt_state.timer >= PROMPT_FADE_IN_TIMER_GENERIC) {
+            return 1.0;
+        } else {
+            return original_alpha;
+        }
+    } else if (global_prompt_state.page == last_page) {
+        if (global_prompt_state.timer <= PROMPT_FADE_IN_TIMER_GENERIC) {
+            return 1.0;
+        } else {
+            return original_alpha;
+        }
+    }
+
+    return 1.0;
+}
+
 Define_Prompt(DEVTEST_prompt1) {
     float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
     union color4f prompt_color = COLOR4F_BLACK;
     union color4f text_color   = COLOR4F_WHITE;
 
-    if (do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC)) {
-        game_close_prompt();
-    }
-
+    do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0);
     if (game_no_prompt()) return;
 
     prompt_color.a = prompt_alpha * 0.6;
@@ -136,7 +156,26 @@ Define_Prompt(DEVTEST_prompt2) {
 
 /* kind with multiple pages */
 Define_Prompt(DEVTEST_prompt3) {
-    game_close_prompt();
+    float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
+
+    const int LAST_PAGE = 1;
+    union color4f prompt_color = COLOR4F_BLACK;
+    union color4f text_color   = COLOR4F_WHITE;
+
+    do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, LAST_PAGE);
+    prompt_color.a = do_prompt_multipage_alpha(prompt_alpha, PROMPT_FADE_IN_TIMER_GENERIC, LAST_PAGE) * 0.6;
+
+    if (game_no_prompt()) return;
+
+    text_color.a   = prompt_alpha;
+
+    begin_graphics_frame(NULL); {
+        draw_filled_rectangle(0, 0, 9999, 9999, prompt_color);
+        /* switch (global_prompt_state.page) { */
+        /* } */
+        draw_text(test3_font, 0, 0, "Hello World", text_color);
+    } end_graphics_frame();
+
 }
 
 local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {

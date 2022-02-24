@@ -8,6 +8,8 @@
   
   Anyways, resolve to do auto-save since Dark Souls is cool
 */
+/* #define DEV */
+
 #define VPIXELS_PER_METER (16)
 #define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))
 #define TILES_PER_SCREEN (22)
