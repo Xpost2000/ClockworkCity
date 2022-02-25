@@ -429,6 +429,46 @@ bool entity_already_in_slope(struct tilemap* tilemap, struct entity* entity) {
     return false;
 }
 
+bool entity_hugging_wall(struct tilemap* tilemap, struct entity* entity) {
+    struct tilemap_sample_interval sample_region = tilemap_sampling_region_around_moving_entity(tilemap, entity);
+
+    float entity_center_x = entity->x + entity->w/2;
+    float entity_center_y = entity->y + entity->h/2;
+
+    int facing_dir = entity->facing_dir;
+    if (facing_dir == 0) {facing_dir = 1;}
+
+    const float RAY_LENGTH = 0.04;
+
+    for (unsigned y = sample_region.min_y; y < sample_region.max_y; ++y) {
+        for (unsigned x = sample_region.min_x; x < sample_region.max_x; ++x) {
+            struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+            if(t->id == TILE_NONE) continue;
+
+            enum intersection_edge closest_edge;
+
+            /* NOTE(jerry): weird quirk. */
+            if (facing_dir == 1) {
+                closest_edge = rectangle_closest_intersection_edge_v(entity_center_x, entity_center_y - 0.05,
+                                                                     entity->w/2 + RAY_LENGTH, 0.1, t->x, t->y, 1, 1);
+            } else {
+                closest_edge = rectangle_closest_intersection_edge_v(entity_center_x - (entity->w/2 + 0.3), entity_center_y - 0.05,
+                                                                     entity->w/2 + RAY_LENGTH, 0.1, t->x, t->y, 1, 1);
+            }
+
+            /* NOTE(jerry): technically this I can do it on right/left edges of certain slope types but whatever. */
+            if (!tile_is_slope(t)) {
+                if (closest_edge == INTERSECTION_EDGE_RIGHT ||
+                    closest_edge == INTERSECTION_EDGE_LEFT) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt, int substeps) {
     float old_x = entity->x;
     float old_vy = entity->vy;

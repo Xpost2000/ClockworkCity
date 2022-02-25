@@ -3,6 +3,10 @@
   the vast majority of their code.
 */
 
+enum movement_flags { /* eh? */
+    MOVEMENT_FLAG_ALLOW_WALL_JUMP = BIT(0), /*wall grinding*/
+};
+
 #define KINEMATIC_ENTITY_BASE_BODY()            \
     float x, last_x;                            \
     float y, last_y;                            \
@@ -13,7 +17,9 @@
     float ax;                                   \
     float ay;                                   \
     float last_vy;                              \
-    uint8_t onground
+    uint8_t movement_flags;                     \
+    uint8_t sliding_against_wall;               \
+    uint8_t onground;
 
 /* 
    To allow this to technically be "future proof", I'd actually

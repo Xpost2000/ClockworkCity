@@ -49,7 +49,23 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
     }
 
     entity->vx += entity->ax * dt;
-    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+    bool hugging = entity_hugging_wall(tilemap, entity);
+    entity->sliding_against_wall = hugging;
+
+    const float WALL_SLIDE_VELOCITY = GRAVITY_CONSTANT/7;
+    if (fabs(entity->ax) > 0 && hugging) {
+        if (entity->vy < 0) entity->vy = 0;
+        entity->vy += (entity->ay + WALL_SLIDE_VELOCITY) * dt;
+        if (entity->vy > 0) {
+            if (entity->vy > WALL_SLIDE_VELOCITY) {
+                entity->vy = WALL_SLIDE_VELOCITY;
+            }
+        }
+
+        entity->current_jump_count = 0;
+    } else {
+        entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+    }
 
     if (entity->dash) {
         entity->vx -= (entity->vx * 40 * dt);
@@ -164,14 +180,16 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     }
 
     if (is_key_pressed(KEY_SPACE) || controller_button_pressed(gamepad, BUTTON_A)) {
-        if (entity->onground || entity->coyote_jump_timer > 0 || entity->current_jump_count < entity->max_allowed_jump_count) {
+        if ((entity->onground ||
+             entity->coyote_jump_timer > 0 ||
+             entity->current_jump_count < entity->max_allowed_jump_count)) {
             entity->vy                  = -5.5;
             entity->player_variable_jump_time = PLAYER_VARIABLE_JUMP_TIME_LIMIT;
 
             entity->current_jump_count += 1;
 
             /* jump particles */
-            if (!entity->onground) {
+            if (!entity->onground && !entity->sliding_against_wall) {
                 struct particle_emitter* splatter = particle_emitter_allocate();
                 splatter->x = splatter->x1 = entity->x;
                 splatter->y = splatter->y1 = entity->y + entity->h;
@@ -259,6 +277,7 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
         if (current_entity->dash) {
             entity_record_locations_for_linger_shadows(current_entity);
         }
+        
         current_entity->linger_shadow_sample_record_timer -= dt;
 
         {
