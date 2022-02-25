@@ -175,8 +175,14 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
             entity->vy = 0;
             const int MAX_SPEED = 100;
+
+            if (entity->sliding_against_wall) {
+                entity->facing_dir *= -1;
+            }
+
             entity->vx = MAX_SPEED * entity->facing_dir;
             entity->vy = MAX_SPEED * entity->facing_dir;
+
             camera_traumatize(&game_camera, 0.0435);
             entity->dash = true;
         }
@@ -213,7 +219,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             }
 
             if (entity->sliding_against_wall) {
-                entity->apply_wall_jump_force_timer = 0.1;
+                entity->apply_wall_jump_force_timer = 0.15;
                 entity->opposite_facing_direction = -entity->facing_dir;
                 entity->facing_dir *= -1;
             }
@@ -223,8 +229,8 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     }
 
     if (entity->apply_wall_jump_force_timer > 0) {
-        entity->ax = entity->opposite_facing_direction * 85;
-        entity->vy = -7.2;
+        entity->ax = entity->opposite_facing_direction * 50;
+        entity->vy = -8;
         entity->sliding_against_wall = false;
     }
 

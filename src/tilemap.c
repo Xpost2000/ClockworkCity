@@ -438,7 +438,9 @@ bool entity_hugging_wall(struct tilemap* tilemap, struct entity* entity) {
     int facing_dir = entity->facing_dir;
     if (facing_dir == 0) {facing_dir = 1;}
 
-    const float RAY_LENGTH = 0.04;
+    const float RAY_LENGTH = 0.0589;
+    /* hahahaha, not really a ray, but whatever */
+    const float RAY_HEIGHT = 0.6;
 
     for (unsigned y = sample_region.min_y; y < sample_region.max_y; ++y) {
         for (unsigned x = sample_region.min_x; x < sample_region.max_x; ++x) {
@@ -449,11 +451,11 @@ bool entity_hugging_wall(struct tilemap* tilemap, struct entity* entity) {
 
             /* NOTE(jerry): weird quirk. */
             if (facing_dir == 1) {
-                closest_edge = rectangle_closest_intersection_edge_v(entity_center_x, entity_center_y - 0.05,
-                                                                     entity->w/2 + RAY_LENGTH, 0.1, t->x, t->y, 1, 1);
+                closest_edge = rectangle_closest_intersection_edge_v(entity_center_x, entity_center_y - (RAY_HEIGHT/2),
+                                                                     entity->w/2 + RAY_LENGTH, RAY_HEIGHT, t->x, t->y, 1, 1);
             } else {
-                closest_edge = rectangle_closest_intersection_edge_v(entity_center_x - (entity->w/2 + 0.3), entity_center_y - 0.05,
-                                                                     entity->w/2 + RAY_LENGTH, 0.1, t->x, t->y, 1, 1);
+                closest_edge = rectangle_closest_intersection_edge_v(entity_center_x - (entity->w/2 + 0.3), entity_center_y - (RAY_HEIGHT/2),
+                                                                     entity->w/2 + RAY_LENGTH, RAY_HEIGHT, t->x, t->y, 1, 1);
             }
 
             /* NOTE(jerry): technically this I can do it on right/left edges of certain slope types but whatever. */
