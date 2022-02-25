@@ -50,11 +50,21 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
 
     entity->vx += entity->ax * dt;
     bool hugging = entity_hugging_wall(tilemap, entity);
+    bool will_be_hugging_wall = false;
+    {
+        float old_x = entity->x;
+        entity->x += entity->vx * dt;
+        will_be_hugging_wall = entity_hugging_wall(tilemap, entity);
+        entity->x = old_x;
+    }
     entity->sliding_against_wall = hugging;
 
     const float WALL_SLIDE_VELOCITY = GRAVITY_CONSTANT/7;
     if (fabs(entity->ax) > 0 && hugging) {
-        if (entity->vy < 0) entity->vy = 0;
+        if (entity->vy < 0 && will_be_hugging_wall) {
+            entity->vy = 0;  
+        } 
+
         entity->vy += (entity->ay + WALL_SLIDE_VELOCITY) * dt;
         if (entity->vy > 0) {
             if (entity->vy > WALL_SLIDE_VELOCITY) {
@@ -111,7 +121,9 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
     bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
 
+
     entity->ax = 0;
+
 
     if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
@@ -189,7 +201,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             entity->current_jump_count += 1;
 
             /* jump particles */
-            if (!entity->onground && !entity->sliding_against_wall) {
+            if (!entity->onground) {
                 struct particle_emitter* splatter = particle_emitter_allocate();
                 splatter->x = splatter->x1 = entity->x;
                 splatter->y = splatter->y1 = entity->y + entity->h;
@@ -200,8 +212,20 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
                 splatter->particle_max_lifetime = 1;
             }
 
+            if (entity->sliding_against_wall) {
+                entity->apply_wall_jump_force_timer = 0.1;
+                entity->opposite_facing_direction = -entity->facing_dir;
+                entity->facing_dir *= -1;
+            }
+
             entity->onground            = false;
         }
+    }
+
+    if (entity->apply_wall_jump_force_timer > 0) {
+        entity->ax = entity->opposite_facing_direction * 85;
+        entity->vy = -7.2;
+        entity->sliding_against_wall = false;
     }
 
     if (is_key_down(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
@@ -279,6 +303,7 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
         }
         
         current_entity->linger_shadow_sample_record_timer -= dt;
+        current_entity->apply_wall_jump_force_timer       -= dt;
 
         {
             float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);

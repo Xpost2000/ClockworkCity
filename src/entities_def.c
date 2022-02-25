@@ -175,6 +175,7 @@ struct entity {
 
     /*temporary*/
     int facing_dir;
+    int opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
     bool dash;
     /*end temporary*/
 
@@ -186,6 +187,9 @@ struct entity {
     float linger_shadow_sample_record_timer;
     uint8_t                   linger_shadow_count;
     struct entity_dash_shadow linger_shadows[ENTITY_DASH_SHADOW_MAX_AMOUNT];
+
+    /* qfix */
+    float apply_wall_jump_force_timer;
 };
 
 float entity_lerp_x(struct entity* entity, float t);
