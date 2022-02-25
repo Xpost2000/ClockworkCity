@@ -146,10 +146,10 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     if (is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) >= 0.75) {
         if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
             entity->vy = 0;
-            const int MAX_SPEED = 150;
+            const int MAX_SPEED = 100;
             entity->vx = MAX_SPEED * entity->facing_dir;
             entity->vy = MAX_SPEED * entity->facing_dir;
-            camera_traumatize(&game_camera, 0.0525);
+            camera_traumatize(&game_camera, 0.0435);
             entity->dash = true;
         }
     }
@@ -230,6 +230,16 @@ struct entity entity_create_player(float x, float y) {
     return result;
 }
 
+void entity_record_locations_for_linger_shadows(struct entity* entity) {
+    if (entity->linger_shadow_count < ENTITY_DASH_SHADOW_MAX_AMOUNT && entity->linger_shadow_sample_record_timer) {
+        struct entity_dash_shadow* next_shadow = &entity->linger_shadows[entity->linger_shadow_count++];
+        next_shadow->x = entity->x;
+        next_shadow->y = entity->y;
+        next_shadow->t = ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT;
+        entity->linger_shadow_sample_record_timer = ENTITY_DASH_SHADOW_SAMPLE_RECORD_TIMER_MAX;
+    }
+}
+
 void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
     const float IMPACT_INFLUENCE_MAX_DISTANCE_SQ = 12.0f;
     struct entity* player = &game_state->persistent_entities[0];
@@ -245,6 +255,11 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
                 do_generic_entity_physics_update(current_entity, tilemap, dt);
                 break;
         }
+
+        if (current_entity->dash) {
+            entity_record_locations_for_linger_shadows(current_entity);
+        }
+        current_entity->linger_shadow_sample_record_timer -= dt;
 
         {
             float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);
@@ -285,6 +300,23 @@ void draw_all_entities(struct entity_iterator* entities, float dt, float interpo
         switch (current_entity->type) {
             case ENTITY_TYPE_PLAYER: {
                 if (current_entity->death_state == DEATH_STATE_ALIVE) {
+                    for (int shadow_index = current_entity->linger_shadow_count-1; shadow_index >= 0; --shadow_index) {
+                        struct entity_dash_shadow* shadow = current_entity->linger_shadows + shadow_index;
+
+                        union color4f shadow_color = active_colorscheme.primary;
+                        shadow_color.r /= 3;
+                        shadow_color.g /= 3;
+                        shadow_color.b /= 3;
+                        shadow_color.a = interpolation_clamp(shadow->t / ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT);
+                        shadow->t -= dt;
+
+                        draw_filled_rectangle(shadow->x, shadow->y, current_entity->w, current_entity->h, shadow_color);
+
+                        if (shadow->t <= 0.0) {
+                            current_entity->linger_shadows[shadow_index] = current_entity->linger_shadows[--current_entity->linger_shadow_count];
+                        }
+                    }
+
                     draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
                                           entity_lerp_y(current_entity, interpolation_value),
                                           current_entity->w, current_entity->h, active_colorscheme.primary);

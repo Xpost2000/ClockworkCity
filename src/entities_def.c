@@ -137,10 +137,18 @@ shared_storage char* death_state_strings[] = {
     [DEATH_STATE_DEAD] = "dead",
 };
 
-#define ENTITY_COYOTE_JUMP_TIMER_MAX        (0.12)
-#define ENTITY_STRING_IDENTIFIER_MAX_LENGTH (8) /*entity12*/ /*use for hardcoded triggers*/
-#define PLAYER_VARIABLE_JUMP_TIME_LIMIT     (0.17)
-#define PLAYER_VARIABLE_JUMP_ACCELERATION   (GRAVITY_CONSTANT*1.3)
+#define ENTITY_COYOTE_JUMP_TIMER_MAX               (0.12)
+#define ENTITY_STRING_IDENTIFIER_MAX_LENGTH        (8) /*entity12*/ /*use for hardcoded triggers*/
+#define PLAYER_VARIABLE_JUMP_TIME_LIMIT            (0.17)
+#define PLAYER_VARIABLE_JUMP_ACCELERATION          (GRAVITY_CONSTANT*1.3)
+#define ENTITY_DASH_SHADOW_MAX_AMOUNT              (32)
+#define ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT        (0.45) /*seconds*/
+#define ENTITY_DASH_SHADOW_SAMPLE_RECORD_TIMER_MAX (0.5)
+struct entity_dash_shadow {
+    /* Flat data, really mostly depends on the code for better rendering */
+    float x; float y; float t;
+};
+
 struct entity {
     KINEMATIC_ENTITY_BASE_BODY();
     char identifier[ENTITY_STRING_IDENTIFIER_MAX_LENGTH];
@@ -168,6 +176,10 @@ struct entity {
     float   player_variable_jump_time;
     uint8_t current_jump_count;
     uint8_t max_allowed_jump_count;
+
+    float linger_shadow_sample_record_timer;
+    uint8_t                   linger_shadow_count;
+    struct entity_dash_shadow linger_shadows[ENTITY_DASH_SHADOW_MAX_AMOUNT];
 };
 
 float entity_lerp_x(struct entity* entity, float t);
