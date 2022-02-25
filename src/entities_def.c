@@ -137,9 +137,13 @@ shared_storage char* death_state_strings[] = {
     [DEATH_STATE_DEAD] = "dead",
 };
 
-#define ENTITY_COYOTE_JUMP_TIMER_MAX (0.12)
+#define ENTITY_COYOTE_JUMP_TIMER_MAX        (0.12)
+#define ENTITY_STRING_IDENTIFIER_MAX_LENGTH (8) /*entity12*/ /*use for hardcoded triggers*/
+#define PLAYER_VARIABLE_JUMP_TIME_LIMIT     (0.17)
+#define PLAYER_VARIABLE_JUMP_ACCELERATION   (GRAVITY_CONSTANT*1.3)
 struct entity {
     KINEMATIC_ENTITY_BASE_BODY();
+    char identifier[ENTITY_STRING_IDENTIFIER_MAX_LENGTH];
 
     /*
       NOTE(jerry):
@@ -161,6 +165,7 @@ struct entity {
     /*end temporary*/
 
     float   coyote_jump_timer;
+    float   player_variable_jump_time;
     uint8_t current_jump_count;
     uint8_t max_allowed_jump_count;
 };

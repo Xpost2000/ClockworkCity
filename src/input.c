@@ -66,6 +66,19 @@ bool is_key_pressed(int keyid) {
     return false;
 }
 
+bool controller_button_pressed(struct game_controller* controller, uint8_t button_id) {
+    bool last    = controller->last_buttons[button_id];
+    bool current = controller->buttons[button_id];
+
+    if (last == current) {
+        return false;
+    } else if (current == true && last == false) {
+        return true;
+    }
+
+    return false;
+}
+
 struct game_controller* get_gamepad(int index) {
     assert(index >= 0 && index < array_count(global_controllers) && "Bad controller index");
     return global_controllers + index;
@@ -79,7 +92,11 @@ void end_input_frame(void) {
 
     for (unsigned index = 0; index < array_count(global_controllers); ++index) {
         struct game_controller* controller = global_controllers + index;
-        memcpy(controller->last_buttons, controller->buttons, sizeof(controller->buttons));
+
+        /* depends on the structure of game controller */
+        memcpy((char*)controller + (sizeof(*controller)/2),
+               (char*)controller,
+               sizeof(*controller)/2);
     }
     /* zero_array(global_input.current_state.keys); */
 }

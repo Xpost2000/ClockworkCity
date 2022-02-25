@@ -7,6 +7,20 @@
 #define GAME_TITLE_CSTR "SINGLE ASCENT"
 
 local void do_gameplay_ui(struct game_controller* controller, float dt) {
+    struct entity* player = &game_state->persistent_entities[0];
+    {
+        float square_size = font_size_aspect_ratio_independent(0.075);
+        float x_cursor = square_size * 1.2;
+
+        begin_graphics_frame(0); {
+            /* should be active colorshceme later */
+            for (int i = 0; i < player->health; ++i) {
+                draw_texture(ui_health_slice, x_cursor, square_size, square_size, square_size, COLOR4F_WHITE);
+                x_cursor += square_size;
+            }
+        } end_graphics_frame();
+    }
+
     update_render_game_prompt(controller, dt);
 }
 

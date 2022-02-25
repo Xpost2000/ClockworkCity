@@ -13,12 +13,14 @@ local void gameplay_initialize(void) {
     test_emitter2 = particle_emitter_allocate();
 
     {
+#if 0
         test_emitter->emission_rate = 0.001;
         test_emitter->emission_count = 8;
         test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
         test_emitter->particle_texture = particle_textures[0];
         test_emitter->particle_max_lifetime = 1;
         test_emitter->collides_with_world = true;
+#endif
     }
 
     {

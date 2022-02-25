@@ -72,11 +72,17 @@ struct game_controller_joystick {
 };
 struct game_controller {
     struct game_controller_triggers triggers;
-    uint8_t buttons[BUTTON_COUNT];
-    uint8_t last_buttons[BUTTON_COUNT];
+    uint8_t                         buttons[BUTTON_COUNT];
     struct game_controller_joystick left_stick;
     struct game_controller_joystick right_stick;
+
+    struct game_controller_triggers last_triggers;
+    uint8_t                         last_buttons[BUTTON_COUNT];
+    struct game_controller_joystick last_left_stick;
+    struct game_controller_joystick last_right_stick;
 };
+
+bool controller_button_pressed(struct game_controller* controller, uint8_t button_id);
 
 /* KEYPAD keys are left out because I have not mapped them yet. */
 shared_storage char* keyboard_key_strings[] = {

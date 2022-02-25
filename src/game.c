@@ -38,6 +38,8 @@ local font_id    test_font;
 local font_id    game_title_font;
 local font_id    game_ui_menu_font;
 
+local texture_id ui_health_slice;
+
 local font_id    test2_font;
 local font_id    test3_font;
 local sound_id   test_sound;
@@ -171,6 +173,7 @@ local void load_graphics_resources(void) {
     test_guy  = load_texture("assets/guy.png");
     _console_font  = load_font("assets/LiberationMono-Regular.ttf", 16);
     test3_font          = load_font("assets/Exoplanetaria-gxxJ5.ttf", font_size_aspect_ratio_independent(0.04));
+    ui_health_slice = load_texture("assets/ui_healthslice.png");
 
     test2_font      = load_font("assets/Exo2Medium-aDL9.ttf", font_size_aspect_ratio_independent(0.07));
 

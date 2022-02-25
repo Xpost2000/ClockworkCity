@@ -143,28 +143,31 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         }
     }
 
-    if (is_key_pressed(KEY_SHIFT) || roundf(gamepad->triggers.right) == 1.0f) {
-        if (!entity->dash) {
+    if (is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) >= 0.75) {
+        if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
             entity->vy = 0;
-            const int MAX_SPEED = 300;
+            const int MAX_SPEED = 150;
             entity->vx = MAX_SPEED * entity->facing_dir;
             entity->vy = MAX_SPEED * entity->facing_dir;
-            camera_traumatize(&game_camera, 0.0675);
+            camera_traumatize(&game_camera, 0.0525);
             entity->dash = true;
         }
     }
 
     if (entity->onground) {
-        entity->coyote_jump_timer  = ENTITY_COYOTE_JUMP_TIMER_MAX;
-        entity->current_jump_count = 0;
+        entity->coyote_jump_timer         = ENTITY_COYOTE_JUMP_TIMER_MAX;
+        entity->current_jump_count        = 0;
     } else {
         /* interesting coyote jump bug. Actually I don't even know what expected behavior should be... */
-        entity->coyote_jump_timer -= dt;
+        entity->coyote_jump_timer         -= dt;
+        entity->player_variable_jump_time -= dt;
     }
 
-    if (is_key_pressed(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
+    if (is_key_pressed(KEY_SPACE) || controller_button_pressed(gamepad, BUTTON_A)) {
         if (entity->onground || entity->coyote_jump_timer > 0 || entity->current_jump_count < entity->max_allowed_jump_count) {
-            entity->vy                  = -10;
+            entity->vy                  = -5.5;
+            entity->player_variable_jump_time = PLAYER_VARIABLE_JUMP_TIME_LIMIT;
+
             entity->current_jump_count += 1;
 
             /* jump particles */
@@ -180,6 +183,12 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             }
 
             entity->onground            = false;
+        }
+    }
+
+    if (is_key_down(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
+        if (!entity->onground && entity->player_variable_jump_time > 0) {
+            entity->vy -= PLAYER_VARIABLE_JUMP_ACCELERATION * dt;
         }
     }
 }
@@ -213,7 +222,7 @@ struct entity entity_create_player(float x, float y) {
         .type = ENTITY_TYPE_PLAYER,
         .w = (0.5),
         .h = 1,
-        .health = 5,
+        .health = 3,
         .flags = ENTITY_FLAGS_PERMENANT,
         .max_allowed_jump_count = 2,
     };

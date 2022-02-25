@@ -15,6 +15,12 @@
   emitters because emitters end up using lots of memory.
   
   There will be "emitter entities", which will be limited to the amount of particle emitters in the engine?
+  
+  NOTE(jerry):
+  I believe I want the UI to have particles as well, but this clearly wasn't designed for that.
+  Fuck.
+  
+  Worry about it later.
 */
 #define MAX_PARTICLE_EMITTER_COUNT (512) /* With the new particle storage system. GO NUTS!*/
 
