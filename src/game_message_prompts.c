@@ -347,45 +347,52 @@ Define_Prompt(prompt_control_scheme_overview) {
 
 /* byebye localization efforts. */
 /* code as data? data as code? who knows anymore */
-Define_Prompt(prompt_story1) {
-    float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC);
-    local char* story1_prompt_text[] = {
-        "Death is a new beginning.",
-        "A fresh start.",
-        "Destroy the guardians.",
-        "Become whole.",
-        "Ascend.",
-        "Free from this unlife."
-    };
 
-    const int LAST_PAGE = array_count(story1_prompt_text)-1;
-    union color4f prompt_color = COLOR4F_BLACK;
-    union color4f text_color   = COLOR4F_WHITE;
-
-    do_prompt_page_advancing(&prompt_alpha, PROMPT_TIME_PER_PAGE_GENERIC*3, PROMPT_FADE_IN_TIMER_GENERIC*1, PROMPT_TIME_LINGER_TIME_GENERIC, LAST_PAGE);
-    prompt_color.a = do_prompt_multipage_alpha(prompt_alpha, PROMPT_FADE_IN_TIMER_GENERIC*1, LAST_PAGE) * 0.85;
-
-    if (game_no_prompt()) {
-        block_player_input = false;
-        return;   
-    } else {
-        block_player_input = true;
-    }
-
-    text_color.a   = prompt_alpha;
-
-    begin_graphics_frame(NULL); {
-        draw_filled_rectangle(0, 0, 9999, 9999, prompt_color);
-        {
-            char* text = story1_prompt_text[global_prompt_state.page];
-            int dimens[2];
-            get_screen_dimensions(dimens, dimens+1);
-            int tdimens[2];
-            get_text_dimensions(game_ui_menu_font, text, tdimens, tdimens+1);
-            draw_text(game_ui_menu_font, dimens[0]/2 - tdimens[0]/2, dimens[1]/2 - tdimens[1]/2, text, text_color);
-        }
-    } end_graphics_frame();
+/* this makes me cry. */
+#define Define_Text_Based_Prompt(name, text_array, prompt_time_per_page, prompt_fade_in_timer, prompt_time_Linger_time, black_strength, blocks_player_input) Define_Prompt(name) {                                               \ 
+        float prompt_alpha = interpolation_clamp(global_prompt_state.timer / PROMPT_FADE_IN_TIMER_GENERIC); \
+    \
+    const int LAST_PAGE = array_count(text_array)-1;                    \
+    union color4f prompt_color = COLOR4F_BLACK;                         \
+    union color4f text_color   = COLOR4F_WHITE;                         \
+    \
+    do_prompt_page_advancing(&prompt_alpha, prompt_time_per_page*3, prompt_fade_in_timer*1, prompt_time_Linger_time, LAST_PAGE); \
+    prompt_color.a = do_prompt_multipage_alpha(prompt_alpha, prompt_fade_in_timer*1, LAST_PAGE) * black_strength; \
+    \
+    if (blocks_player_input) {                                          \
+        if (game_no_prompt()) {                                         \
+            block_player_input = false;                                 \
+            return;                                                     \
+        } else {                                                        \
+            block_player_input = true;                                  \
+        }                                                               \
+    }                                                                   \
+    \
+    text_color.a   = prompt_alpha;                                      \
+    \
+    begin_graphics_frame(NULL); {                                       \
+        draw_filled_rectangle(0, 0, 9999, 9999, prompt_color);          \
+        {                                                               \
+            char* text = text_array[global_prompt_state.page];          \
+            int dimens[2];                                              \
+            get_screen_dimensions(dimens, dimens+1);                    \
+            int tdimens[2];                                             \
+            get_text_dimensions(game_ui_menu_font, text, tdimens, tdimens+1); \
+            draw_text(game_ui_menu_font, dimens[0]/2 - tdimens[0]/2, dimens[1]/2 - tdimens[1]/2, text, text_color); \
+        }                                                               \
+    } end_graphics_frame();                                             \
 }
+
+local char* story1_prompt_text[] = {
+    "Death is a new beginning.",
+    "A fresh start.",
+    "Destroy the guardians.",
+    "Become whole.",
+    "Ascend.",
+    "Free from this unlife."
+};
+
+Define_Text_Based_Prompt(prompt_story1, story1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1)
 
 local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {
     [PROMPT_ID_TEST_PROMPT]          = DEVTEST_prompt1,

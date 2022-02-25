@@ -69,6 +69,9 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
         if (entity->vy > 0) {
             if (entity->vy > WALL_SLIDE_VELOCITY) {
                 entity->vy = WALL_SLIDE_VELOCITY;
+                {
+                    /* TODO(jerry): sliding grinding particles */
+                }
             }
         }
 
@@ -77,20 +80,14 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
         entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
     }
 
-    if (entity->dash) {
-        entity->vx -= (entity->vx * 40 * dt);
-    } else {
-        entity->vx -= (entity->vx * 3 * dt);
+    if (!entity->dash) {
+        entity->vx -= (entity->vx * 4 * dt);
     }
 
     const int MAX_SPEED = 500;
     if (fabs(entity->vx) > MAX_SPEED) {
         float sgn = float_sign(entity->vx);
         entity->vx = MAX_SPEED * sgn;
-    }
-
-    if (fabs(entity->vx) < (30)) {
-        entity->dash = false;
     }
 
     if (entity->dash) entity->vy = 0;
@@ -174,17 +171,26 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     if (is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) >= 0.75) {
         if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
             entity->vy = 0;
-            const int MAX_SPEED = 100;
 
             if (entity->sliding_against_wall) {
                 entity->facing_dir *= -1;
             }
 
-            entity->vx = MAX_SPEED * entity->facing_dir;
-            entity->vy = MAX_SPEED * entity->facing_dir;
+            camera_traumatize(&game_camera, 0.0375);
+            entity->dash       = true;
+            entity->dash_timer = ENTITY_DASH_TIME_MAX;
+        }
+    }
 
-            camera_traumatize(&game_camera, 0.0435);
-            entity->dash = true;
+    if (entity->dash) {
+        entity->ax = 0;
+
+        const int MAX_SPEED = (DISTANCE_PER_DASH / ENTITY_DASH_TIME_MAX);
+        entity->vx = MAX_SPEED * entity->facing_dir;
+        entity->dash_timer -= dt;
+
+        if (entity->dash_timer < 0) {
+            entity->dash = false;
         }
     }
 
@@ -279,7 +285,7 @@ struct entity entity_create_player(float x, float y) {
 }
 
 void entity_record_locations_for_linger_shadows(struct entity* entity) {
-    if (entity->linger_shadow_count < ENTITY_DASH_SHADOW_MAX_AMOUNT && entity->linger_shadow_sample_record_timer) {
+    if (entity->linger_shadow_count < ENTITY_DASH_SHADOW_MAX_AMOUNT && entity->linger_shadow_sample_record_timer < 0) {
         struct entity_dash_shadow* next_shadow = &entity->linger_shadows[entity->linger_shadow_count++];
         next_shadow->x = entity->x;
         next_shadow->y = entity->y;
@@ -307,7 +313,7 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
         if (current_entity->dash) {
             entity_record_locations_for_linger_shadows(current_entity);
         }
-        
+
         current_entity->linger_shadow_sample_record_timer -= dt;
         current_entity->apply_wall_jump_force_timer       -= dt;
 
@@ -324,6 +330,7 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
+
         if (current_entity->health <= 0)  {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
                 current_entity->death_state = DEATH_STATE_DYING;

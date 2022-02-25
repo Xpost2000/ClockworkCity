@@ -147,9 +147,11 @@ shared_storage char* death_state_strings[] = {
 #define ENTITY_STRING_IDENTIFIER_MAX_LENGTH        (8) /*entity12*/ /*use for hardcoded triggers*/
 #define PLAYER_VARIABLE_JUMP_TIME_LIMIT            (0.17)
 #define PLAYER_VARIABLE_JUMP_ACCELERATION          (GRAVITY_CONSTANT*1.3)
-#define ENTITY_DASH_SHADOW_MAX_AMOUNT              (32)
-#define ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT        (0.45) /*seconds*/
-#define ENTITY_DASH_SHADOW_SAMPLE_RECORD_TIMER_MAX (0.5)
+#define ENTITY_DASH_SHADOW_MAX_AMOUNT              (64)
+#define ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT        (0.7) /*seconds*/
+#define ENTITY_DASH_SHADOW_SAMPLE_RECORD_TIMER_MAX (0.01)
+#define DISTANCE_PER_DASH    (3)
+#define ENTITY_DASH_TIME_MAX (0.10)
 struct entity_dash_shadow {
     /* Flat data, really mostly depends on the code for better rendering */
     float x; float y; float t;
@@ -177,6 +179,7 @@ struct entity {
     int facing_dir;
     int opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
     bool dash;
+    float dash_timer; /* may phase out bool dash, since if this dash_timer > 0, implies dashing */
     /*end temporary*/
 
     float   coyote_jump_timer;
