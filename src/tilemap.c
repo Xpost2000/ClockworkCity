@@ -133,6 +133,7 @@ struct entity_placement {
     float travel_distance_x;
     float travel_distance_y;
 
+    /* not grid aligned */
     float x;
     float y;
 };

@@ -55,7 +55,10 @@ enum editor_tool_mode {
     EDITOR_TOOL_PAINT_TRANSITION,
     EDITOR_TOOL_PAINT_PLAYERSPAWN,
     EDITOR_TOOL_ESTABLISH_BOUNDS,
-    EDITOR_TOOL_PAINT_ENTITIES,
+    EDITOR_TOOL_PAINT_ENTITIES, /* 
+                                   There are submodes within this for specific typed entities? Like doors or something? If I get that far 
+                                   Honestly I'm going to see if I can get away with omitting doors, by just making movement the only gate-keeper.
+                                */
     EDITOR_TOOL_PAINT_TRIGGERS,
     EDITOR_TOOL_COUNT
 };
@@ -89,6 +92,7 @@ struct editor_state {
 
     enum editor_tool_mode tool;
     enum editor_tile_layer editting_tile_layer;
+    uint32_t painting_entity_type;
     bool painting_grass;
 
     void* context; /*depends on mode*/
@@ -597,6 +601,7 @@ local void tilemap_editor_handle_paint_tile_mode(struct memory_arena* frame_aren
 local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* frame_arena, float dt);
 local void tilemap_editor_handle_bounds_establishment(struct memory_arena* frame_arena, float dt);
+local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_arena, float dt);
 
 /* kill any state. */
 local void editor_switch_tool(enum editor_tool_mode mode) {
@@ -624,6 +629,10 @@ local void tilemap_editor_update_render_frame(float dt) {
             editor_switch_tool(EDITOR_TOOL_PAINT_PLAYERSPAWN);
         } else if (is_key_pressed(KEY_F4)) {
             editor_switch_tool(EDITOR_TOOL_ESTABLISH_BOUNDS);
+        } else if (is_key_pressed(KEY_F5)) {
+            editor_switch_tool(EDITOR_TOOL_PAINT_ENTITIES);
+        } else if (is_key_pressed(KEY_F6)) {
+            editor_switch_tool(EDITOR_TOOL_PAINT_TRIGGERS);
         }
 
         /*camera editor movement*/
@@ -783,6 +792,9 @@ local void tilemap_editor_update_render_frame(float dt) {
         } break;
         case EDITOR_TOOL_ESTABLISH_BOUNDS: {
             tilemap_editor_handle_bounds_establishment(&frame_arena, dt);
+        } break;
+        case EDITOR_TOOL_PAINT_ENTITIES: {
+            tilemap_editor_handle_paint_entities_mode(&frame_arena, dt);
         } break;
     }
 
@@ -1226,4 +1238,105 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
             } end_graphics_frame();
         }
     }
+}
+
+local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_arena, float dt) {
+    begin_graphics_frame(&editor_camera); {
+        {
+            int mouse_position[2];
+            bool left_click, right_click;
+
+            get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+            get_mouse_buttons(&left_click, 0, &right_click);
+
+#if 0
+            struct player_spawn_link* already_selected = (struct player_spawn_link*) editor.context;
+
+            if (left_click) {
+                if (already_selected) {
+                    if (!editor.dragging &&
+                        rectangle_overlapping_v(already_selected->x, already_selected->y, 1, 2, mouse_position[0], mouse_position[1], 1, 1)) {
+                        editor.dragging = true;
+                    } else if (editor.dragging) {
+                        already_selected->x = mouse_position[0];
+                        already_selected->y = mouse_position[1];
+                    }
+                } else {
+                    struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
+
+                    if (!spawn) {
+                        spawn = editor_allocate_spawn();
+                        spawn->x = mouse_position[0];
+                        spawn->y = mouse_position[1];
+                    }
+
+                    editor.context = spawn;
+                }
+            } else {
+                editor.dragging = false;
+            }
+
+            if (right_click) {
+                struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
+
+                if (spawn) {
+                    if (spawn != &editor.tilemap.default_spawn) {
+                        unsigned index = (spawn - editor.tilemap.player_spawn_links);
+                        editor.tilemap.player_spawn_links[index] = editor.tilemap.player_spawn_links[--editor.tilemap.player_spawn_link_count];
+                    }
+                } else {
+                    editor.context = NULL;
+                }
+            }
+
+            if (already_selected) {
+                if (!is_editting_text()) {
+                    if (is_key_down(KEY_1) && already_selected != &editor.tilemap.default_spawn) {
+                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->identifier));
+                    }
+                }
+                
+                draw_rectangle(already_selected->x, already_selected->y, 1, 2, color4f(0.2, 0.3, 1.0, 1.0));
+            }
+#endif
+        }
+    } end_graphics_frame();
+
+    if (is_key_pressed(KEY_UP)) {
+        editor.painting_entity_type++;
+    } else if (is_key_pressed(KEY_DOWN)) {
+        editor.painting_entity_type--;
+    }
+
+    /* disallow placing multiple players. */
+    editor.painting_entity_type = clampi(editor.painting_entity_type, ENTITY_TYPE_PLAYER+1, ENTITY_TYPE_COUNT);
+
+    begin_graphics_frame(NULL); {
+        {
+            draw_text(test_font, 0, 0,
+                      format_temp("entities present: %d\nplacement type: %s\n",
+                                  editor.tilemap.entity_placement_count,
+                                  entity_type_strings[editor.painting_entity_type]),
+                      active_colorscheme.text);
+        }
+        {
+            struct entity_placement* already_selected = (struct entity_placement*) editor.context;
+
+            if (already_selected) {
+                float font_height = font_size_aspect_ratio_independent(0.03);
+                int dimens[2];
+                get_screen_dimensions(dimens, dimens+1);
+
+                draw_text_right_justified(test_font, 0, 0, dimens[0],
+                                          format_temp("ENTITY PROPERTIES\nNAME: \"%s\"\nX: %f\nY: %f\nTYPE: %d (%s)\nFLAGS(RAW): %d\nFACING DIR: %s\n",
+                                                      already_selected->identifier,
+                                                      already_selected->x,
+                                                      already_selected->y,
+                                                      already_selected->type, entity_type_strings[already_selected->type],
+                                                      already_selected->flags,
+                                                      get_facing_direction_string(already_selected->facing_direction)),
+                                          COLOR4F_WHITE);
+            }
+        }
+    } end_graphics_frame();
 }

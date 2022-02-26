@@ -207,6 +207,14 @@ struct entity {
     /* qfix */
     float apply_wall_jump_force_timer;
 };
+shared_storage const char* get_facing_direction_string(int x) {
+    switch (x) {
+        case 1: return "right";
+        case -1: return "left";
+    }
+
+    return "?";
+}
 
 /* 
    NOTE(jerry):
