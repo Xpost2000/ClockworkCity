@@ -7,8 +7,14 @@
   final artstyle are relatively simple (monochrome "shapes", not 1 bit art per say (well characters are 1 bit art...)).
   
   Anyways, resolve to do auto-save since Dark Souls is cool
+  
+  Also this clearly doesn't follow the theme, but thankfully it's a guideline
+  since I want to stick with something safe so it has a chance of being polished,
+  not trying to make anything novel intentionally...
+  
+  NOTE(jerry): nope, the answer is no. Or very likely no.
 */
-/* #define DEV */
+#define DEV
 
 #define VPIXELS_PER_METER (16)
 #define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))

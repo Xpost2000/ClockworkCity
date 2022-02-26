@@ -147,6 +147,7 @@ shared_storage char* death_state_strings[] = {
 #define ENTITY_STRING_IDENTIFIER_MAX_LENGTH        (8) /*entity12*/ /*use for hardcoded triggers*/
 #define PLAYER_VARIABLE_JUMP_TIME_LIMIT            (0.17)
 #define PLAYER_VARIABLE_JUMP_ACCELERATION          (GRAVITY_CONSTANT*1.3)
+#define PLAYER_ATTACK_COOLDOWN_TIMER_MAX           (0.2)
 #define ENTITY_DASH_SHADOW_MAX_AMOUNT              (64)
 #define ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT        (0.7) /*seconds*/
 #define ENTITY_DASH_SHADOW_SAMPLE_RECORD_TIMER_MAX (0.01)
@@ -190,6 +191,9 @@ struct entity {
     float linger_shadow_sample_record_timer;
     uint8_t                   linger_shadow_count;
     struct entity_dash_shadow linger_shadows[ENTITY_DASH_SHADOW_MAX_AMOUNT];
+
+    /* delay per attack input. */
+    float attack_cooldown_timer;
 
     /* qfix */
     float apply_wall_jump_force_timer;

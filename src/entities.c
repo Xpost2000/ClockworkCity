@@ -51,11 +51,21 @@ local void DEBUG_draw_all_lingering_hitboxes(void) {
 }
 #endif
 
+local void hitbox_push_ignored_entity(struct hitbox* hitbox, struct entity* to_ignore) {
+    for (unsigned ignored_index = 0; ignored_index < array_count(hitbox->ignored_entities); ++ignored_index) {
+        if (hitbox->ignored_entities[ignored_index] == NULL) {
+            hitbox->ignored_entities[ignored_index] = to_ignore;
+            return;
+        }
+    }
+}
+
 /* hitbox that operates on one frame. */
 local void push_melee_hitbox(struct entity* owner,
                              float x, float y, float w, float h, int damage) {
     assert(hitbox_count < HITBOX_POOL_MAX);
     struct hitbox* new_hitbox = &hitbox_pool[hitbox_count++];
+    hitbox_push_ignored_entity(new_hitbox, owner);
 
     new_hitbox->x = x;
     new_hitbox->y = y;
@@ -168,29 +178,27 @@ void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, fl
 void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     struct game_controller* gamepad = get_gamepad(gamepad_id);
 
-    bool move_right = is_key_down(KEY_D) || gamepad->buttons[DPAD_RIGHT];
-    bool move_left  = is_key_down(KEY_A) || gamepad->buttons[DPAD_LEFT];
+    bool pause      = is_key_down(KEY_ESCAPE) || controller_button_pressed(gamepad, BUTTON_START);
+    bool move_right = is_key_down(KEY_D)    || gamepad->buttons[DPAD_RIGHT];
+    bool move_left  = is_key_down(KEY_A)    || gamepad->buttons[DPAD_LEFT];
+    bool attack     = is_key_pressed(KEY_J) || controller_button_pressed(gamepad, BUTTON_X);
+    bool jump       = is_key_pressed(KEY_SPACE) || controller_button_pressed(gamepad, BUTTON_A);
+    bool dash       = is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) >= 0.75;
 
+    /* This state, is not really stored per say. Since the
+     game doesn't need to care whether I'm technically lookin up or not?
+    Well I'll see soon*/
+    bool aiming_down = is_key_down(KEY_S) || gamepad->buttons[DPAD_DOWN] || gamepad->left_stick.axes[1] >  0.25;
+    bool aiming_up   = is_key_down(KEY_W) || gamepad->buttons[DPAD_UP]   || gamepad->left_stick.axes[1] < -0.25;
 
     entity->ax = 0;
 
 
-    if (is_key_down(KEY_ESCAPE) || (!gamepad->last_buttons[BUTTON_START] && gamepad->buttons[BUTTON_START])) {
+    if (pause) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
         game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_PAUSE;
         game_state->ingame_transition_timer[0] = INGAME_PAN_OUT_TIMER;
         game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
-    }
-
-    if (is_key_down(KEY_T)) {
-        camera_set_focus_zoom_level(&game_camera, 0.5);
-        camera_set_focus_speed_zoom(&game_camera, 0.75);
-    } else if (is_key_down(KEY_G)) {
-        camera_set_focus_zoom_level(&game_camera, 1.0);
-        camera_set_focus_speed_zoom(&game_camera, 1.15);
-    } else if (is_key_down(KEY_H)) {
-        camera_set_focus_zoom_level(&game_camera, 1.5);
-        camera_set_focus_speed_zoom(&game_camera, 1.15);
     }
 
     /* basic movements */
@@ -221,7 +229,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         }
     }
 
-    if (is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) >= 0.75) {
+    if (dash) {
         if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
             entity->vy = 0;
 
@@ -256,7 +264,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         entity->player_variable_jump_time -= dt;
     }
 
-    if (is_key_pressed(KEY_SPACE) || controller_button_pressed(gamepad, BUTTON_A)) {
+    if (jump) {
         if ((entity->onground ||
              entity->coyote_jump_timer > 0 ||
              entity->current_jump_count < entity->max_allowed_jump_count)) {
@@ -287,6 +295,36 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         }
     }
 
+    if (attack) {
+        if (entity->attack_cooldown_timer <= 0) {
+            const float HITBOX_W = 0.65;
+
+            float hitbox_x = entity->x;
+            float hitbox_y = entity->y;
+
+            int facing_dir = entity->facing_dir;
+            if (facing_dir == 0) facing_dir = 1;
+
+            if (aiming_up || aiming_down) {
+                if (aiming_up) {
+                    hitbox_y = entity->y - entity->h;
+                } else {
+                    hitbox_y = entity->y + entity->h;
+                }
+            } else {
+                if (facing_dir == 1) {
+                    hitbox_x = (entity->x + entity->w);
+                } else {
+                    hitbox_x = (entity->x) - HITBOX_W;
+                }
+            }
+
+            entity->attack_cooldown_timer = PLAYER_ATTACK_COOLDOWN_TIMER_MAX;
+            push_melee_hitbox(entity, hitbox_x, hitbox_y, HITBOX_W, entity->h, 1);
+        }
+    }
+
+
     if (entity->apply_wall_jump_force_timer > 0) {
         entity->ax = entity->opposite_facing_direction * 50;
         entity->vy = -8;
@@ -298,6 +336,8 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             entity->vy -= PLAYER_VARIABLE_JUMP_ACCELERATION * dt;
         }
     }
+
+    entity->attack_cooldown_timer -= dt;
 }
 
 local bool block_player_input = false;
