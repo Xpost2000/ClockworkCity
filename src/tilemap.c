@@ -598,6 +598,7 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                             if (t->id == TILE_SLOPE_BR) {
                                 switch (closest_edge) {
                                     case INTERSECTION_EDGE_TOP: {
+                                        printf("a???\n");
                                         entity->onground = true;
                                         entity->y        = t->y - entity->h;
                                         entity->last_vy  = old_vy;
@@ -605,6 +606,7 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                                         continue;
                                     } break;
                                     case INTERSECTION_EDGE_LEFT: {
+                                        printf("b???\n");
                                         entity->x  = t->x - entity->w;
                                         entity->vx = 0;
                                         continue;
@@ -614,6 +616,7 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                             } else if (t->id == TILE_SLOPE_BL) {
                                 switch (closest_edge) {
                                     case INTERSECTION_EDGE_TOP: {
+                                        printf("a???\n");
                                         entity->onground = true;
                                         entity->y        = t->y - entity->h;
                                         entity->last_vy  = old_vy;
@@ -621,6 +624,7 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                                         continue;
                                     } break;
                                     case INTERSECTION_EDGE_RIGHT: {
+                                        printf("b???\n");
                                         entity->x  = t->x + 1;
                                         entity->vx = 0;
                                         continue;
@@ -634,17 +638,20 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                                     entity->y = slope_snapped_location;
 
                                     if (entity_intersects_any_tiles_excluding(entity, tilemap, y * tilemap->width + x)) {
+                                        printf("1???\n");
                                         entity->x = old_x;
                                         entity->y = old_y;
                                         entity->vx = 0;
                                     }
 
                                     if (entity->vy < 0) {
+                                        printf("2???\n");
                                         entity->last_vy = old_vy;
                                         entity->vy = 0;
                                     }
                                 }
                             } else {
+                                printf("3???\n");
                                 if (closest_edge == INTERSECTION_EDGE_LEFT) {
                                     entity->x = t->x - entity->w;
                                 } else {
@@ -749,6 +756,16 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                                 entity->vy = 0;
                             }
                         } break;
+
+                        case TILE_SLOPE_BL:
+                        case TILE_SLOPE_BR: {
+                            /* hack */
+                            if ((entity->y) < t->y) {
+                                entity->onground = true;
+                                entity->last_vy = old_vy;
+                                entity->vy = 0;
+                            }
+                        } break;
                     }
                 }
             }
@@ -757,7 +774,7 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
 }
 
 void do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
-    _do_moving_entity_horizontal_collision_response(tilemap, entity, dt, 16);
+    _do_moving_entity_horizontal_collision_response(tilemap, entity, dt, 32);
 }
 
 void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {

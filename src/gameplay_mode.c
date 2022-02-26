@@ -143,7 +143,7 @@ local void game_update_render_frame(float dt) {
     if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
         {
             local float physics_accumulation_timer = 0;
-            const int PHYSICS_FRAMERATE = 300;
+            const int PHYSICS_FRAMERATE = 600;
             const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
             struct entity_iterator entities = game_state_entity_iterator(game_state);
