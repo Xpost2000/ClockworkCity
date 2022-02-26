@@ -759,8 +759,15 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
 
                         case TILE_SLOPE_BL:
                         case TILE_SLOPE_BR: {
-                            /* hack */
-                            if ((entity->y) < t->y) {
+                            /*
+                              NOTE(jerry):
+                              looks like a hack but it's actually not.
+                              I handle x and y separately, and I forget cause I handle the y part of slopes in the
+                              x part.
+                             */
+                            enum intersection_edge closest_edge = rectangle_closest_intersection_edge_v(entity->x, entity->y, entity->w, entity->h, t->x, t->y, 1, 1);
+                            if (closest_edge == INTERSECTION_EDGE_TOP) {
+                                entity->y = t->y - entity->h;
                                 entity->onground = true;
                                 entity->last_vy = old_vy;
                                 entity->vy = 0;
