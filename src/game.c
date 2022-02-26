@@ -14,6 +14,18 @@
   
   NOTE(jerry): nope, the answer is no. Or very likely no.
 */
+
+/*
+  TODO(jerry):
+  
+  - Entity Placement in the editor
+  - Spikes doing damage and also "nail" bouncing.
+  - Trigger placement for cutscenes/prompts
+  - Add "Rest" points (Soul Anchors)
+
+  Consider adding props very soon. They're technically also entities but a subtype.
+  add particle placements (allow line placement for rains!)
+ */
 #define DEV
 
 #define VPIXELS_PER_METER (16)
