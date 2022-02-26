@@ -57,6 +57,7 @@ struct image_buffer {
 union color4f color4f_lerp(union color4f a, union color4f b, float t);
 union color4f color4f(float r, float g, float b, float a);
 union color4f color4f_normalize(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+union color4f color4f_invert(union color4f base);
 union color4u8 color4u8(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 union color4u8 color4u8_from_color4f(union color4f color);
 bool within_screen_bounds(int x, int y, int w, int h);

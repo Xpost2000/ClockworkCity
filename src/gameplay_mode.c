@@ -67,6 +67,11 @@ local void DEBUG_draw_debug_stuff(void) {
         }
     }
 
+    /* hitboxes */
+    {
+        DEBUG_draw_all_hitboxes();
+    }
+
     /* Camera bounds */
     #if 0
     {
@@ -154,6 +159,10 @@ local void game_update_render_frame(float dt) {
         {
             struct entity_iterator entities = game_state_entity_iterator(game_state);
             do_entity_updates(&entities, tilemap, dt * game_timescale);
+        }
+        {
+            struct entity_iterator entities = game_state_entity_iterator(game_state);
+            update_all_hitboxes(&entities, tilemap, dt);
         }
         {
             local float particle_accumulation_timer = 0;

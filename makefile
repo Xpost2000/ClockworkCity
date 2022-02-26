@@ -12,9 +12,9 @@ all: clean build
 
 build: dgame.exe game.exe
 dgame.exe: $(SRCFILES)
-	$(CC) glad/glad.c src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -ggdb3 -o $@
+	$(CC) src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -ggdb3 -o $@
 game.exe: $(SRCFILES)
-	$(CC) glad/glad.c src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -O2 -o $@
+	$(CC) src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -O2 -o $@
 clean: 
 	-rm game.exe
 	-rm dgame.exe

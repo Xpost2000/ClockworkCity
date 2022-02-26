@@ -12,6 +12,59 @@ float entity_lerp_y(struct entity* entity, float t) {
     return lerp(entity->last_y, entity->y, t);
 }
 
+#ifdef DEV
+struct lingered_hitbox { /* I don't actually need this for any data tracking, just debug viewing... */
+    float x;
+    float y;
+    float w;
+    float h;
+    float lifetime;
+};
+local uint16_t               DEBUG_lingering_hitbox_count              =  0;
+local struct lingered_hitbox DEBUG_lingering_hitboxes[HITBOX_POOL_MAX] = {};
+
+local void push_lingering_hitbox(float x, float y, float w, float h) {
+    assert(DEBUG_lingering_hitbox_count < HITBOX_POOL_MAX);
+    struct lingered_hitbox* new_hitbox = &DEBUG_lingering_hitboxes[DEBUG_lingering_hitbox_count++];
+    new_hitbox->x = x; new_hitbox->y = y;
+    new_hitbox->w = w; new_hitbox->h = h;
+    new_hitbox->lifetime = 0.15;
+}
+
+local void DEBUG_update_all_lingering_hitboxes(float dt) {
+    for (int index = DEBUG_lingering_hitbox_count-1; index >= 0; --index) {
+        struct lingered_hitbox* current_hitbox = DEBUG_lingering_hitboxes + index;
+        current_hitbox->lifetime -= dt;
+
+        if (current_hitbox->lifetime <= 0) {
+            DEBUG_lingering_hitboxes[index] = DEBUG_lingering_hitboxes[--DEBUG_lingering_hitbox_count];
+        }
+    }
+
+}
+
+local void DEBUG_draw_all_lingering_hitboxes(void) {
+    for (int index = DEBUG_lingering_hitbox_count-1; index >= 0; --index) {
+        struct hitbox* current_hitbox = hitbox_pool + index;
+        draw_rectangle(current_hitbox->x, current_hitbox->y, current_hitbox->w, current_hitbox->h, COLOR4F_BLUE);
+    }
+}
+#endif
+
+/* hitbox that operates on one frame. */
+local void push_melee_hitbox(struct entity* owner,
+                             float x, float y, float w, float h, int damage) {
+    assert(hitbox_count < HITBOX_POOL_MAX);
+    struct hitbox* new_hitbox = &hitbox_pool[hitbox_count++];
+
+    new_hitbox->x = x;
+    new_hitbox->y = y;
+    new_hitbox->w = w;
+    new_hitbox->h = h;
+    new_hitbox->lifetime = 0;
+    new_hitbox->damage = damage;
+}
+
 local void entity_do_ground_impact(struct entity* entity, float camera_influence) {
     if (entity->last_vy >= (15)) {
         float g_force_count = (entity->last_vy / (GRAVITY_CONSTANT));
@@ -386,4 +439,58 @@ void draw_all_entities(struct entity_iterator* entities, float dt, float interpo
             } break;
         }
     }
+}
+
+local bool hitbox_check_is_entity_ignored(struct hitbox* hitbox, struct entity* entity) {
+    for (unsigned ignored_entity_index = 0; ignored_entity_index < array_count(hitbox->ignored_entities); ++ignored_entity_index) {
+        struct entity* ignored_entity = hitbox->ignored_entities[ignored_entity_index];
+
+        if (entity == ignored_entity)
+            return true;
+    }
+
+    return false;
+}
+
+void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iterator* entities) {
+    /* O(n^2) really hurts... Hmmm yikes! */
+    for (struct entity* current_entity = entity_iterator_begin(entities);
+         !entity_iterator_done(entities);
+         current_entity = entity_iterator_next(entities)) {
+        bool ignore_entity = hitbox_check_is_entity_ignored(hitbox, current_entity);
+
+        if (!ignore_entity) {
+            /* do hit response on entities! For now just remove damage */
+            current_entity->health -= hitbox->damage;
+        }
+    }
+}
+
+void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
+    for (int index = hitbox_count-1; index >= 0; --index) {
+        struct hitbox* current_hitbox = hitbox_pool + index;
+        hitbox_handle_entity_interactions(current_hitbox, entities);
+        current_hitbox->lifetime -= dt;
+
+        if (current_hitbox->lifetime <= 0) {
+#ifdef DEV
+            push_lingering_hitbox(current_hitbox->x, current_hitbox->y, current_hitbox->w, current_hitbox->h);
+#endif
+            hitbox_pool[index] = hitbox_pool[--hitbox_count];
+        }
+    }
+#ifdef DEV
+    DEBUG_update_all_lingering_hitboxes(dt);
+#endif
+}
+
+void DEBUG_draw_all_hitboxes(void) {
+#ifdef DEV
+    for (int index = hitbox_count-1; index >= 0; --index) {
+        struct hitbox* current_hitbox = hitbox_pool + index;
+        draw_rectangle(current_hitbox->x, current_hitbox->y, current_hitbox->w, current_hitbox->h, COLOR4F_RED);
+    }
+
+    DEBUG_draw_all_lingering_hitboxes();
+#endif
 }

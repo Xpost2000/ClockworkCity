@@ -195,6 +195,51 @@ struct entity {
     float apply_wall_jump_force_timer;
 };
 
+/* 
+   NOTE(jerry):
+   This was the solution I found that would be quickest to implement and least amount of effort,
+   since I wouldn't need to worry about entities as much if I used this method.
+ */
+#define HITBOX_POOL_MAX                 (128)
+#define HITBOX_MAX_IGNORE_ENTITIES      (8)
+#define HITBOX_MAX_ALREADY_HIT_ENTITIES (16)
+#define HITBOX_MAX_IGNORE_TYPES         (16)
+/*
+  Under the assumption that it would be impossible for all entities to hit something and create
+  this many hitboxes.
+
+  Projectiles are entities, and their bounds is the hitbox.
+
+  This is just for melee.
+  
+  This is also lightly fat.
+*/
+enum hitbox_type {
+    HITBOX_TYPE_HURT,
+};
+struct hitbox {
+    struct entity* ignored_entities[HITBOX_MAX_IGNORE_ENTITIES];
+
+    /* not sure if needed yet.*/
+#if 0
+    struct entity* already_hit_entities[HITBOX_MAX_ALREADY_HIT_ENTITIES]; /* lingering hitboxes */
+    uint32_t       ignored_entity_types[HITBOX_MAX_IGNORE_TYPES];
+    uint32_t       type;
+#endif
+
+    float x;
+    float y;
+    float w;
+    float h;
+
+    float lifetime;
+
+    int damage;
+};
+
+shared_storage uint16_t      hitbox_count                 =  0;
+shared_storage struct hitbox hitbox_pool[HITBOX_POOL_MAX] = {};
+
 float entity_lerp_x(struct entity* entity, float t);
 float entity_lerp_y(struct entity* entity, float t);
 

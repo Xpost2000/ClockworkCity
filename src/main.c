@@ -277,6 +277,7 @@ local void initialize(void) {
         report_screen_dimensions(screen_dimensions);
     }
 
+#if 0
     {
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -285,6 +286,7 @@ local void initialize(void) {
         global_opengl_context = SDL_GL_CreateContext(global_window);
         assert(gladLoadGLLoader(SDL_GL_GetProcAddress) && "OpenGL functions not loadable?");
     }
+#endif
 
     graphics_initialize(global_window);
     audio_initialize();

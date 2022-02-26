@@ -139,6 +139,10 @@ union color4f color4f(float r, float g, float b, float a) {
     };
 }
 
+union color4f color4f_invert(union color4f base) {
+    return color4f(1.0 - base.r, 1.0 - base.g, 1.0 - base.b, 1.0 - base.a);
+}
+
 union color4f color4f_lerp(union color4f a, union color4f b, float t) {
     return (union color4f) {
         .r = lerp(a.r, b.r, t),
