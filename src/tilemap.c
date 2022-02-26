@@ -1,4 +1,4 @@
-#define TILEMAP_CURRENT_VERSION (3) 
+#define TILEMAP_CURRENT_VERSION (4) 
 #define GRASS_DENSITY_PER_TILE  (6) /* in blades */
 #define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
 #define GRASS_BLADE_MAX_HEIGHT  (12) /* in "vpixels" */
@@ -117,7 +117,8 @@ struct tilemap {
     uint32_t width;
     uint32_t height;
     /*old*/
-    struct tile* tiles;
+    struct tile*   tiles;
+    struct entity* entities; /* these are the ones that come with the level. */
 
     /* 
        These are purely decorative, and do not require
@@ -128,6 +129,7 @@ struct tilemap {
     uint32_t foreground_tile_count;
     uint32_t background_tile_count;
     uint32_t grass_tile_count;
+    uint32_t entity_count;
 
     struct tile* foreground_tiles;
     struct tile* background_tiles;

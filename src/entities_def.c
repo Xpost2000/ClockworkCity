@@ -36,14 +36,23 @@ enum movement_flags { /* eh? */
 enum entity_type {
     ENTITY_TYPE_NONE = 0,
     ENTITY_TYPE_PLAYER = 1,
-    ENTITY_TYPE_DUMMYA = 2,
+    ENTITY_TYPE_HOVERING_LOST_SOUL = 2,
+    ENTITY_TYPE_MEPHIT_MINOR = 3,
+    ENTITY_TYPE_MEPHIT = 3,
 
     ENTITY_TYPE_COUNT,
 };
 char* entity_type_strings[] = {
     "?",
     "Player",
-    "Dummy(1) Entity",
+    /* These two should reform. This could be a flag but whatever. */
+    "Lost Soul(idle)",
+    "Lost Soul",
+    /* these can die */
+    "Volatile Lost Soul",
+    /* more flying skins */
+    "Lesser Mephit",
+    "Mephit",
     0
 };
 
