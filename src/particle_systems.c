@@ -20,6 +20,10 @@
   I believe I want the UI to have particles as well, but this clearly wasn't designed for that.
   Fuck.
   
+  (Although to be fair, this is a much more "general" game situation),
+  (if I want the UI to have particles, I could just code much simpler particles since those
+  one's aren't really that important and have a very likely known amount.)
+  
   Worry about it later.
 */
 #define MAX_PARTICLE_EMITTER_COUNT (512) /* With the new particle storage system. GO NUTS!*/

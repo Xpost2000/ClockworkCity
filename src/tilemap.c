@@ -102,6 +102,41 @@ struct player_spawn_link {
     char identifier[TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH];
 };
 
+/* 
+   Who knows what I'm using these parameters for... All I know
+   is I don't want to be responsible for any extra changes, so this is a "polymorphic" fat
+   data blob
+   
+   In the emergency case I need more.
+*/
+#define TRIGGER_PARAMETERS_MAX (8)
+struct trigger {
+    uint16_t                    type;
+    uint32_t                     params[TRIGGER_PARAMETERS_MAX];
+    float                       fparams[TRIGGER_PARAMETERS_MAX];
+};
+
+struct entity_placement {
+    uint32_t type;
+    uint32_t flags;
+
+    uint8_t facing_direction;
+
+    /* unknown if needed right now */
+    uint8_t active_on_spawn; /* merge into flags??? */
+    uint8_t _reserved_[7]; /* just incase... :) */
+    /* end of unknown if needed right now */
+
+    char identifier[ENTITY_STRING_IDENTIFIER_MAX_LENGTH];
+
+    /* for certain enemy types. Will determine if they need them */
+    float travel_distance_x;
+    float travel_distance_y;
+
+    float x;
+    float y;
+};
+
 /* should be "streamed" */
 /* rename to level */
 struct tilemap {

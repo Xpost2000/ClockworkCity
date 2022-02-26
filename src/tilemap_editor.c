@@ -1,6 +1,7 @@
 #include "memory_arena.h"
 #define EDITOR_TILE_GRASS_MAX_COUNT   (16384)
 #define EDITOR_TILE_MAX_COUNT         (32768)
+#define EDITOR_ENTITY_PLACEMENTS_MAX  (1024)
 #define EDITOR_TRANSITIONS_MAX_COUNT  (64)
 #define EDITOR_PLAYER_SPAWN_MAX_COUNT (EDITOR_TRANSITIONS_MAX_COUNT)
 
@@ -26,6 +27,7 @@ struct editable_tilemap {
     uint32_t tile_count;
     uint8_t transition_zone_count;
     uint8_t player_spawn_link_count;
+    uint16_t entity_placement_count;
 
     uint32_t width;
     uint32_t height;
@@ -40,6 +42,7 @@ struct editable_tilemap {
     float bounds_max_y;
 
     struct player_spawn_link* player_spawn_links;
+    struct entity_placement*  entity_placements; /* store entity placements and some flags*/
     struct tile*              tiles;
     struct tile*              foreground_tiles;
     struct tile*              background_tiles;
@@ -52,6 +55,8 @@ enum editor_tool_mode {
     EDITOR_TOOL_PAINT_TRANSITION,
     EDITOR_TOOL_PAINT_PLAYERSPAWN,
     EDITOR_TOOL_ESTABLISH_BOUNDS,
+    EDITOR_TOOL_PAINT_ENTITIES,
+    EDITOR_TOOL_PAINT_TRIGGERS,
     EDITOR_TOOL_COUNT
 };
 enum editor_tile_layer {
@@ -63,7 +68,7 @@ const local char* editor_tile_layer_strings[] = {
     "playable layer", "background layer", "foreground layer",
 };
 const local char* editor_tool_mode_strings[] = {
-    "Paint Tile", "Edit Transitions", "Player Spawn Placement", "Establish Level Bounds", "?"
+    "Paint Tile", "Edit Transitions", "Player Spawn Placement", "Establish Level Bounds", "Paint Entities", "Paint Triggers", "?"
 };
 struct editor_text_edit {
     bool open;
@@ -476,6 +481,7 @@ local void editor_clear_all(void) {
     editor.tilemap.background_tile_count   = 0;
     editor.tilemap.transition_zone_count   = 0;
     editor.tilemap.player_spawn_link_count = 0;
+    editor.tilemap.entity_placement_count  = 0;
     camera_reset_transform(&editor_camera);
     editor.tilemap.bounds_min_x            = 0;
     editor.tilemap.bounds_min_y            = 0;
@@ -494,6 +500,7 @@ local void load_tilemap_editor_resources(void) {
         editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT  * sizeof(*editor.tilemap.transitions));
         editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
         editor.tilemap.grass_tiles        = memory_arena_push(&editor.arena, EDITOR_TILE_GRASS_MAX_COUNT   * sizeof(*editor.tilemap.grass_tiles));
+        editor.tilemap.entity_placements  = memory_arena_push(&editor.arena, EDITOR_TILE_GRASS_MAX_COUNT   * sizeof(*editor.tilemap.entity_placements));
 
         editor.initialized = true;
     }
