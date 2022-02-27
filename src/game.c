@@ -18,10 +18,16 @@
 /*
   TODO(jerry):
   
+  Coming back tomorrow actually.
+  
   - Entity Placement in the editor
-  - Spikes doing damage and also "nail" bouncing.
   - Trigger placement for cutscenes/prompts
+  - Spikes doing damage and also "nail" bouncing.
   - Add "Rest" points (Soul Anchors)
+  - Player Death Animation
+  - Entity Death Animation
+  - Game Save / Load (single save.)
+  - (Revelation for ability achievement)
 
   Consider adding props very soon. They're technically also entities but a subtype.
   add particle placements (allow line placement for rains!)
@@ -31,7 +37,7 @@
 #define VPIXELS_PER_METER (16)
 #define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))
 #define TILES_PER_SCREEN (22)
-#define GRAVITY_CONSTANT (20)
+#define GRAVITY_CONSTANT (21)
 
 #define LAST_GROUNDED_POSITION_RECORD_TIMER_MAX (5.0f) /* seconds */
 

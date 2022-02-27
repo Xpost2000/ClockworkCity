@@ -112,12 +112,12 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
     }
 
     entity->vx += entity->ax * dt;
-    bool hugging = entity_hugging_wall(tilemap, entity);
+    bool hugging = entity_hugging_wall(tilemap, entity) && !entity->onground;
     bool will_be_hugging_wall = false;
     {
         float old_x = entity->x;
         entity->x += entity->vx * dt;
-        will_be_hugging_wall = entity_hugging_wall(tilemap, entity);
+        will_be_hugging_wall = entity_hugging_wall(tilemap, entity) && !entity->onground;
         entity->x = old_x;
     }
     entity->sliding_against_wall = hugging;

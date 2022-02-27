@@ -1,5 +1,13 @@
 /*
   Colorscheme database and loader.
+  
+  NOTE(jerry):
+  Consider hard coding colors/level association
+  
+  I don't want to have to add this feature to the editor, since I'm bad at 
+  time management, it'd literally be way faster to couple this in here...
+  
+  fuck me.
 */
 
 #define GAME_COLORSCHEME_NAME_STRING_MAX (32)
