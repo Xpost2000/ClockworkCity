@@ -27,6 +27,7 @@
   - Entity Death Animation
   - Game Save / Load (single save.)
   - (Revelation for ability achievement)
+  - Add our first boss (Should be doable without any abilities, and maybe just copy the style for False Knight?)
 
   Consider adding props very soon. They're technically also entities but a subtype.
   add particle placements (allow line placement for rains!)

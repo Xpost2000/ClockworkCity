@@ -277,8 +277,20 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     /* This state, is not really stored per say. Since the
      game doesn't need to care whether I'm technically lookin up or not?
     Well I'll see soon*/
-    bool aiming_down = is_key_down(KEY_S) || gamepad->buttons[DPAD_DOWN] || gamepad->left_stick.axes[1] >  0.25;
-    bool aiming_up   = is_key_down(KEY_W) || gamepad->buttons[DPAD_UP]   || gamepad->left_stick.axes[1] < -0.25;
+    float left_stick_angle = radians_to_degrees(
+        angle_formed_by_joystick(gamepad, CONTROLLER_JOYSTICK_LEFT));
+
+    const float ANGLE_AIMING_THRESHOLD_IN_DEGREES = 35.0f; /* This isn't actually perfectly accurate, but this is close enough */
+    bool aiming_down =
+           is_key_down(KEY_S)
+        || gamepad->buttons[DPAD_DOWN]
+        || (left_stick_angle > ANGLE_AIMING_THRESHOLD_IN_DEGREES &&
+            left_stick_angle < (180 - ANGLE_AIMING_THRESHOLD_IN_DEGREES));
+    bool aiming_up   =
+           is_key_down(KEY_W)
+        || gamepad->buttons[DPAD_UP]
+        || (left_stick_angle < -ANGLE_AIMING_THRESHOLD_IN_DEGREES
+            && left_stick_angle > -(180 - ANGLE_AIMING_THRESHOLD_IN_DEGREES));
 
     entity->ax = 0;
 
@@ -293,7 +305,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     /* basic movements */
     const int MAX_ACCELERATION = 30;
     {
-        if (fabs(gamepad->left_stick.axes[0]) >= 0.1) {
+        if (fabs(gamepad->left_stick.axes[0]) >= 0.2) {
             entity->ax = MAX_ACCELERATION * gamepad->left_stick.axes[0];
             entity->facing_dir = (int)float_sign(entity->ax);
         }
@@ -335,6 +347,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     if (entity->dash) {
         entity->ax = 0;
 
+        fprintf(stderr, "%d\n", entity->facing_dir);
         const int MAX_SPEED = (DISTANCE_PER_DASH / ENTITY_DASH_TIME_MAX);
         entity->vx = MAX_SPEED * entity->facing_dir;
         entity->dash_timer -= dt;

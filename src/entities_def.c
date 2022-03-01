@@ -219,8 +219,8 @@ struct entity {
     uint8_t  death_state; /* use this for animation setting. */
 
     /*temporary*/
-    uint8_t facing_dir; /* don't know why this is not an enum either... */
-    uint8_t opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
+    int8_t facing_dir; /* don't know why this is not an enum either... */
+    int8_t opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
     bool dash;
     float dash_timer; /* may phase out bool dash, since if this dash_timer > 0, implies dashing */
     /*end temporary*/

@@ -248,6 +248,10 @@ inline shared_storage float degrees_to_radians(float deg) {
     return (deg * M_PI/180.0f);
 }
 
+inline shared_storage float radians_to_degrees(float deg) {
+    return (deg * 180.0f/M_PI);
+}
+
 inline shared_storage float safe_ratio(float a, float b) {
     if (b == 0.0f) return 0.0f;
     return (a/b);

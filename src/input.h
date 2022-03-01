@@ -180,6 +180,25 @@ struct input_state {
 
 struct game_controller* get_gamepad(int index);
 
+enum {
+    CONTROLLER_JOYSTICK_LEFT,
+    CONTROLLER_JOYSTICK_RIGHT,
+};
+local float angle_formed_by_joystick(struct game_controller* controller, int which) {
+    struct game_controller_joystick target;
+    switch (which) {
+        case CONTROLLER_JOYSTICK_LEFT: {
+            target = controller->left_stick;
+        } break;
+        case CONTROLLER_JOYSTICK_RIGHT: {
+            target = controller->right_stick;
+        } break;
+    }
+
+    float angle = atan2(target.axes[1], target.axes[0]);
+    return angle;
+}
+
 void register_key_down(int keyid);
 void register_key_up(int keyid);
 

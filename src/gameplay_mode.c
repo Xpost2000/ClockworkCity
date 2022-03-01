@@ -49,8 +49,8 @@ local void DEBUG_draw_debug_ui_stuff(void) {
             struct entity* player = &game_state->persistent_entities[0];
             struct memory_arena* arena = &game_memory_arena;
             size_t memusage = memory_arena_total_usage(arena);
-            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f, %f, %f lastvy: %f, \ndeathstate: %d)\n",
-                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player->onground, player->x, player->y, player->vx, player->vy, player->last_vy, player->death_state);
+            char* arena_msg = format_temp("(memory arena \"%s\") is using %d bytes\n(%d kb)\n(%d mb)\n(%d gb)\n(onground: %d)\n(player %f, %f, %f, %f lastvy: %f, \ndeathstate: %d, facing_dir: %d\n)\n",
+                                          arena->name, memusage, memusage / 1024, memusage / (1024 * 1024), memusage / (1024*1024*1024), player->onground, player->x, player->y, player->vx, player->vy, player->last_vy, player->death_state, player->facing_dir);
             draw_text(_console_font, 0, 0, arena_msg, COLOR4F_GREEN);
         }
     } end_graphics_frame();
@@ -85,8 +85,12 @@ void restore_player_to_last_good_grounded(void) {
         return;
 
     struct entity* player = &game_state->persistent_entities[0];
-    player->x = game_state->last_good_grounded_position_x;
-    player->y = game_state->last_good_grounded_position_y;
+    player->vx       = 0;
+    player->vy       = 0;
+    player->onground = true;
+    player->x        = game_state->last_good_grounded_position_x;
+    player->y        = game_state->last_good_grounded_position_y;
+    game_state->last_good_grounded_position_recording_timer = 0;
 }
 
 #include "game_animations.c"
