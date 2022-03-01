@@ -208,7 +208,7 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                 splatter->particle_color = active_colorscheme.primary;
                 splatter->particle_max_lifetime = 1;
                 splatter->collides_with_world = true;
-                camera_traumatize(&game_camera, 0.005);
+                camera_traumatize(&game_camera, 0.0152);
             }
         }
     }
@@ -628,6 +628,11 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
             case ENTITY_TYPE_PLAYER:
                 do_player_entity_update(current_entity, tilemap, dt);
                 break;
+            case ENTITY_TYPE_HOVERING_LOST_SOUL:
+            case ENTITY_TYPE_LOST_SOUL:
+            case ENTITY_TYPE_VOLATILE_LOST_SOUL:
+                do_lost_soul_update(current_entity, tilemap, dt);
+            break;
             default:
                 do_generic_entity_update(current_entity, tilemap, dt);
                 break;
@@ -701,7 +706,13 @@ void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iter
 
         if (!ignore_entity) {
             /* do hit response on entities! For now just remove damage */
-            current_entity->health -= hitbox->damage;
+            if (rectangle_intersects_v(
+                    hitbox->x, hitbox->y, hitbox->w, hitbox->h,
+                    current_entity->x, current_entity->y, current_entity->w, current_entity->h
+                )) {
+                current_entity->health -= hitbox->damage;
+                camera_traumatize(&game_camera, 0.01875);
+            }
         }
     }
 }
