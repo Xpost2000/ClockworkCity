@@ -2,6 +2,13 @@
   A vast majority of the entity code is kind of else where because the tilemaps is probably
   the vast majority of their code.
 */
+enum attack_direction {
+    ATTACK_DIRECTION_RIGHT,
+    ATTACK_DIRECTION_LEFT,
+    ATTACK_DIRECTION_DOWN,
+    ATTACK_DIRECTION_UP,
+};
+
 
 enum movement_flags { /* eh? */
     MOVEMENT_FLAG_ALLOW_WALL_JUMP = BIT(0), /*wall grinding*/
@@ -210,8 +217,8 @@ struct entity {
     uint8_t  death_state; /* use this for animation setting. */
 
     /*temporary*/
-    int facing_dir;
-    int opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
+    uint8_t facing_dir; /* don't know why this is not an enum either... */
+    uint8_t opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
     bool dash;
     float dash_timer; /* may phase out bool dash, since if this dash_timer > 0, implies dashing */
     /*end temporary*/
@@ -236,6 +243,7 @@ struct entity {
        
        But who said I was a wise man?
      */
+    uint8_t attack_direction;
     float apply_wall_jump_force_timer;
     float apply_attack_knockback_force_timer;
 
@@ -280,6 +288,7 @@ enum hitbox_type {
     HITBOX_TYPE_HURT_WITH_KNOCKBACK,
 };
 struct hitbox {
+    struct entity* owner;
     struct entity* ignored_entities[HITBOX_MAX_IGNORE_ENTITIES];
 
     /* not sure if needed yet.*/
@@ -288,6 +297,8 @@ struct hitbox {
     uint32_t       ignored_entity_types[HITBOX_MAX_IGNORE_TYPES];
 #endif
     enum hitbox_type type;
+    /* not necessarily attack, but relative direction to the entity when it was made */
+    enum attack_direction direction;
 
     float x;
     float y;

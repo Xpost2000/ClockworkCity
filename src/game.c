@@ -344,6 +344,8 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                         unpack_into->flags      = ep->flags;
                         unpack_into->facing_dir = ep->facing_direction;
                         console_printf("Unpacked a %s (%f, %f)\n", entity_type_strings[ep->type], unpack_into->x, unpack_into->y);
+
+                        initialize_entity(unpack_into);
                     }
 
                     game_state->loaded_level->entities = unpacked_entities;

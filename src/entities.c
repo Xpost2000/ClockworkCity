@@ -62,11 +62,14 @@ local void hitbox_push_ignored_entity(struct hitbox* hitbox, struct entity* to_i
 
 /* hitbox that operates on one frame. */
 local void push_melee_hitbox(struct entity* owner,
-                             float x, float y, float w, float h, int damage) {
+                             float x, float y, float w, float h, int damage, int direction) {
     assert(hitbox_count < HITBOX_POOL_MAX);
     struct hitbox* new_hitbox = &hitbox_pool[hitbox_count++];
+    new_hitbox->owner = owner;
     hitbox_push_ignored_entity(new_hitbox, owner);
 
+    new_hitbox->type = HITBOX_TYPE_HURT;
+    new_hitbox->direction = direction;
     new_hitbox->x = x;
     new_hitbox->y = y;
     new_hitbox->w = w;
@@ -76,12 +79,14 @@ local void push_melee_hitbox(struct entity* owner,
 }
 
 local void push_melee_with_knockback_hitbox(struct entity* owner,
-                                            float x, float y, float w, float h, int damage) {
+                                            float x, float y, float w, float h, int damage, int direction) {
     assert(hitbox_count < HITBOX_POOL_MAX);
     struct hitbox* new_hitbox = &hitbox_pool[hitbox_count++];
+    new_hitbox->owner = owner;
     hitbox_push_ignored_entity(new_hitbox, owner);
 
     new_hitbox->type = HITBOX_TYPE_HURT_WITH_KNOCKBACK;
+    new_hitbox->direction = direction;
     new_hitbox->x = x;
     new_hitbox->y = y;
     new_hitbox->w = w;
@@ -386,33 +391,74 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             float hitbox_y = entity->y;
 
             int facing_dir = entity->facing_dir;
+            int direction = ATTACK_DIRECTION_RIGHT;
             if (facing_dir == 0) facing_dir = 1;
 
             if (aiming_up || aiming_down) {
                 if (aiming_up) {
                     hitbox_y = entity->y - entity->h;
+                    direction = ATTACK_DIRECTION_UP;
                 } else {
                     hitbox_y = entity->y + entity->h;
+                    direction = ATTACK_DIRECTION_DOWN;
                 }
             } else {
                 if (facing_dir == 1) {
                     hitbox_x = (entity->x + entity->w);
+                    direction = ATTACK_DIRECTION_RIGHT;
                 } else {
                     hitbox_x = (entity->x) - HITBOX_W;
+                    direction = ATTACK_DIRECTION_LEFT;
                 }
             }
 
+
             entity->attack_cooldown_timer = PLAYER_ATTACK_COOLDOWN_TIMER_MAX;
-            push_melee_hitbox(entity, hitbox_x, hitbox_y, HITBOX_W, entity->h, 1);
+            push_melee_with_knockback_hitbox(entity, hitbox_x, hitbox_y, HITBOX_W, entity->h, 1, direction);
         }
     }
 
+    {
+        /* wall jump has priority of force. */
+        if (entity->apply_attack_knockback_force_timer > 0) {
+            const int KNOCKDOWN_MAGNITUDE_X = 2;
+            const int KNOCKDOWN_MAGNITUDE_Y = 2;
 
-    if (entity->apply_wall_jump_force_timer > 0) {
-        entity->ax = entity->opposite_facing_direction * 50;
-        entity->vy = -8;
-        entity->sliding_against_wall = false;
+            switch (entity->attack_direction) {
+                /* on left and right, cancel knockback if you're facing away.
+                 I have no idea how accurate this looks, but this'll probably prevent a weird issue?*/
+                case ATTACK_DIRECTION_RIGHT: {
+                    if (entity->facing_dir == 1) {
+                        entity->vx = -KNOCKDOWN_MAGNITUDE_X;
+                    } else {
+                        entity->apply_attack_knockback_force_timer = 0;   
+                    }
+                } break;
+                case ATTACK_DIRECTION_LEFT: {
+                    if (entity->facing_dir == -1) {
+                        entity->vx = KNOCKDOWN_MAGNITUDE_X;
+                    } else {
+                        entity->apply_attack_knockback_force_timer = 0;  
+                    } 
+                } break;
+                case ATTACK_DIRECTION_DOWN: {
+                    /* allows for "bouncing" */
+                    entity->vy = -KNOCKDOWN_MAGNITUDE_Y * 1.452;
+                } break;
+                case ATTACK_DIRECTION_UP: {
+                    entity->vy = KNOCKDOWN_MAGNITUDE_Y;
+                } break;
+            }
+        }
+
+        if (entity->apply_wall_jump_force_timer > 0) {
+            /* Should be a velocity to be better looking. */
+            entity->ax = entity->opposite_facing_direction * 50;
+            entity->vy = -8;
+            entity->sliding_against_wall = false;
+        }
     }
+
 
     if (is_key_down(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (!entity->onground && entity->player_variable_jump_time > 0) {
@@ -493,7 +539,6 @@ struct entity entity_create_hovering_lost_soul(float x, float y) {
         .health = 2, .max_health = 2,
     };
 
-    result.lost_soul_info.owned_emitter = entity_lost_soul_particles(x, y);
     return result;
 }
 
@@ -505,7 +550,6 @@ struct entity entity_create_lost_soul(float x, float y) {
         .health = 2, .max_health = 2,
     };
 
-    result.lost_soul_info.owned_emitter = entity_lost_soul_particles(x, y);
     return result;
 }
 
@@ -517,7 +561,6 @@ struct entity entity_create_volatile_lost_soul(float x, float y) {
         .health = 2, .max_health = 2,
     };
 
-    result.lost_soul_info.owned_emitter = entity_lost_soul_particles(x, y);
     return result;
 }
 
@@ -547,7 +590,7 @@ void entity_get_type_dimensions(uint32_t type, float* width, float* height) {
     safe_assignment(height) = out_height;
 }
 
-/* factory */
+/* factory, does not initialize them. It basically only allocates them */
 struct entity construct_entity_of_type(uint32_t type, float x, float y) {
     struct entity result;
     switch (type) {
@@ -575,6 +618,21 @@ struct entity construct_entity_of_type(uint32_t type, float x, float y) {
     result.last_x = result.initial_x = result.x;
     result.last_y = result.initial_y = result.y;
     return result;
+}
+
+void initialize_entity(struct entity* entity) {
+    /* 
+       secondary step only during loading 
+       
+       This is for any entities that have "extra" parts.
+    */
+    switch (entity->type) {
+        case ENTITY_TYPE_LOST_SOUL:
+        case ENTITY_TYPE_VOLATILE_LOST_SOUL:
+        case ENTITY_TYPE_HOVERING_LOST_SOUL: {
+            entity->lost_soul_info.owned_emitter = entity_lost_soul_particles(entity->x, entity->y);
+        } break;
+    }
 }
 
 void entity_record_locations_for_linger_shadows(struct entity* entity) {
@@ -616,8 +674,9 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
             entity_record_locations_for_linger_shadows(current_entity);
         }
 
-        current_entity->linger_shadow_sample_record_timer -= dt;
-        current_entity->apply_wall_jump_force_timer       -= dt;
+        current_entity->linger_shadow_sample_record_timer  -= dt;
+        current_entity->apply_wall_jump_force_timer        -= dt;
+        current_entity->apply_attack_knockback_force_timer -= dt;
 
         {
             float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);
@@ -712,21 +771,61 @@ local bool hitbox_check_is_entity_ignored(struct hitbox* hitbox, struct entity* 
     return false;
 }
 
+void hitbox_try_and_apply_knockback(struct hitbox* hitbox, float time) {
+    if (hitbox->type == HITBOX_TYPE_HURT_WITH_KNOCKBACK && hitbox->owner) {
+        hitbox->owner->attack_direction                   = hitbox->direction;
+        hitbox->owner->apply_attack_knockback_force_timer = time;
+    }
+}
+
 void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iterator* entities) {
     /* O(n^2) really hurts... Hmmm yikes! */
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
-        bool ignore_entity = hitbox_check_is_entity_ignored(hitbox, current_entity);
 
-        if (!ignore_entity) {
-            /* do hit response on entities! For now just remove damage */
-            if (rectangle_intersects_v(
-                    hitbox->x, hitbox->y, hitbox->w, hitbox->h,
-                    current_entity->x, current_entity->y, current_entity->w, current_entity->h
-                )) {
-                current_entity->health -= hitbox->damage;
-                camera_traumatize(&game_camera, 0.01875);
+        if (current_entity->death_state == DEATH_STATE_ALIVE) {
+            bool ignore_entity = hitbox_check_is_entity_ignored(hitbox, current_entity);
+
+            if (!ignore_entity) {
+                /* do hit response on entities! For now just remove damage */
+                if (rectangle_intersects_v(
+                        hitbox->x, hitbox->y, hitbox->w, hitbox->h,
+                        current_entity->x, current_entity->y, current_entity->w, current_entity->h
+                    )) {
+                    current_entity->health -= hitbox->damage;
+                    camera_traumatize(&game_camera, 0.01275);
+                    hitbox_try_and_apply_knockback(hitbox, 0.1);
+                }
+            }
+        }
+    }
+}
+
+void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* tilemap) {
+    unsigned total_tile_count = tilemap->width * tilemap->height;
+    for (unsigned index = 0; index < total_tile_count; ++index) {
+        struct tile* t = &tilemap->tiles[index];
+
+        if (t->id == TILE_NONE) continue;
+
+        if (rectangle_intersects_v(
+                hitbox->x, hitbox->y, hitbox->w, hitbox->h,
+                t->x, t->y, 1, 1
+            )) {
+            switch (t->id) {
+                case TILE_SPIKE_LEFT:
+                case TILE_SPIKE_RIGHT:
+                case TILE_SPIKE_DOWN:
+                case TILE_SPIKE_UP: {
+                    hitbox_try_and_apply_knockback(hitbox, 0.16);
+                    camera_traumatize(&game_camera, 0.01275);
+                    return;
+                } break;
+                default: {
+                    /* create hit particle. otherwise bye bye */
+                    continue;
+                } break;
             }
         }
     }
@@ -735,7 +834,10 @@ void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iter
 void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
     for (int index = hitbox_count-1; index >= 0; --index) {
         struct hitbox* current_hitbox = hitbox_pool + index;
+
         hitbox_handle_entity_interactions(current_hitbox, entities);
+        hitbox_handle_tilemap_interactions(current_hitbox, tilemap);
+
         current_hitbox->lifetime -= dt;
 
         if (current_hitbox->lifetime <= 0) {
