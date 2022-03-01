@@ -229,7 +229,15 @@ struct entity {
     float attack_cooldown_timer;
 
     /* qfix */
+    /* A wiser man would've probably just did
+       
+       uint8_t applied_force_count;
+       force* forces;
+       
+       But who said I was a wise man?
+     */
     float apply_wall_jump_force_timer;
+    float apply_attack_knockback_force_timer;
 
 #if 1
     /* per instance data */
@@ -269,6 +277,7 @@ shared_storage const char* get_facing_direction_string(int x) {
 */
 enum hitbox_type {
     HITBOX_TYPE_HURT,
+    HITBOX_TYPE_HURT_WITH_KNOCKBACK,
 };
 struct hitbox {
     struct entity* ignored_entities[HITBOX_MAX_IGNORE_ENTITIES];
@@ -277,8 +286,8 @@ struct hitbox {
 #if 0
     struct entity* already_hit_entities[HITBOX_MAX_ALREADY_HIT_ENTITIES]; /* lingering hitboxes */
     uint32_t       ignored_entity_types[HITBOX_MAX_IGNORE_TYPES];
-    uint32_t       type;
 #endif
+    enum hitbox_type type;
 
     float x;
     float y;

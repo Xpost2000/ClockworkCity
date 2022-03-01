@@ -75,6 +75,21 @@ local void push_melee_hitbox(struct entity* owner,
     new_hitbox->damage = damage;
 }
 
+local void push_melee_with_knockback_hitbox(struct entity* owner,
+                                            float x, float y, float w, float h, int damage) {
+    assert(hitbox_count < HITBOX_POOL_MAX);
+    struct hitbox* new_hitbox = &hitbox_pool[hitbox_count++];
+    hitbox_push_ignored_entity(new_hitbox, owner);
+
+    new_hitbox->type = HITBOX_TYPE_HURT_WITH_KNOCKBACK;
+    new_hitbox->x = x;
+    new_hitbox->y = y;
+    new_hitbox->w = w;
+    new_hitbox->h = h;
+    new_hitbox->lifetime = 0;
+    new_hitbox->damage = damage;
+}
+
 local void entity_do_ground_impact(struct entity* entity, float camera_influence) {
     if (entity->last_vy >= (15)) {
         float g_force_count = (entity->last_vy / (GRAVITY_CONSTANT));
