@@ -36,25 +36,37 @@ enum movement_flags { /* eh? */
 enum entity_type {
     ENTITY_TYPE_NONE               = 0,
     ENTITY_TYPE_PLAYER             = 1,
+    /* 
+       If I spent more time thinking I would've obviously just made these
+       different types through behavioral settings (like flags), and not
+       do type based dispatch. But this is fast and I'm not adding many more
+       enemy types.
+     */
     ENTITY_TYPE_HOVERING_LOST_SOUL = 2,
-    /* ENTITY_TYPE_LOST_SOUL          = 3, */
-    /* ENTITY_TYPE_VOLATILE_LOST_SOUL = 4, */
+    ENTITY_TYPE_LOST_SOUL          = 3,
+    ENTITY_TYPE_VOLATILE_LOST_SOUL = 4,
     /* ENTITY_TYPE_MEPHIT_MINOR       = 5, */
     /* ENTITY_TYPE_MEPHIT             = 6, */
 
-    ENTITY_TYPE_COUNT,
+    /* 
+       Entities past this point cannot be created in the
+       editor, these are spawned for very specific situations.
+    */
+    ENTITY_TYPE_LAST_SPAWNABLE_ENTITY_TYPE,
+
+    ENTITY_TYPE_COUNT, /* inaccurate??? */
 };
 char* entity_type_strings[] = {
     "?",
-    "Player",
+    [ENTITY_TYPE_PLAYER] = "Player",
     /* These two should reform. This could be a flag but whatever. */
-    "Lost Soul(idle)",
-    "Lost Soul",
+    [ENTITY_TYPE_HOVERING_LOST_SOUL] = "Lost Soul(idle)",
+    [ENTITY_TYPE_LOST_SOUL] = "Lost Soul",
     /* these can die */
-    "Volatile Lost Soul",
+    [ENTITY_TYPE_VOLATILE_LOST_SOUL] = "Volatile Lost Soul",
     /* more flying skins */
-    "Lesser Mephit",
-    "Mephit",
+    /* [ENTITY_TYPE_MEPHIT_MINOR] = "Lesser Mephit", */
+    /* [ENTITY_TYPE_MEPHIT] = "Mephit", */
     0
 };
 
@@ -209,6 +221,10 @@ struct entity {
 
     /* qfix */
     float apply_wall_jump_force_timer;
+
+#if 0
+    /* per instance data */
+#endif
 };
 shared_storage const char* get_facing_direction_string(int x) {
     switch (x) {

@@ -165,7 +165,7 @@ struct tilemap {
     uint32_t foreground_tile_count;
     uint32_t background_tile_count;
     uint32_t grass_tile_count;
-    uint32_t entity_count;
+    uint16_t entity_count;
 
     struct tile* foreground_tiles;
     struct tile* background_tiles;

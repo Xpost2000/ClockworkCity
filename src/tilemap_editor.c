@@ -1,7 +1,7 @@
 #include "memory_arena.h"
 #define EDITOR_TILE_GRASS_MAX_COUNT   (16384)
 #define EDITOR_TILE_MAX_COUNT         (32768)
-#define EDITOR_ENTITY_PLACEMENTS_MAX  (1024)
+#define EDITOR_ENTITY_PLACEMENTS_MAX  (8192)
 #define EDITOR_TRANSITIONS_MAX_COUNT  (64)
 #define EDITOR_PLAYER_SPAWN_MAX_COUNT (EDITOR_TRANSITIONS_MAX_COUNT)
 
@@ -564,10 +564,14 @@ local void editor_serialize(struct binary_serializer* serializer) {
 
         if (version_id >= 3) {
             Serialize_Fixed_Array(serializer, u32, editor.tilemap.grass_tile_count, editor.tilemap.grass_tiles);
+
+            if (version_id >= 4) {
+                Serialize_Fixed_Array(serializer, u16, editor.tilemap.entity_placement_count, editor.tilemap.entity_placements);
+            }
         }
     }
-    Serialize_Fixed_Array(serializer, u8, editor.tilemap.transition_zone_count, editor.tilemap.transitions);
-    Serialize_Fixed_Array(serializer, u8, editor.tilemap.player_spawn_link_count, editor.tilemap.player_spawn_links);
+    Serialize_Fixed_Array(serializer,  u8, editor.tilemap.transition_zone_count, editor.tilemap.transitions);
+    Serialize_Fixed_Array(serializer,  u8, editor.tilemap.player_spawn_link_count, editor.tilemap.player_spawn_links);
 }
 
 /*
@@ -648,10 +652,8 @@ local void editor_switch_tool(enum editor_tool_mode mode) {
 void editor_draw_entity_placements(struct entity_placement* entity_placements, size_t entity_placement_count) {
     for (unsigned index = 0; index < entity_placement_count; ++index) {
         struct entity_placement* ep = entity_placements + index;
-
-        /* weirdo wastefulness. */
-        struct entity temp = construct_entity_of_type(ep->type, ep->x, ep->y);
-        draw_entity(&temp);
+        struct entity temporary = construct_entity_of_type(ep->type, ep->x, ep->y);
+        draw_entity(&temporary, 0, 0);
     }
 }
 
@@ -660,7 +662,7 @@ local void tilemap_editor_update_render_frame(float dt) {
     load_tilemap_editor_resources();
 
     float scale_factor = editor_camera.render_scale;
-    struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(600));
+    struct temporary_arena frame_arena = begin_temporary_memory(&editor.arena, Kilobyte(800));
 
     if (!is_editting_text()) {
         if (is_key_pressed(KEY_F1)) {
@@ -1363,7 +1365,7 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
     }
 
     /* disallow placing multiple players. */
-    editor.painting_entity_type = clampi(editor.painting_entity_type, ENTITY_TYPE_PLAYER+1, ENTITY_TYPE_COUNT);
+    editor.painting_entity_type = clampi(editor.painting_entity_type, ENTITY_TYPE_PLAYER+1, ENTITY_TYPE_LAST_SPAWNABLE_ENTITY_TYPE-1);
 
     {
         struct entity_placement* already_selected = (struct entity_placement*) editor.context;

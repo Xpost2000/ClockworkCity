@@ -390,6 +390,28 @@ struct entity entity_create_hovering_lost_soul(float x, float y) {
     return result;
 }
 
+struct entity entity_create_lost_soul(float x, float y) {
+    struct entity result = {
+        .x = x, .y = y,
+        .type = ENTITY_TYPE_LOST_SOUL,
+        .w = (0.5), .h = (0.5),
+        .health = 2, .max_health = 2,
+    };
+
+    return result;
+}
+
+struct entity entity_create_volatile_lost_soul(float x, float y) {
+    struct entity result = {
+        .x = x, .y = y,
+        .type = ENTITY_TYPE_VOLATILE_LOST_SOUL,
+        .w = (0.5), .h = (0.5),
+        .health = 2, .max_health = 2,
+    };
+
+    return result;
+}
+
 /* TODO(jerry):
    A nice way would just be to create a table of "templates", which would
    also work nicely for avoiding duplication.
@@ -403,8 +425,8 @@ void entity_get_type_dimensions(uint32_t type, float* width, float* height) {
     /* NOTE(jerry): lots of duplication. Maybe clean up later? */
     switch (type) {
         case ENTITY_TYPE_HOVERING_LOST_SOUL:
-        /* case ENTITY_TYPE_VOLATILE_LOST_SOUL: */
-        /* case ENTITY_TYPE_LOST_SOUL: */
+        case ENTITY_TYPE_LOST_SOUL:
+        case ENTITY_TYPE_VOLATILE_LOST_SOUL:
         {
             out_width = 0.5;
             out_height = 0.5;
@@ -418,14 +440,32 @@ void entity_get_type_dimensions(uint32_t type, float* width, float* height) {
 
 /* factory */
 struct entity construct_entity_of_type(uint32_t type, float x, float y) {
+    struct entity result;
     switch (type) {
         case ENTITY_TYPE_PLAYER: {
-            return entity_create_player(x, y);
+            result = entity_create_player(x, y);
         } break;
         case ENTITY_TYPE_HOVERING_LOST_SOUL: {
-            return entity_create_hovering_lost_soul(x, y);
+            result = entity_create_hovering_lost_soul(x, y);
+        } break;
+        case ENTITY_TYPE_VOLATILE_LOST_SOUL: {
+            result = entity_create_volatile_lost_soul(x, y);
+        } break;
+        case ENTITY_TYPE_LOST_SOUL: {
+            result = entity_create_lost_soul(x, y);
         } break;
     }
+
+    /* 
+       NOTE(jerry):
+       Fix problems related to interpolation.
+
+       The editor doesn't play animation, so it never updates the state that
+       interpolated rendering requires.
+     */
+    result.last_x = result.x;
+    result.last_y = result.y;
+    return result;
 }
 
 void entity_record_locations_for_linger_shadows(struct entity* entity) {
@@ -493,47 +533,47 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
     }
 }
 
-local void draw_entity(struct entity* entity) {
-    struct entity_iterator entities = {};
-    entity_iterator_push_array(&entities, entity, 1);
-    draw_all_entities(&entities, 0, 0);
+/* technically... Entities should know their visual position as separate state instead of
+ having this here but whatever.*/
+local void draw_entity(struct entity* current_entity, float dt, float interpolation_value) {
+    switch (current_entity->type) {
+        case ENTITY_TYPE_PLAYER: {
+            if (current_entity->death_state == DEATH_STATE_ALIVE) {
+                for (int shadow_index = current_entity->linger_shadow_count-1; shadow_index >= 0; --shadow_index) {
+                    struct entity_dash_shadow* shadow = current_entity->linger_shadows + shadow_index;
+
+                    union color4f shadow_color = active_colorscheme.primary;
+                    shadow_color.r /= 3;
+                    shadow_color.g /= 3;
+                    shadow_color.b /= 3;
+                    shadow_color.a = interpolation_clamp(shadow->t / ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT);
+                    shadow->t -= dt;
+
+                    draw_filled_rectangle(shadow->x, shadow->y, current_entity->w, current_entity->h, shadow_color);
+
+                    if (shadow->t <= 0.0) {
+                        current_entity->linger_shadows[shadow_index] = current_entity->linger_shadows[--current_entity->linger_shadow_count];
+                    }
+                }
+
+                draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
+                                      entity_lerp_y(current_entity, interpolation_value),
+                                      current_entity->w, current_entity->h, active_colorscheme.primary);
+            }
+        } break;
+        default: {
+            draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
+                                  entity_lerp_y(current_entity, interpolation_value),
+                                  current_entity->w, current_entity->h, active_colorscheme.primary);
+        } break;
+    }
 }
 
 void draw_all_entities(struct entity_iterator* entities, float dt, float interpolation_value) {
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
-        switch (current_entity->type) {
-            case ENTITY_TYPE_PLAYER: {
-                if (current_entity->death_state == DEATH_STATE_ALIVE) {
-                    for (int shadow_index = current_entity->linger_shadow_count-1; shadow_index >= 0; --shadow_index) {
-                        struct entity_dash_shadow* shadow = current_entity->linger_shadows + shadow_index;
-
-                        union color4f shadow_color = active_colorscheme.primary;
-                        shadow_color.r /= 3;
-                        shadow_color.g /= 3;
-                        shadow_color.b /= 3;
-                        shadow_color.a = interpolation_clamp(shadow->t / ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT);
-                        shadow->t -= dt;
-
-                        draw_filled_rectangle(shadow->x, shadow->y, current_entity->w, current_entity->h, shadow_color);
-
-                        if (shadow->t <= 0.0) {
-                            current_entity->linger_shadows[shadow_index] = current_entity->linger_shadows[--current_entity->linger_shadow_count];
-                        }
-                    }
-
-                    draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
-                                          entity_lerp_y(current_entity, interpolation_value),
-                                          current_entity->w, current_entity->h, active_colorscheme.primary);
-                }
-            } break;
-            default: {
-                draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
-                                      entity_lerp_y(current_entity, interpolation_value),
-                                      current_entity->w, current_entity->h, active_colorscheme.primary);
-            } break;
-        }
+        draw_entity(current_entity, dt, interpolation_value);
     }
 }
 
