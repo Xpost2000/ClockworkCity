@@ -167,13 +167,21 @@ void draw_rectangle(float x, float y, float w, float h, union color4f color) {
 }
 
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color) {
+    draw_texture_ext(texture, x, y, w, h, color, false);
+}
+
+void draw_texture_ext(texture_id texture, float x, float y, float w, float h, union color4f color, bool flipped) {
     int dimens[2];
     get_texture_dimensions(texture, dimens, dimens+1);
-    draw_texture_subregion(texture, x, y, w, h, 0, 0, dimens[0], dimens[1], color);
+    draw_texture_subregion_ext(texture, x, y, w, h, 0, 0, dimens[0], dimens[1], color, flipped);
 }
 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h,
                             int srx, int sry, int srw, int srh, union color4f color) {
+    draw_texture_subregion_ext(texture, x, y, w, h, srx, sry, srw, srh, color, false);
+}
+
+void draw_texture_subregion_ext(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color, bool flipped) {
     SDL_Texture* texture_object = textures[texture.id].texture_object;
 
     x *= _camera_render_scale(_active_camera);
@@ -193,10 +201,40 @@ void draw_texture_subregion(texture_id texture, float x, float y, float w, float
     _camera_transform_v2(_active_camera, &x, &y);
 
     if (within_screen_bounds(x, y, w, h)) {
-        SDL_RenderCopy(global_renderer, texture_object,
-                       &(SDL_Rect){srx, sry, srw, srh},
-                       &(SDL_Rect){x, y, w, h});
+        if (flipped) {
+            SDL_RenderCopyEx(global_renderer, texture_object,
+                             &(SDL_Rect){srx, sry, srw, srh},
+                             &(SDL_Rect){x, y, w, h},
+                             0, 0, SDL_FLIP_HORIZONTAL);
+        } else {
+            SDL_RenderCopy(global_renderer, texture_object,
+                           &(SDL_Rect){srx, sry, srw, srh},
+                           &(SDL_Rect){x, y, w, h});
+        }
     }
+}
+
+void draw_texture_aligned(texture_id texture, float x, float y, float tw, float th, float scale, float cx, float cy, union color4f color, bool flipped) {
+    float texture_width_in_units     = tw * scale;
+    texture_width_in_units          *= (VPIXEL_SZ);
+    float texture_height_in_units    = th * scale;
+    texture_height_in_units         *= (VPIXEL_SZ);
+    float texture_offset_x_in_units  = cx * scale;
+    texture_offset_x_in_units       *= (VPIXEL_SZ);
+    float texture_offset_y_in_units  = cy * scale;
+    texture_offset_y_in_units       *= (VPIXEL_SZ);
+
+    float render_x = x - (texture_offset_x_in_units);
+    float render_y = y - (texture_offset_y_in_units);
+
+    draw_texture_ext(texture,
+                     render_x, render_y,
+                     texture_width_in_units, texture_height_in_units, color,
+                     flipped);
+
+#ifdef DEV
+    draw_filled_rectangle(render_x, render_y, 0.1, 0.1, COLOR4F_RED);
+#endif
 }
 
 /* 

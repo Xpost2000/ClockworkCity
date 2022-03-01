@@ -131,6 +131,10 @@ Define_Console_Command(prompt) {
     game_activate_prompt(id);
 }
 
+Define_Console_Command(rlaa) {
+    reload_all_graphics_resources();
+}
+
 void register_console_commands(void) {
     console_system_register_command(&cmd_exit);
     console_system_register_command(&cmd_noclip);
@@ -145,4 +149,5 @@ void register_console_commands(void) {
     console_system_register_command(&cmd_kill);
     console_system_register_command(&cmd_badfall);
     console_system_register_command(&cmd_prompt);
+    console_system_register_command(&cmd_rlaa);
 }

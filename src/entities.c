@@ -200,10 +200,9 @@ void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap,
         emitter->alive = 0;
     }
     {
-        emitter->x  = entity->x - 0.25;
-        emitter->y  = entity->y + 0.5;
-        emitter->x1 = entity->x + 0.25;
-        emitter->y1 = entity->y + 0.5;
+        emitter->x  = emitter->x1 = entity->x + 0.20;
+        emitter->y  = entity->y + 0.55;
+        emitter->y1 = entity->y + 0.55;
     }
 
     entity->lost_soul_info.fly_time += dt * 1.5;
@@ -558,18 +557,11 @@ struct particle_emitter* entity_lost_soul_particles(float x, float y) {
     struct particle_emitter* emitter = particle_emitter_allocate();
 
     emitter->emission_rate = 0.002;
-    emitter->emission_count = 8;
+    emitter->emission_count = 2;
     emitter->particle_color = color4f(0.7, 0.1, 0.2, 1.0);
     emitter->particle_texture = particle_textures[0];
     emitter->particle_max_lifetime = 1;
     emitter->collides_with_world = true;
-
-    {
-        emitter->x  = x - 0.25;
-        emitter->y  = y + 0.25;
-        emitter->x1 = x + 0.25;
-        emitter->y1 = y + 0.25;
-    }
 
     return emitter;
 }
@@ -781,19 +773,27 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                     }
                 }
 
-                draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
-                                      entity_lerp_y(current_entity, interpolation_value),
-                                      current_entity->w, current_entity->h, active_colorscheme.primary);
+                draw_texture_aligned(player_idle1,
+                                     entity_lerp_x(current_entity, interpolation_value),
+                                     entity_lerp_y(current_entity, interpolation_value),
+                                     16, 24, 1, 4, 8, active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1);
             }
         } break;
         default: {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
-                draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
-                                      entity_lerp_y(current_entity, interpolation_value),
-                                      current_entity->w, current_entity->h, active_colorscheme.primary);
+                /* These alignments... Are broken lol */
+                draw_texture_aligned(lostsoul_idle1,
+                                     entity_lerp_x(current_entity, interpolation_value),
+                                     entity_lerp_y(current_entity, interpolation_value),
+                                     16, 16, 0.75,
+                                     3, 4, active_colorscheme.primary, 0);
             }
         } break;
     }
+
+    draw_rectangle(entity_lerp_x(current_entity, interpolation_value),
+                   entity_lerp_y(current_entity, interpolation_value),
+                   current_entity->w, current_entity->h, COLOR4F_BLUE);
 }
 
 void draw_all_entities(struct entity_iterator* entities, float dt, float interpolation_value) {

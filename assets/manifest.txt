@@ -1,0 +1,19 @@
+/*
+	At time of writing not sure if this is actually read at runtime, which would
+	be not really optimal...
+	
+	Or metaprogrammed, which would be more work...
+	
+	If I had decided to use my time to implement a better sprite system. I'm sure
+	I wouldn't be in much pain. Oh well.
+
+	*Will do this tomorrow??*
+
+	for textures
+	name texture path center_x center_y
+*/
+// PLAYER TEXTURES
+player_idle1 texture "assets/player/1.png" 3 8
+
+// LOST SOUL TEXTURES
+lostsoul_idle1 texture "assets/lostsoul/1idle.png"

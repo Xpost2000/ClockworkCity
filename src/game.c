@@ -33,12 +33,6 @@
   add particle placements (allow line placement for rains!)
  */
 #define DEV
-
-#define VPIXELS_PER_METER (16)
-#define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))
-#define TILES_PER_SCREEN (22)
-#define GRAVITY_CONSTANT (21)
-
 #define LAST_GROUNDED_POSITION_RECORD_TIMER_MAX (5.0f) /* seconds */
 
 local struct camera game_camera   = {};
@@ -223,6 +217,9 @@ local void load_graphics_resources(void) {
     game_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
     editor_camera.render_scale = ratio_with_screen_width(TILES_PER_SCREEN);
 
+    initialize_entity_assets();
+    playersizedblock = load_texture("assets/playersizedblock.png");
+
     load_all_particle_textures();
     load_gameplay_resources();
 }
@@ -237,7 +234,6 @@ local void load_static_resources(void) {
     game_state = memory_arena_push(&game_memory_arena, sizeof(*game_state));
     initialize_colorscheme_database(&game_memory_arena);
     initialize_particle_emitter_pool(&game_memory_arena);
-    playersizedblock = load_texture("assets/playersizedblock.png");
 
     use_colorscheme("MonoDefault0");
 

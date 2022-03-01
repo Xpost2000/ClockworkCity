@@ -3,6 +3,11 @@
 
 #define FILENAME_MAX_LENGTH (260)
 
+#define VPIXELS_PER_METER (16)
+#define VPIXEL_SZ          ((1.0f)/(VPIXELS_PER_METER))
+#define TILES_PER_SCREEN (22)
+#define GRAVITY_CONSTANT (21)
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

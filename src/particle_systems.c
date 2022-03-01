@@ -136,6 +136,25 @@ struct particle_emitter {
     float emission_rate;
     float emission_timer;
 
+    float vx_min;
+    float vx_max;
+
+    float vy_min;
+    float vy_max;
+
+    float lifetime_min;
+    float lifetime_max;
+
+    float min_w;
+    float max_w;
+
+    float min_h;
+    float max_h;
+
+    bool is_square;
+
+    union color4f color_variance; /* probably not using? */
+
     /* use texture as emission source, overrides everything else, since I can't see any other way to use this for now */
     texture_id from_texture;
     texture_id particle_texture;
@@ -221,6 +240,25 @@ struct particle_emitter* particle_emitter_allocate(void) {
             emitter->chunks.head = emitter->chunks.tail = &particle_chunk_list_sentinel;
             emitter->arena = &game_memory_arena; /* hack for now */
             emitter->alive = true;
+
+            /* these are the default settings when all settings were hard coded :) */
+            emitter->color_variance = COLOR4F_BLACK;
+            emitter->min_h = 0.1;
+            emitter->min_w = 0.1;
+            emitter->max_h = 0.2;
+            emitter->min_w = 0.2;
+
+            emitter->vx_min = -3;
+            emitter->vx_max = 2;
+            emitter->vy_min = -1;
+            emitter->vy_max = -6;
+            emitter->is_square = true;
+
+            /* LOL */
+            /* TODO(jerry): reorganize later. */
+            emitter->lifetime_min = emitter->particle_max_lifetime;
+            emitter->lifetime_max = emitter->particle_max_lifetime + 0.4;
+
             return emitter;
         }
     }
@@ -293,8 +331,8 @@ local void emit_particles_from_image_source(struct particle_emitter* emitter) {
                     emitted_particle->h = pixel_scale_factor;
                     emitted_particle->w = pixel_scale_factor;
 
-                    emitted_particle->vx = (random_float() * 5) - 3;
-                    emitted_particle->vy = -1 - (random_float() * 5);
+                    emitted_particle->vx = lerp(emitter->vx_min, emitter->vx_max, random_float());
+                    emitted_particle->vy = lerp(emitter->vy_min, emitter->vy_max, random_float());
 
                     emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
                 }
@@ -312,11 +350,19 @@ local void emit_particles(struct particle_emitter* emitter) {
             emitted_particle->y = lerp(emitter->y, emitter->y1, random_float());
         }
             
+        /* TODO(jerry)  color variance*/
         emitted_particle->color = color4u8_from_color4f(emitter->particle_color);
             
-        emitted_particle->h = emitted_particle->w = 0.1 + random_float() * 0.1;
-        emitted_particle->vx = (random_float() * 5) - 3;
-        emitted_particle->vy = -1 - (random_float() * 5);
+        if (emitter->is_square) {
+            emitted_particle->h = emitted_particle->w = lerp(emitter->min_h, emitter->max_h, random_float());
+        } else {
+            emitted_particle->h = lerp(emitter->min_h, emitter->max_h, random_float());
+            emitted_particle->w = lerp(emitter->min_w, emitter->max_w, random_float());
+        }
+
+        emitted_particle->vx = lerp(emitter->vx_min, emitter->vx_max, random_float());
+        emitted_particle->vy = lerp(emitter->vy_min, emitter->vy_max, random_float());
+        /* emitted_particle->lifetime_max = emitted_particle->lifetime = lerp(emitter->lifetime_min, emitter->lifetime_max, random_float()); */
         emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
     }
 }

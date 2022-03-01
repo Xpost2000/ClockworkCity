@@ -1,4 +1,15 @@
 /*
+  Entity assets
+ */
+
+/* PLAYER */
+local texture_id player_idle1 = {}; /*16x24*/
+/* END PLAYER */
+/* LOST SOUL */
+local texture_id lostsoul_idle1 = {};
+/* END LOST SOUL */
+
+/*
   A vast majority of the entity code is kind of else where because the tilemaps is probably
   the vast majority of their code.
 */
@@ -8,7 +19,6 @@ enum attack_direction {
     ATTACK_DIRECTION_DOWN,
     ATTACK_DIRECTION_UP,
 };
-
 
 enum movement_flags { /* eh? */
     MOVEMENT_FLAG_ALLOW_WALL_JUMP = BIT(0), /*wall grinding*/
@@ -264,6 +274,11 @@ shared_storage const char* get_facing_direction_string(int x) {
     }
 
     return "?";
+}
+
+void initialize_entity_assets(void) {
+    player_idle1   = load_texture("assets/player/1.png");
+    lostsoul_idle1 = load_texture("assets/lostsoul/1idle.png");
 }
 
 /* 
