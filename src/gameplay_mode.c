@@ -45,6 +45,7 @@ struct entity_iterator game_state_entity_iterator(struct game_state* game_state)
     struct entity_iterator entities = {};
 
     entity_iterator_push_array(&entities, game_state->persistent_entities, game_state->entity_count);
+    entity_iterator_push_array(&entities, game_state->loaded_level->entities, game_state->loaded_level->entity_count);
 
     return entities;
 }
@@ -150,6 +151,8 @@ local void game_update_render_frame(float dt) {
 
             physics_accumulation_timer += dt * game_timescale;
             while (physics_accumulation_timer >= PHYSICS_TIMESTEP) {
+                // Interesting...
+
                 do_entity_physics_updates(&entities, tilemap, PHYSICS_TIMESTEP);
                 physics_accumulation_timer -= PHYSICS_TIMESTEP;
             }

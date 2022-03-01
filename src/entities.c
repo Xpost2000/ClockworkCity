@@ -172,7 +172,10 @@ void do_generic_entity_physics_update(struct entity* entity, struct tilemap* til
 }
 
 void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    
+    /* entity->x += dt; */
+    /* entity->y += dt; */
+    /* entity->w += dt; */
+    /* entity->h += dt; */
 }
 
 void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {

@@ -305,9 +305,11 @@ struct entity_iterator {
 
 void entity_iterator_push_array(struct entity_iterator* iterator, struct entity* list, size_t count) {
     /* nocheck */
-    struct entity_iterator_list* new_list = &iterator->lists[iterator->list_count++];
-    new_list->list_length = count;
-    new_list->list        = list;
+    if (list && (count > 0)) {
+        struct entity_iterator_list* new_list = &iterator->lists[iterator->list_count++];
+        new_list->list_length = count;
+        new_list->list        = list;
+    }
 }
 
 struct entity* entity_iterator_begin(struct entity_iterator* iterator) {
@@ -316,17 +318,25 @@ struct entity* entity_iterator_begin(struct entity_iterator* iterator) {
     return result;
 }
 
+struct entity _entity_sentinel = {};
 struct entity* entity_iterator_next(struct entity_iterator* iterator) {
     {
         struct entity_iterator_list* current_list = &iterator->lists[iterator->current_list_index];
 
         if (iterator->current_list_item_index < current_list->list_length) {
             iterator->current_list_item_index += 1; 
-        } else {
+        }
+
+        if (iterator->current_list_item_index >= current_list->list_length) {
             iterator->current_list_item_index = 0;
-            iterator->current_list_index     += 1;
+            if (iterator->current_list_index < iterator->list_count) {
+                iterator->current_list_index     += 1;
+            } else {
+                return &_entity_sentinel;
+            }
         }
     }
+
 
     struct entity* result = &iterator->lists[iterator->current_list_index].list[iterator->current_list_item_index];
     return result;
@@ -334,10 +344,7 @@ struct entity* entity_iterator_next(struct entity_iterator* iterator) {
 
 bool entity_iterator_done(struct entity_iterator* iterator) {
     if (iterator->current_list_index >= iterator->list_count) {
-        struct entity_iterator_list* current_list = &iterator->lists[iterator->current_list_index];
-        if (iterator->current_list_item_index >= current_list->list_length) {
-            return true;
-        }
+        return true;
     }
 
     return false;

@@ -231,7 +231,8 @@ local void load_static_resources(void) {
     use_colorscheme("MonoDefault0");
 
     gameplay_initialize();
-    console_execute_cstr("load 1.lvl");
+    console_execute_cstr("load t");
+    /* console_execute_cstr("load 1.lvl"); */
 
     initialize_grass_visual_tables();
     /* console_execute_cstr("noclip"); */
@@ -304,7 +305,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
 
         if (version_id >= 3) {
             Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u32, game_state->loaded_level->grass_tile_count, game_state->loaded_level->grass_tiles);
-#if 1
+
             if (version_id >= 4) {
                 console_printf("new version!\n");
                 /*
@@ -317,6 +318,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                 struct entity_placement* entity_placements = memory_arena_push(&conversion_arena, entity_placement_count * sizeof(*entity_placements));
                 serialize_bytes(serializer, entity_placements, entity_placement_count * sizeof(*entity_placements));
 
+#if 1
                 {
                     game_state->loaded_level->entity_count = entity_placement_count;
                     struct entity* unpacked_entities = memory_arena_push_top(arena, sizeof(*unpacked_entities) * entity_placement_count);
@@ -328,16 +330,17 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                         struct entity_placement* ep = entity_placements + index;
                         struct entity*           unpack_into = unpacked_entities + index;
 
-                        console_printf("Unpacked a %s\n", entity_type_strings[ep->type]);
                         *unpack_into = construct_entity_of_type(ep->type, ep->x, ep->y);
                         unpack_into->flags      = ep->flags;
                         unpack_into->facing_dir = ep->facing_direction;
+                        console_printf("Unpacked a %s (%f, %f)\n", entity_type_strings[ep->type], unpack_into->x, unpack_into->y);
                     }
+
+                    game_state->loaded_level->entities = unpacked_entities;
                 }
-                
+#endif
                 end_temporary_memory(&conversion_arena);
             }
-#endif
         }
     }
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->transition_zone_count, game_state->loaded_level->transitions);
