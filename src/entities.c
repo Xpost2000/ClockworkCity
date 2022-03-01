@@ -241,6 +241,7 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
 void do_generic_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     entity->vx += entity->ax *                      dt;
     entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+
     do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
     do_moving_entity_vertical_collision_response(tilemap, entity, dt);
 }
@@ -389,6 +390,8 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
             float hitbox_x = entity->x;
             float hitbox_y = entity->y;
+            float hitbox_w = HITBOX_W;
+            float hitbox_h = entity->h;
 
             int facing_dir = entity->facing_dir;
             int direction = ATTACK_DIRECTION_RIGHT;
@@ -396,11 +399,13 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
             if (aiming_up || aiming_down) {
                 if (aiming_up) {
-                    hitbox_y = entity->y - entity->h;
+                    hitbox_h = entity->h * 1.3;
+                    hitbox_y = entity->y - hitbox_h;
                     direction = ATTACK_DIRECTION_UP;
                 } else {
                     hitbox_y = entity->y + entity->h;
                     direction = ATTACK_DIRECTION_DOWN;
+                    hitbox_h = entity->h * 1.3;
                 }
             } else {
                 if (facing_dir == 1) {
@@ -414,7 +419,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
 
             entity->attack_cooldown_timer = PLAYER_ATTACK_COOLDOWN_TIMER_MAX;
-            push_melee_with_knockback_hitbox(entity, hitbox_x, hitbox_y, HITBOX_W, entity->h, 1, direction);
+            push_melee_with_knockback_hitbox(entity, hitbox_x, hitbox_y, hitbox_w, hitbox_h, 1, direction);
         }
     }
 
@@ -443,7 +448,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
                 } break;
                 case ATTACK_DIRECTION_DOWN: {
                     /* allows for "bouncing" */
-                    entity->vy = -KNOCKDOWN_MAGNITUDE_Y * 1.452;
+                    entity->vy = -KNOCKDOWN_MAGNITUDE_Y * 2;
                 } break;
                 case ATTACK_DIRECTION_UP: {
                     entity->vy = KNOCKDOWN_MAGNITUDE_Y;
@@ -480,6 +485,32 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
         do_player_entity_input(entity, 0, dt);
     }
     /* game collisions, not physics */
+
+    /* check for spike hits */
+    {
+        struct tilemap_sample_interval sample_region = tilemap_sampling_region_around_moving_entity(tilemap, entity);
+        for (unsigned y = sample_region.min_y; y < sample_region.max_y; ++y) {
+            for (unsigned x = sample_region.min_x; x < sample_region.max_x; ++x) {
+                struct tile* t = &tilemap->tiles[y * tilemap->width + x];
+
+                if (t->id == TILE_NONE) continue;
+
+                if (rectangle_intersects_v(
+                        entity->x, entity->y, entity->w, entity->h,
+                        t->x, t->y, 1, 1
+                    )) {
+                    if (t->id == TILE_SPIKE_LEFT  ||
+                        t->id == TILE_SPIKE_RIGHT ||
+                        t->id == TILE_SPIKE_DOWN  ||
+                        t->id == TILE_SPIKE_UP) {
+                        /* for now just restore a bad fall */
+                        /* NOTE(jerry): global. Shit! */
+                        restore_player_to_last_good_grounded();
+                    }
+                }
+            }
+        }
+    }
     /* check if I hit transition then change level */
     {
         /* NOTE(jerry): I store string pointers in the "queue"... So this has to be a pointer inside of the loop. */

@@ -174,12 +174,14 @@ char* entity_flag_strings[] = {
 enum death_state {
     DEATH_STATE_ALIVE,
     DEATH_STATE_DYING,
+    DEATH_STATE_DYING_FROM_SPIKE, /* gives me permission to animate them in a fun way :) */
     DEATH_STATE_DEAD,
 };
 shared_storage char* death_state_strings[] = {
-    [DEATH_STATE_ALIVE] = "alive",
-    [DEATH_STATE_DYING] = "dying",
-    [DEATH_STATE_DEAD] = "dead",
+    [DEATH_STATE_ALIVE]            = "alive",
+    [DEATH_STATE_DYING]            = "dying",
+    [DEATH_STATE_DYING_FROM_SPIKE] = "badfalldeath",
+    [DEATH_STATE_DEAD]             = "dead",
 };
 
 #define ENTITY_COYOTE_JUMP_TIMER_MAX               (0.12)

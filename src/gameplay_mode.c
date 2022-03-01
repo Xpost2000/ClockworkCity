@@ -65,6 +65,7 @@ local void try_and_record_player_grounded_position(float dt) {
     */
     struct entity* player = &game_state->persistent_entities[0];
 
+    /* TODO(jerry): This is a little bugged, (okay the onground state is technically. Check later.)*/
     if (player->onground) {
         if (game_state->last_good_grounded_position_recording_timer <= 0) {
             game_state->last_good_grounded_position_x = (int32_t)floorf(player->x);
@@ -79,7 +80,7 @@ local void try_and_record_player_grounded_position(float dt) {
     }
 }
 
-local void restore_player_to_last_good_grounded(void) {
+void restore_player_to_last_good_grounded(void) {
     if (!game_state->have_a_good_grounded_position)
         return;
 

@@ -655,15 +655,17 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                             }
                         }
                     } else {
-                        float entity_right_edge = entity->x + entity->w;
-                        float tile_right_edge = (t->x + 1);
+                        if (t->id == TILE_SOLID) {
+                            float entity_right_edge = entity->x + entity->w;
+                            float tile_right_edge = (t->x + 1);
 
-                        if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
-                            entity->x = t->x - (entity->w);
-                            entity->vx = 0;
-                        } else if (entity->x < tile_right_edge && entity->x > t->x) {
-                            entity->x = tile_right_edge;
-                            entity->vx = 0;
+                            if (entity_right_edge > t->x && entity_right_edge < tile_right_edge) {
+                                entity->x = t->x - (entity->w);
+                                entity->vx = 0;
+                            } else if (entity->x < tile_right_edge && entity->x > t->x) {
+                                entity->x = tile_right_edge;
+                                entity->vx = 0;
+                            }
                         }
                     }
                 }
