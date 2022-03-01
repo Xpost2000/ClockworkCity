@@ -6,8 +6,9 @@
   
   TODO(jerry): work in progress
   
-  I want to do particles from images, but I don't know what the conversion is for unit to pixel unfortunately. I mean I guess
-  it is actually just 
+  TODO(jerry):
+  Specify particle direction,
+  and particle velocity & acceleration.
   
   NOTE(jerry):
   Since particle emitters "own" their particles, I don't variably size them like I do for
@@ -317,6 +318,16 @@ local void emit_particles(struct particle_emitter* emitter) {
         emitted_particle->vx = (random_float() * 5) - 3;
         emitted_particle->vy = -1 - (random_float() * 5);
         emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
+    }
+}
+
+local void particle_emitter_clear_all_particles(struct particle_emitter* emitter) {
+    struct particle_chunk_list* list = &emitter->chunks;
+
+    for (struct particle_chunk* chunk = list->head; chunk != &particle_chunk_list_sentinel; chunk = chunk->next) {
+        chunk->used = 0;
+        particle_chunk_list_remove(list, chunk);
+        particle_chunk_list_push(&particle_chunk_freelist, chunk);
     }
 }
 

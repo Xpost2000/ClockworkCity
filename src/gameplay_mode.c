@@ -1,53 +1,10 @@
-local struct particle_emitter* test_emitter = 0x12345;
-local struct particle_emitter* test_emitter2 = 0x12345;
-
 local void load_gameplay_resources(void) {
     load_all_tile_assets();
     load_all_resources_for_prompts();
 }
 
 local void gameplay_initialize(void) {
-    game_state_add_persistent_entity(game_state, entity_create_player(0, 0));
-
-    test_emitter  = particle_emitter_allocate();
-    test_emitter2 = particle_emitter_allocate();
-
-    {
-#if 0
-        test_emitter->emission_rate = 0.001;
-        test_emitter->emission_count = 8;
-        test_emitter->particle_color = color4f(1.0, 0.0, 0.0, 1.0);
-        test_emitter->particle_texture = particle_textures[0];
-        test_emitter->particle_max_lifetime = 1;
-        test_emitter->collides_with_world = true;
-#endif
-    }
-
-    {
-        test_emitter2->emission_rate = 0.005;
-        test_emitter2->emission_count = 32;
-        test_emitter2->particle_color = color4f(0.32, 0.3, 0.85, 1.0);
-        test_emitter2->particle_texture = particle_textures[0];
-        test_emitter2->particle_max_lifetime = 8;
-        test_emitter2->collides_with_world = false;
-
-        int a = 0;
-        int b = -8;
-        test_emitter2->x = a;
-        test_emitter2->y = b;
-
-        test_emitter2->x1 = a + 30;
-        test_emitter2->y1 = b;
-    }
-}
-
-struct entity_iterator game_state_entity_iterator(struct game_state* game_state) {
-    struct entity_iterator entities = {};
-
-    entity_iterator_push_array(&entities, game_state->persistent_entities, game_state->entity_count);
-    entity_iterator_push_array(&entities, game_state->loaded_level->entities, game_state->loaded_level->entity_count);
-
-    return entities;
+    game_state_add_persistent_entity(game_state, construct_entity_of_type(ENTITY_TYPE_PLAYER, 0, 0));
 }
 
 local void DEBUG_draw_debug_stuff(void) {
@@ -180,11 +137,6 @@ local void game_update_render_frame(float dt) {
 
             particle_interpolation_value = particle_accumulation_timer / PARTICLES_TIMESTEP;
         }
-    }
-
-    {
-        test_emitter->x = test_emitter->x1 = player->x;
-        test_emitter->y = test_emitter->y1 = player->y;
     }
 
     camera_set_focus_speed_x(&game_camera, 3);

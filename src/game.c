@@ -20,7 +20,6 @@
   
   Coming back tomorrow actually.
   
-  - Entity Placement in the editor
   - Trigger placement for cutscenes/prompts
   - Spikes doing damage and also "nail" bouncing.
   - Add "Rest" points (Soul Anchors)
@@ -181,9 +180,20 @@ void game_state_remove_persistent_entity(struct game_state* game_state, uint32_t
 local struct game_state* game_state;
 
 enum game_mode mode = GAME_MODE_PLAYING;
-
 void game_queue_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
 #include "entities.c"
+
+struct entity_iterator game_state_entity_iterator(struct game_state* game_state) {
+    struct entity_iterator entities = {};
+
+    entity_iterator_push_array(&entities, game_state->persistent_entities, game_state->entity_count);
+    /* NOTE(jerry): *sigh*, this shouldn't be a pointer and I have no idea why I made it that way before. Definitely not for a good reason */
+    if (game_state->loaded_level)
+        entity_iterator_push_array(&entities, game_state->loaded_level->entities, game_state->loaded_level->entity_count);
+
+    return entities;
+}
+
 #include "game_message_prompts.c"
 #include "game_menus.c"
 #include "gameplay_mode.c"
@@ -375,8 +385,19 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
     camera_force_clamp_to_bounds(&game_camera);
 }
 
+local void cleanup_current_entities(void) {
+    struct entity_iterator entities = game_state_entity_iterator(game_state);
+    struct entity* player = &game_state->persistent_entities[0];
+
+    for (struct entity* current_entity = entity_iterator_begin(&entities); !entity_iterator_done(&entities); current_entity = entity_iterator_next(&entities)) {
+        if (current_entity != player)
+            cleanup_for_entity(current_entity);
+    }
+}
+
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     struct binary_serializer file = open_read_file_serializer(filename);
+    cleanup_current_entities();
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
     serializer_finish(&file);
 }

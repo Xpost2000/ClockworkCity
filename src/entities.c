@@ -104,6 +104,10 @@ void entity_halt_motion(struct entity* entity) {
 /* end of general entity procedures */
 
 /* type procedures */
+
+/*
+  Honestly... There is no reason this should be special.
+*/
 void do_player_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     if (noclip) {
         entity->vx      = entity->ax;
@@ -159,16 +163,77 @@ void do_player_entity_physics_update(struct entity* entity, struct tilemap* tile
     do_moving_entity_vertical_collision_response(tilemap, entity, dt);
 }
 
+void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity->last_x = entity->x;
+    entity->last_y = entity->y;
+
+    switch (entity->type) {
+        /* case ENTITY_TYPE_HOVERING_LOST_SOUL: {} break; */
+        default: {
+            /* TODO(jerry):
+             make lost soul types work differently.*/
+            entity->y = normalized_sinf((entity->lost_soul_info.fly_time)) * 0.67 + entity->initial_y;
+        } break;
+    }
+    struct particle_emitter* emitter = entity->lost_soul_info.owned_emitter;
+    if (entity->health == 0) {
+        emitter->alive = 0;
+    }
+    {
+        emitter->x  = entity->x - 0.25;
+        emitter->y  = entity->y + 0.5;
+        emitter->x1 = entity->x + 0.25;
+        emitter->y1 = entity->y + 0.5;
+    }
+
+    entity->lost_soul_info.fly_time += dt * 1.5;
+    /* entity->x  += entity->vx *                       dt; */
+    /* entity->y  += entity->vy *                       dt; */
+}
+
+void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    /* these guys do respawn. For platforming reasons lol. */
+    if (entity->death_state != DEATH_STATE_ALIVE) {
+        if (entity->death_state == DEATH_STATE_DYING) {
+            entity->death_state = DEATH_STATE_DEAD;
+
+            /* death explosion. woosh */
+            {
+                struct particle_emitter* splatter = particle_emitter_allocate();
+                splatter->x = splatter->x1 = entity->x;
+                splatter->y = splatter->y1 = entity->y + entity->h;
+                splatter->emission_rate = 0;
+                splatter->emission_count = 16;
+                splatter->max_emissions = 1;
+                splatter->particle_color = active_colorscheme.primary;
+                splatter->particle_max_lifetime = 1;
+                splatter->collides_with_world = true;
+                camera_traumatize(&game_camera, 0.005);
+            }
+        }
+    }
+}
+
 /* 
    technically physics updates for all entities should nearly be identical...
    However for now I only have the player so... I can't say.
 */
 void do_generic_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    entity->vx += entity->ax * dt;
+    entity->vx += entity->ax *                      dt;
     entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
-
     do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
     do_moving_entity_vertical_collision_response(tilemap, entity, dt);
+}
+
+void do_generic_entity_basic_kinematic_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity->vx += entity->ax *                      dt;
+    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+
+    entity->last_x = entity->x;
+    entity->last_y = entity->y;
+
+    entity->x  += entity->vx *                       dt;
+    entity->y  += entity->vy *                       dt;
 }
 
 void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
@@ -345,6 +410,9 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
 local bool block_player_input = false;
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    if (entity->death_state != DEATH_STATE_ALIVE)
+        return;
+
     if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
 
     if (animation_id == GAME_ANIMATION_ID_NONE && !block_player_input) {
@@ -381,6 +449,26 @@ struct entity entity_create_player(float x, float y) {
     return result;
 }
 
+struct particle_emitter* entity_lost_soul_particles(float x, float y) {
+    struct particle_emitter* emitter = particle_emitter_allocate();
+
+    emitter->emission_rate = 0.002;
+    emitter->emission_count = 8;
+    emitter->particle_color = color4f(0.7, 0.1, 0.2, 1.0);
+    emitter->particle_texture = particle_textures[0];
+    emitter->particle_max_lifetime = 1;
+    emitter->collides_with_world = true;
+
+    {
+        emitter->x  = x - 0.25;
+        emitter->y  = y + 0.25;
+        emitter->x1 = x + 0.25;
+        emitter->y1 = y + 0.25;
+    }
+
+    return emitter;
+}
+
 /* For now I'm hardcoding immortality into these things... */
 struct entity entity_create_hovering_lost_soul(float x, float y) {
     struct entity result = {
@@ -390,6 +478,7 @@ struct entity entity_create_hovering_lost_soul(float x, float y) {
         .health = 2, .max_health = 2,
     };
 
+    result.lost_soul_info.owned_emitter = entity_lost_soul_particles(x, y);
     return result;
 }
 
@@ -401,6 +490,7 @@ struct entity entity_create_lost_soul(float x, float y) {
         .health = 2, .max_health = 2,
     };
 
+    result.lost_soul_info.owned_emitter = entity_lost_soul_particles(x, y);
     return result;
 }
 
@@ -412,6 +502,7 @@ struct entity entity_create_volatile_lost_soul(float x, float y) {
         .health = 2, .max_health = 2,
     };
 
+    result.lost_soul_info.owned_emitter = entity_lost_soul_particles(x, y);
     return result;
 }
 
@@ -466,8 +557,8 @@ struct entity construct_entity_of_type(uint32_t type, float x, float y) {
        The editor doesn't play animation, so it never updates the state that
        interpolated rendering requires.
      */
-    result.last_x = result.x;
-    result.last_y = result.y;
+    result.last_x = result.initial_x = result.x;
+    result.last_y = result.initial_y = result.y;
     return result;
 }
 
@@ -489,11 +580,20 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
         switch (current_entity->type) {
-            case ENTITY_TYPE_PLAYER:
+            case ENTITY_TYPE_PLAYER: {
                 do_player_entity_physics_update(current_entity, tilemap, dt);
-                break;
+            } break;
+            case ENTITY_TYPE_HOVERING_LOST_SOUL:
+            case ENTITY_TYPE_LOST_SOUL:
+            case ENTITY_TYPE_VOLATILE_LOST_SOUL: {
+                do_lost_soul_physics_update(current_entity, tilemap, dt);
+            } break;
             default:
-                do_generic_entity_physics_update(current_entity, tilemap, dt);
+                if (entity_is_physics_active(current_entity->type)) {
+                    do_generic_entity_physics_update(current_entity, tilemap, dt);
+                } else {
+                    do_generic_entity_basic_kinematic_update(current_entity, tilemap, dt);
+                }
                 break;
         }
 
@@ -522,16 +622,15 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
                 current_entity->death_state = DEATH_STATE_DYING;
             }
-        } else {
-            current_entity->death_state = DEATH_STATE_ALIVE;
-            switch (current_entity->type) {
-                case ENTITY_TYPE_PLAYER:
-                    do_player_entity_update(current_entity, tilemap, dt);
-                    break;
-                default:
-                    do_generic_entity_update(current_entity, tilemap, dt);
-                    break;
-            }
+        } 
+
+        switch (current_entity->type) {
+            case ENTITY_TYPE_PLAYER:
+                do_player_entity_update(current_entity, tilemap, dt);
+                break;
+            default:
+                do_generic_entity_update(current_entity, tilemap, dt);
+                break;
         }
     }
 }
@@ -565,9 +664,11 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
             }
         } break;
         default: {
-            draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
-                                  entity_lerp_y(current_entity, interpolation_value),
-                                  current_entity->w, current_entity->h, active_colorscheme.primary);
+            if (current_entity->death_state == DEATH_STATE_ALIVE) {
+                draw_filled_rectangle(entity_lerp_x(current_entity, interpolation_value),
+                                      entity_lerp_y(current_entity, interpolation_value),
+                                      current_entity->w, current_entity->h, active_colorscheme.primary);
+            }
         } break;
     }
 }
@@ -621,6 +722,14 @@ void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilem
 #ifdef DEV
     DEBUG_update_all_lingering_hitboxes(dt);
 #endif
+}
+
+void cleanup_for_entity(struct entity* entity) {
+    if (entity->lost_soul_info.owned_emitter) {
+        particle_emitter_clear_all_particles(entity->lost_soul_info.owned_emitter);
+        entity->lost_soul_info.owned_emitter->alive = false;
+        entity->lost_soul_info.owned_emitter = 0;
+    }
 }
 
 void DEBUG_draw_all_hitboxes(void) {

@@ -8,8 +8,8 @@ enum movement_flags { /* eh? */
 };
 
 #define KINEMATIC_ENTITY_BASE_BODY()            \
-    float x, last_x;                            \
-    float y, last_y;                            \
+    float x, last_x, initial_x;                 \
+    float y, last_y, initial_y;                 \
     float w;                                    \
     float h;                                    \
     float vx;                                   \
@@ -56,6 +56,15 @@ enum entity_type {
 
     ENTITY_TYPE_COUNT, /* inaccurate??? */
 };
+
+/* hardcoded type baking. fun */
+local bool entity_is_physics_active(uint32_t entity_type) {
+    switch (entity_type) {
+        default:
+            return false;
+    }
+}
+
 char* entity_type_strings[] = {
     "?",
     [ENTITY_TYPE_PLAYER] = "Player",
@@ -222,8 +231,12 @@ struct entity {
     /* qfix */
     float apply_wall_jump_force_timer;
 
-#if 0
+#if 1
     /* per instance data */
+    struct {
+        float fly_time;
+        struct particle_emitter* owned_emitter;
+    } lost_soul_info;
 #endif
 };
 shared_storage const char* get_facing_direction_string(int x) {
