@@ -34,11 +34,13 @@ enum movement_flags { /* eh? */
    to hardcode all of these special animations...)
 */
 enum entity_type {
-    ENTITY_TYPE_NONE = 0,
-    ENTITY_TYPE_PLAYER = 1,
+    ENTITY_TYPE_NONE               = 0,
+    ENTITY_TYPE_PLAYER             = 1,
     ENTITY_TYPE_HOVERING_LOST_SOUL = 2,
-    ENTITY_TYPE_MEPHIT_MINOR = 3,
-    ENTITY_TYPE_MEPHIT = 3,
+    /* ENTITY_TYPE_LOST_SOUL          = 3, */
+    /* ENTITY_TYPE_VOLATILE_LOST_SOUL = 4, */
+    /* ENTITY_TYPE_MEPHIT_MINOR       = 5, */
+    /* ENTITY_TYPE_MEPHIT             = 6, */
 
     ENTITY_TYPE_COUNT,
 };
@@ -153,7 +155,7 @@ shared_storage char* death_state_strings[] = {
 };
 
 #define ENTITY_COYOTE_JUMP_TIMER_MAX               (0.12)
-#define ENTITY_STRING_IDENTIFIER_MAX_LENGTH        (8) /*entity12*/ /*use for hardcoded triggers*/
+#define ENTITY_STRING_IDENTIFIER_MAX_LENGTH        (9) /*entity12*/ /*use for hardcoded triggers*/
 #define PLAYER_VARIABLE_JUMP_TIME_LIMIT            (0.17)
 #define PLAYER_VARIABLE_JUMP_ACCELERATION          (GRAVITY_CONSTANT*1.3)
 #define PLAYER_ATTACK_COOLDOWN_TIMER_MAX           (0.2)
@@ -182,6 +184,7 @@ struct entity {
     uint32_t flags;
     uint32_t type; 
 
+    int32_t  max_health;
     int32_t  health;
     uint8_t  death_state; /* use this for animation setting. */
 

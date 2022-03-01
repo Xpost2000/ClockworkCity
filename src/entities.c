@@ -370,11 +370,62 @@ struct entity entity_create_player(float x, float y) {
         .w = (0.5),
         .h = 1,
         .health = 3,
+        .max_health = 3,
         .flags = ENTITY_FLAGS_PERMENANT,
         .max_allowed_jump_count = 2,
     };
 
     return result;
+}
+
+/* For now I'm hardcoding immortality into these things... */
+struct entity entity_create_hovering_lost_soul(float x, float y) {
+    struct entity result = {
+        .x = x, .y = y,
+        .type = ENTITY_TYPE_HOVERING_LOST_SOUL,
+        .w = (0.5), .h = (0.5),
+        .health = 2, .max_health = 2,
+    };
+
+    return result;
+}
+
+/* TODO(jerry):
+   A nice way would just be to create a table of "templates", which would
+   also work nicely for avoiding duplication.
+*/
+
+/* use for construction */
+void entity_get_type_dimensions(uint32_t type, float* width, float* height) {
+    float out_width  = 1;
+    float out_height = 1;
+
+    /* NOTE(jerry): lots of duplication. Maybe clean up later? */
+    switch (type) {
+        case ENTITY_TYPE_HOVERING_LOST_SOUL:
+        /* case ENTITY_TYPE_VOLATILE_LOST_SOUL: */
+        /* case ENTITY_TYPE_LOST_SOUL: */
+        {
+            out_width = 0.5;
+            out_height = 0.5;
+        } break;
+        default: {} break;
+    }
+
+    safe_assignment(width)  = out_width;
+    safe_assignment(height) = out_height;
+}
+
+/* factory */
+struct entity construct_entity_of_type(uint32_t type, float x, float y) {
+    switch (type) {
+        case ENTITY_TYPE_PLAYER: {
+            return entity_create_player(x, y);
+        } break;
+        case ENTITY_TYPE_HOVERING_LOST_SOUL: {
+            return entity_create_hovering_lost_soul(x, y);
+        } break;
+    }
 }
 
 void entity_record_locations_for_linger_shadows(struct entity* entity) {
@@ -442,7 +493,12 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
     }
 }
 
-/*and visually update*/
+local void draw_entity(struct entity* entity) {
+    struct entity_iterator entities = {};
+    entity_iterator_push_array(&entities, entity, 1);
+    draw_all_entities(&entities, 0, 0);
+}
+
 void draw_all_entities(struct entity_iterator* entities, float dt, float interpolation_value) {
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);

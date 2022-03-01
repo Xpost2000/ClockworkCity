@@ -181,6 +181,17 @@ local struct transition_zone* editor_allocate_transition(void) {
     return result;
 }
 
+local struct entity_placement* editor_allocate_entity_placement(void) {
+    assert(editor.tilemap.entity_placement_count < EDITOR_ENTITY_PLACEMENTS_MAX);
+    struct entity_placement* result = &editor.tilemap.entity_placements[editor.tilemap.entity_placement_count++];
+    zero_array(result->identifier);
+    result->flags = 0;
+    result->travel_distance_x = 0;
+    result->travel_distance_y = 0;
+    
+    return result;
+}
+
 local struct player_spawn_link* editor_allocate_spawn(void) {
     assert(editor.tilemap.player_spawn_link_count < EDITOR_PLAYER_SPAWN_MAX_COUNT);
     struct player_spawn_link* result = &editor.tilemap.player_spawn_links[editor.tilemap.player_spawn_link_count++];
@@ -277,7 +288,7 @@ struct transition_zone* editor_existing_transition_at(struct transition_zone* tr
     return NULL;
 }
 
-struct transition_zone* editor_existing_spawn_at(struct player_spawn_link* spawns, size_t spawn_count, int grid_x, int grid_y) {
+struct player_spawn_link* editor_existing_spawn_at(struct player_spawn_link* spawns, size_t spawn_count, int grid_x, int grid_y) {
     if (rectangle_intersects_v(editor.tilemap.default_spawn.x, editor.tilemap.default_spawn.y, 1, 2, grid_x, grid_y, 0.5, 0.5)) {
         return &editor.tilemap.default_spawn;
     }
@@ -286,6 +297,27 @@ struct transition_zone* editor_existing_spawn_at(struct player_spawn_link* spawn
         struct player_spawn_link* t = spawns + index;
 
         if (rectangle_intersects_v(t->x, t->y, 1, 2, grid_x, grid_y, 0.5, 0.5)) {
+            return t;
+        }
+    }
+
+    return NULL;
+}
+
+/* NOTE(jerry):
+   Entities are technically in floating point positions.
+   
+   Just round to nearest integer and hope it looks okay.
+*/
+struct entity_placement* editor_existing_entity_at(struct entity_placement* entities, size_t entity_count, int integer_x, int integer_y) {
+    for (unsigned index = 0; index < entity_count; ++index) {
+        struct entity_placement* t = entities + index;
+
+        float entity_w;
+        float entity_h;
+
+        entity_get_type_dimensions(t->type, &entity_w, &entity_h);
+        if (rectangle_intersects_v(t->x, t->y, entity_w, entity_h, integer_x, integer_y, 0.5, 0.5)) {
             return t;
         }
     }
@@ -613,6 +645,16 @@ local void editor_switch_tool(enum editor_tool_mode mode) {
     editor.editor_tool_change_fade_timer = 1.5f;
 }
 
+void editor_draw_entity_placements(struct entity_placement* entity_placements, size_t entity_placement_count) {
+    for (unsigned index = 0; index < entity_placement_count; ++index) {
+        struct entity_placement* ep = entity_placements + index;
+
+        /* weirdo wastefulness. */
+        struct entity temp = construct_entity_of_type(ep->type, ep->x, ep->y);
+        draw_entity(&temp);
+    }
+}
+
 local void tilemap_editor_update_render_frame(float dt) {
     /* lazy init to avoid hogging resources */
     load_tilemap_editor_resources();
@@ -730,6 +772,7 @@ local void tilemap_editor_update_render_frame(float dt) {
 
             draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
             draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
+            editor_draw_entity_placements(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count);
             draw_player_spawn(&editor.tilemap.default_spawn);
 
             {
@@ -1249,41 +1292,46 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
             get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
             get_mouse_buttons(&left_click, 0, &right_click);
 
-#if 0
-            struct player_spawn_link* already_selected = (struct player_spawn_link*) editor.context;
+#if 1
+            struct entity_placement* already_selected = (struct entity_placement*) editor.context;
 
             if (left_click) {
                 if (already_selected) {
+                    float entity_w;
+                    float entity_h;
+
+                    entity_get_type_dimensions(already_selected->type, &entity_w, &entity_h);
+
                     if (!editor.dragging &&
-                        rectangle_overlapping_v(already_selected->x, already_selected->y, 1, 2, mouse_position[0], mouse_position[1], 1, 1)) {
+                        rectangle_overlapping_v(already_selected->x, already_selected->y,
+                                                entity_w, entity_h, mouse_position[0], mouse_position[1], 1, 1)) {
                         editor.dragging = true;
                     } else if (editor.dragging) {
                         already_selected->x = mouse_position[0];
                         already_selected->y = mouse_position[1];
                     }
                 } else {
-                    struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
+                    struct entity_placement* entity = editor_existing_entity_at(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count, mouse_position[0], mouse_position[1]);
 
-                    if (!spawn) {
-                        spawn = editor_allocate_spawn();
-                        spawn->x = mouse_position[0];
-                        spawn->y = mouse_position[1];
+                    if (!entity) {
+                        entity       = editor_allocate_entity_placement();
+                        entity->x    = mouse_position[0];
+                        entity->y    = mouse_position[1];
+                        entity->type = editor.painting_entity_type;
                     }
 
-                    editor.context = spawn;
+                    editor.context = entity;
                 }
             } else {
                 editor.dragging = false;
             }
 
             if (right_click) {
-                struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
+                struct entity_placement* entity = editor_existing_entity_at(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count, mouse_position[0], mouse_position[1]);
 
-                if (spawn) {
-                    if (spawn != &editor.tilemap.default_spawn) {
-                        unsigned index = (spawn - editor.tilemap.player_spawn_links);
-                        editor.tilemap.player_spawn_links[index] = editor.tilemap.player_spawn_links[--editor.tilemap.player_spawn_link_count];
-                    }
+                if (entity) {
+                    unsigned index = (entity - editor.tilemap.entity_placements);
+                    editor.tilemap.entity_placements[index] = editor.tilemap.entity_placements[--editor.tilemap.entity_placement_count];
                 } else {
                     editor.context = NULL;
                 }
@@ -1291,12 +1339,18 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
 
             if (already_selected) {
                 if (!is_editting_text()) {
-                    if (is_key_down(KEY_1) && already_selected != &editor.tilemap.default_spawn) {
-                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->identifier));
+                    if (is_key_down(KEY_1)) {
+                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, ENTITY_STRING_IDENTIFIER_MAX_LENGTH, strlen(already_selected->identifier));
                     }
                 }
                 
-                draw_rectangle(already_selected->x, already_selected->y, 1, 2, color4f(0.2, 0.3, 1.0, 1.0));
+                {
+                    float entity_w;
+                    float entity_h;
+
+                    entity_get_type_dimensions(already_selected->type, &entity_w, &entity_h);
+                    draw_rectangle(already_selected->x, already_selected->y, entity_w, entity_h, color4f(0.2, 0.3, 1.0, 1.0));
+                }
             }
 #endif
         }
@@ -1310,6 +1364,15 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
 
     /* disallow placing multiple players. */
     editor.painting_entity_type = clampi(editor.painting_entity_type, ENTITY_TYPE_PLAYER+1, ENTITY_TYPE_COUNT);
+
+    {
+        struct entity_placement* already_selected = (struct entity_placement*) editor.context;
+        if (already_selected) {
+            if (already_selected->type != editor.painting_entity_type) {
+                already_selected->type = editor.painting_entity_type;
+            }
+        }
+    }
 
     begin_graphics_frame(NULL); {
         {
