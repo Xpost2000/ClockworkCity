@@ -1,4 +1,4 @@
-#define TILEMAP_CURRENT_VERSION (4) 
+#define TILEMAP_CURRENT_VERSION (5) 
 #define GRASS_DENSITY_PER_TILE  (6) /* in blades */
 #define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
 #define GRASS_BLADE_MAX_HEIGHT  (12) /* in "vpixels" */
@@ -109,11 +109,33 @@ struct player_spawn_link {
    
    In the emergency case I need more.
 */
-#define TRIGGER_PARAMETERS_MAX (8)
+#define TRIGGER_PARAMETERS_MAX (4)
+/* What they sound like. */
+enum trigger_type {
+    TRIGGER_TYPE_PROMPT, /*????*/
+    TRIGGER_TYPE_SPECIAL_EVENT, /* Special cased in code... Probably */
+    TRIGGER_TYPE_COUNT,
+};
+local const char* trigger_type_strings[] = {
+    "(prompt)", "(special?)"
+};
+/* Simplified by the fact only a player can interact with it. */
 struct trigger {
-    uint16_t                    type;
-    uint32_t                     params[TRIGGER_PARAMETERS_MAX];
+    uint8_t                     once_only;
+    uint8_t                     requires_interaction; /* interaction button like a door */
+    uint32_t                    type;
+    int32_t                     params[TRIGGER_PARAMETERS_MAX];
     float                       fparams[TRIGGER_PARAMETERS_MAX];
+};
+/* Our rest points */
+#define SOUL_ANCHOR_IDENTIFIER_STRING_LENGTH (8)
+struct soul_anchor {
+    int32_t x;
+    int32_t y;
+
+    uint8_t allow_resting; /* ??? */
+    uint8_t unlocked;      /* ??? */
+    char identifier[SOUL_ANCHOR_IDENTIFIER_STRING_LENGTH];
 };
 
 struct entity_placement {
