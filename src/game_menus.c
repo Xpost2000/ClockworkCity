@@ -4,7 +4,7 @@
   Right now this is a minimal flashy menu, that might actually survive
   to ship considering how cool it looks.
 */
-#define GAME_TITLE_CSTR "SINGLE ASCENT"
+#define GAME_TITLE_CSTR "ASCENSION"
 
 local void do_gameplay_ui(struct game_controller* controller, float dt) {
     struct entity* player = &game_state->persistent_entities[0];

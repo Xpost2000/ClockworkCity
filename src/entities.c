@@ -196,21 +196,25 @@ void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap,
         } break;
     }
     struct particle_emitter* emitter = entity->lost_soul_info.owned_emitter;
+
     if (entity->health == 0) {
         emitter->alive = 0;
-    }
-    {
-        emitter->x  = emitter->x1 = entity->x + 0.20;
-        emitter->y  = emitter->y1 = entity->y + 0.36;
-    }
+    } else {
+        emitter->alive = 1;
+        {
+            emitter->x  = emitter->x1 = entity->x + 0.20;
+            emitter->y  = emitter->y1 = entity->y + 0.36;
+        }
 
-    entity->lost_soul_info.fly_time += dt * 1.5;
+        entity->lost_soul_info.fly_time += dt * 1.5;
+    }
     /* entity->x  += entity->vx *                       dt; */
     /* entity->y  += entity->vy *                       dt; */
 }
 
 void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     /* these guys do respawn. For platforming reasons lol. */
+    const float SECONDS_PER_RESURRECTION = 3;
     if (entity->death_state != DEATH_STATE_ALIVE) {
         if (entity->death_state == DEATH_STATE_DYING) {
             entity->death_state = DEATH_STATE_DEAD;
@@ -218,19 +222,47 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
             /* death explosion. woosh */
             {
                 struct particle_emitter* splatter = particle_emitter_allocate();
-                splatter->x = splatter->x1 = entity->x;
+                splatter->x = splatter->x1 = entity->x + 0.25;
                 splatter->y = splatter->y1 = entity->y + entity->h;
                 splatter->emission_rate = 0;
-                splatter->emission_count = 16;
+                splatter->emission_count = 32;
                 splatter->max_emissions = 1;
                 splatter->particle_color = active_colorscheme.primary;
-                splatter->particle_max_lifetime = 1;
+                splatter->particle_max_lifetime = 2;
                 splatter->collides_with_world = true;
                 camera_traumatize(&game_camera, 0.0152);
+            }
+
+            if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL || entity->type == ENTITY_TYPE_LOST_SOUL) {
+                entity->lost_soul_info.resurrection_timer = SECONDS_PER_RESURRECTION;
+            }
+        } else if (entity->death_state == DEATH_STATE_DEAD) {
+            if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL || entity->type == ENTITY_TYPE_LOST_SOUL) {
+                entity->lost_soul_info.resurrection_timer -= dt;
+
+                if (entity->lost_soul_info.resurrection_timer <= 0) {
+                    entity->death_state = DEATH_STATE_ALIVE;
+                    entity->health      = 2;
+
+                    /* resurrection explosion. woosh */
+                    {
+                        struct particle_emitter* splatter = particle_emitter_allocate();
+                        splatter->x = splatter->x1 = entity->x + 0.25;
+                        splatter->y = splatter->y1 = entity->y + entity->h;
+                        splatter->emission_rate = 0;
+                        splatter->emission_count = 64;
+                        splatter->max_emissions = 1;
+                        splatter->particle_color = active_colorscheme.primary;
+                        splatter->particle_max_lifetime = 1;
+                        splatter->collides_with_world = false;
+                        camera_traumatize(&game_camera, 0.0100);
+                    }
+                }
             }
         }
     }
     
+    if (entity->death_state == DEATH_STATE_ALIVE) {
         if (entity->lost_soul_info.next_vomit_timer > 0) {
             entity->lost_soul_info.next_vomit_timer -= dt;
             if (entity->lost_soul_info.next_vomit_timer <= 0 && entity->lost_soul_info.vomit_timer <= 0) {
@@ -239,7 +271,6 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                 entity->lost_soul_info.owned_emitter->emission_count = 4;
             }
         } else {
-
             if (entity->lost_soul_info.vomit_timer > 0) {
                 entity->lost_soul_info.vomit_timer -= dt;
             } else {
@@ -248,6 +279,7 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                 entity->lost_soul_info.owned_emitter->emission_count = 0;
             }
         }
+    }
 }
 
 /* 
@@ -487,7 +519,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
         if (entity->apply_wall_jump_force_timer > 0) {
             /* Should be a velocity to be better looking. */
-            entity->ax = entity->opposite_facing_direction * 50;
+            entity->vx = entity->opposite_facing_direction * 5;
             entity->vy = -8;
             entity->sliding_against_wall = false;
         }
@@ -574,6 +606,7 @@ struct particle_emitter* entity_lost_soul_particles(float x, float y) {
     struct particle_emitter* emitter = particle_emitter_allocate();
 
     emitter->emission_rate = 0.0;
+    emitter->reserved = 1;
     emitter->emission_count = 0;
     emitter->particle_color = color4f(0.7, 0.1, 0.2, 1.0);
     emitter->particle_texture = particle_textures[0];
@@ -928,7 +961,8 @@ void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilem
 void cleanup_for_entity(struct entity* entity) {
     if (entity->lost_soul_info.owned_emitter) {
         particle_emitter_clear_all_particles(entity->lost_soul_info.owned_emitter);
-        entity->lost_soul_info.owned_emitter->alive = false;
+        entity->lost_soul_info.owned_emitter->alive    = false;
+        entity->lost_soul_info.owned_emitter->reserved = false;
         entity->lost_soul_info.owned_emitter = 0;
     }
 }

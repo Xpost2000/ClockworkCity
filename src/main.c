@@ -3,7 +3,22 @@
  
  This is a really crufty metroidvania construction set basically.
  Hack in specific game code later.
- */
+ 
+ NOTE(jerry) (3/1/22): You might want to bleach your eyes after this. I'm not even done,
+ but even I regret actually not spending time properly engineering lots of crap.
+ 
+ I seemed to justify a lot of the stupid stuff I did as "I won't have enough time", or
+ "It's not worth the effort it would take to do this right now since it's a jam".
+ 
+ Some of that might be true, but things like not taking time to make UI library for my
+ wysiwyg editor was clearly a mistake.
+ 
+ Animation is also another mistake. The only real way to do it is as a state machine,
+ but doing it without any tooling is really really painful. Not sprite animation, like
+ the more involved cutscene animation things.
+ 
+ Anything else that did not involve the words animation or UI was fine though.
+*/
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -25,7 +40,7 @@ local font_id _console_font;
 #define CONSOLE_IMPLEMENTATION
 #include "blackiron_console_sfl.h"
 
-#define WINDOW_NAME "Metroidvania Jam 15"
+#define WINDOW_NAME "ASCENSION"
 #define DEFAULT_RESOLUTION_X 640
 #define DEFAULT_RESOLUTION_Y 480
 
@@ -452,10 +467,6 @@ int main(int argc, char** argv) {
         /*NOTE(jerry): camera should operate on "game"/"graphics" time
          not IRL time ticks*/
         update_render_frame(dt);
-        {
-            camera_update(&game_camera, dt);
-            camera_update(&editor_camera, dt);
-        }
 
         begin_graphics_frame(NULL);{
             console_frame(dt);

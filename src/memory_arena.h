@@ -50,4 +50,8 @@ void memory_arena_clear_top(struct memory_arena* arena);
 
 void memory_arena_deallocate(struct memory_arena* arena);
 
+#define memory_arena_allocate_array_bottom(arena, array, count) array = memory_arena_push(&arena, count * sizeof(*array))
+#define memory_arena_allocate_array_top(arena, array, count) array    = memory_arena_push_top(&arena, count * sizeof(*array))
+#define memory_arena_allocate_array(arena, array, count) memory_arena_allocate_array_bottom(arena, array, count)
+
 #endif

@@ -20,8 +20,9 @@
   
   Coming back tomorrow actually.
   
+  - Camera Focus Zones (For cinematics :) or focusing on specific things.)
   - Trigger placement for cutscenes/prompts
-  - Spikes doing damage and also "nail" bouncing.
+  - Spikes doing damage
   - Add "Rest" points (Soul Anchors)
   - Player Death Animation
   - Entity Death Animation
@@ -357,7 +358,19 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
 }
 
 /*binary format*/
+local void cleanup_current_entities(void) {
+    struct entity_iterator entities = game_state_entity_iterator(game_state);
+    struct entity* player = &game_state->persistent_entities[0];
+
+    for (struct entity* current_entity = entity_iterator_begin(&entities); !entity_iterator_done(&entities); current_entity = entity_iterator_next(&entities)) {
+        if (current_entity != player)
+            cleanup_for_entity(current_entity);
+    }
+}
+
 void game_load_level_from_serializer(struct memory_arena* arena, struct binary_serializer* serializer, char* transition_link_to_spawn_at) {
+    cleanup_current_entities();
+
     memory_arena_clear_top(arena);
     game_state->loaded_level = memory_arena_push_top(arena, sizeof(*game_state->loaded_level));
     game_state->have_a_good_grounded_position = false;
@@ -384,19 +397,8 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
     camera_force_clamp_to_bounds(&game_camera);
 }
 
-local void cleanup_current_entities(void) {
-    struct entity_iterator entities = game_state_entity_iterator(game_state);
-    struct entity* player = &game_state->persistent_entities[0];
-
-    for (struct entity* current_entity = entity_iterator_begin(&entities); !entity_iterator_done(&entities); current_entity = entity_iterator_next(&entities)) {
-        if (current_entity != player)
-            cleanup_for_entity(current_entity);
-    }
-}
-
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     struct binary_serializer file = open_read_file_serializer(filename);
-    cleanup_current_entities();
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
     serializer_finish(&file);
 }
@@ -408,4 +410,17 @@ void update_render_frame(float dt) {
         case GAME_MODE_PLAYING: game_update_render_frame(dt); break;
         case GAME_MODE_EDITOR: tilemap_editor_update_render_frame(dt); break;
     }
+
+    {
+        struct camera_focus_zone* focus_zones      = 0;
+        size_t                    focus_zone_count = 0;
+
+        if (game_state->loaded_level) {
+            focus_zones      = game_state->loaded_level->camera_focus_zones;
+            focus_zone_count = game_state->loaded_level->camera_focus_zone_count;
+        }
+
+        camera_update(&game_camera,   focus_zones, focus_zone_count, dt);
+    }
+    camera_update(&editor_camera, 0, 0, dt);
 }

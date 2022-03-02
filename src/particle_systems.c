@@ -109,6 +109,7 @@ int particle_chunk_list_length(struct particle_chunk_list* list) {
 struct particle_emitter {
     struct memory_arena* arena;
     bool alive;
+    bool reserved;
 
     float x;
     float y;
@@ -234,7 +235,7 @@ struct particle_emitter* particle_emitter_allocate(void) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
 
-        if (!emitter->alive && particle_emitter_active_particles(emitter) == 0) {
+        if (!emitter->reserved && !emitter->alive && particle_emitter_active_particles(emitter) == 0) {
             zero_buffer_memory(emitter, sizeof(*emitter));
             emitter->chunks.head = emitter->chunks.tail = &particle_chunk_list_sentinel;
             emitter->arena = &game_memory_arena; /* hack for now */
@@ -474,19 +475,13 @@ void load_all_particle_textures(void) {
 void update_all_particle_systems(struct tilemap* world, float dt) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
-
-        if (emitter->alive) {
-            update_particle_emitter(emitter, world, dt);
-        }
+        update_particle_emitter(emitter, world, dt);
     }
 }
 
 void draw_all_particle_systems(float interpolation) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
-
-        if (emitter->alive) {
-            draw_particle_emitter_particles(emitter, interpolation);
-        }
+        draw_particle_emitter_particles(emitter, interpolation);
     }
 }

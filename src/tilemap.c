@@ -188,10 +188,17 @@ struct tilemap {
     uint32_t background_tile_count;
     uint32_t grass_tile_count;
     uint16_t entity_count;
+    uint16_t camera_focus_zone_count;
+    uint16_t trigger_count;
+    uint16_t soul_anchor_count;
 
     struct tile* foreground_tiles;
     struct tile* background_tiles;
     struct grass_tile* grass_tiles;
+
+    struct soul_anchor*       soul_anchors;
+    struct trigger*           triggers;
+    struct camera_focus_zone* camera_focus_zones;
 
     uint8_t transition_zone_count;
     uint8_t player_spawn_link_count;
@@ -199,7 +206,7 @@ struct tilemap {
     struct player_spawn_link* link_spawns;
 };
 
-#define GRASS_VISUAL_INFO_TABLE_SIZE (64)
+#define GRASS_VISUAL_INFO_TABLE_SIZE (128)
 
 shared_storage int32_t grass_visual_height_table[GRASS_VISUAL_INFO_TABLE_SIZE]                     = {};
 shared_storage float   grass_visual_period_table[GRASS_VISUAL_INFO_TABLE_SIZE]                     = {};

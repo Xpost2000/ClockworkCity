@@ -100,7 +100,31 @@ void camera_force_clamp_to_bounds(struct camera* camera) {
     }
 }
 
-void camera_update(struct camera* camera, float dt) {
+local void camera_constrict_view_to_rectangle(struct camera* camera, float min_x, float max_x, float min_y, float max_y) {
+    struct rectangle screen_bounds = camera_get_bounds(camera);
+
+    if ((screen_bounds.x + screen_bounds.w) > (max_x)) {
+        camera->target_position_x = max_x - (screen_bounds.w/2);
+        camera->interpolation_time[0] = 0;
+    }
+
+    if ((screen_bounds.x) < (min_x)) {
+        camera->target_position_x = min_x + (screen_bounds.w/2);
+        camera->interpolation_time[0] = 0;
+    }
+
+    if ((screen_bounds.y + screen_bounds.h) > (max_y)) {
+        camera->target_position_y = max_y - (screen_bounds.h/2);
+        camera->interpolation_time[1] = 0;
+    }
+        
+    if ((screen_bounds.y) < (min_y)) {
+        camera->target_position_y = min_y + (screen_bounds.h/2);
+        camera->interpolation_time[1] = 0;
+    }
+}
+
+void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones, size_t focus_zone_count, float dt) {
     camera->trauma = clampf(camera->trauma, 0.0, 1.0);
 
     /*
@@ -122,23 +146,25 @@ void camera_update(struct camera* camera, float dt) {
         float area = ((camera->bounds_max_x - camera->bounds_min_x) * (camera->bounds_max_y - camera->bounds_min_y));
 
         if (area > 0) {
-            if ((screen_bounds.x + screen_bounds.w) > (camera->bounds_max_x)) {
-                camera->target_position_x = camera->bounds_max_x - (screen_bounds.w/2);
-                camera->interpolation_time[0] = 0;
-            }
-            if ((screen_bounds.x) < (camera->bounds_min_x)) {
-                camera->target_position_x = camera->bounds_min_x + (screen_bounds.w/2);
-                camera->interpolation_time[0] = 0;
-            }
+            camera_constrict_view_to_rectangle(camera, camera->bounds_min_x, camera->bounds_max_x, camera->bounds_min_y, camera->bounds_max_y);
 
-            if ((screen_bounds.y + screen_bounds.h) > (camera->bounds_max_y)) {
-                camera->target_position_y = camera->bounds_max_y - (screen_bounds.h/2);
-                camera->interpolation_time[1] = 0;
-            }
-        
-            if ((screen_bounds.y) < (camera->bounds_min_y)) {
-                camera->target_position_y = camera->bounds_min_y + (screen_bounds.h/2);
-                camera->interpolation_time[1] = 0;
+            for (unsigned index = 0; index < focus_zone_count; ++index) {
+                struct camera_focus_zone* focus_zone = focus_zones + index;
+
+                if (rectangle_overlapping_v(screen_bounds.x, screen_bounds.y,
+                                            screen_bounds.w, screen_bounds.h,
+                                            (float)focus_zone->x, (float)focus_zone->y,
+                                            (float)focus_zone->w, (float)focus_zone->h)) {
+                    camera_constrict_view_to_rectangle(camera,
+                                                       (float)focus_zone->x, (float)(focus_zone->x + focus_zone->w),
+                                                       (float)focus_zone->y, (float)(focus_zone->y + focus_zone->h));
+
+                    camera_set_focus_speed_x(camera, focus_zone->interpolation_speed[0]);
+                    camera_set_focus_speed_y(camera, focus_zone->interpolation_speed[1]);
+                    camera_set_focus_speed_zoom(camera, focus_zone->interpolation_speed[2]);
+                    camera_set_focus_zoom_level(camera, focus_zone->zoom);
+                    break;
+                }
             }
         }
     }
@@ -174,7 +200,6 @@ void camera_resume_tracking(struct camera* camera) {
 }
 
 void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y) {
-
     camera->bounds_min_x = min_x;
     camera->bounds_min_y = min_y;
     camera->bounds_max_x = max_x;

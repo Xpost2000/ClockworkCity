@@ -1,11 +1,12 @@
 #include "memory_arena.h"
-#define EDITOR_TILE_GRASS_MAX_COUNT   (16384)
-#define EDITOR_TILE_MAX_COUNT         (32768)
-#define EDITOR_ENTITY_PLACEMENTS_MAX  (8192)
-#define EDITOR_TRANSITIONS_MAX_COUNT  (64)
-#define EDITOR_PLAYER_SPAWN_MAX_COUNT (EDITOR_TRANSITIONS_MAX_COUNT)
-#define EDITOR_TRIGGERS_MAX_COUNT     (512)
-#define EDITOR_SOUL_ANCHOR_MAX_COUNT  (256)
+#define EDITOR_TILE_GRASS_MAX_COUNT        (16384)
+#define EDITOR_TILE_MAX_COUNT              (32768)
+#define EDITOR_ENTITY_PLACEMENTS_MAX       (8192)
+#define EDITOR_TRANSITIONS_MAX_COUNT       (64)
+#define EDITOR_PLAYER_SPAWN_MAX_COUNT      (EDITOR_TRANSITIONS_MAX_COUNT)
+#define EDITOR_TRIGGERS_MAX_COUNT          (512)
+#define EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT (256)
+#define EDITOR_SOUL_ANCHOR_MAX_COUNT       (256)
 
 /*
   NOTE(jerry):
@@ -16,8 +17,15 @@
 */
 
 /*
+  TODO(jerry):
+  editor support for 
+  - Soul Anchors
+  - Camera Focus Zones
+  - Triggers;
+ */
+
+/*
   regions do not include entities???
-  TODO(jerry): modal editing.
   NOTE(jerry): this suffers a lot from the lack of a real UI library lol.
   I really need a UI library. Dear god.
   
@@ -32,6 +40,7 @@ struct editable_tilemap {
     uint16_t entity_placement_count;
     uint16_t trigger_count;
     uint16_t soul_anchor_count;
+    uint16_t camera_focus_zone_count;
 
     uint32_t width;
     uint32_t height;
@@ -47,6 +56,7 @@ struct editable_tilemap {
 
     struct player_spawn_link* player_spawn_links;
     struct entity_placement*  entity_placements; /* store entity placements and some flags*/
+    struct camera_focus_zone* camera_focus_zones;
     struct tile*              tiles;
     struct tile*              foreground_tiles;
     struct tile*              background_tiles;
@@ -191,6 +201,12 @@ local struct soul_anchor* editor_allocate_soul_anchor(void) {
     assert(editor.tilemap.soul_anchor_count < EDITOR_SOUL_ANCHOR_MAX_COUNT);
     struct soul_anchor* result = &editor.tilemap.soul_anchors[editor.tilemap.soul_anchor_count++];
     zero_array(result->identifier);
+    return result;
+}
+
+local struct camera_focus_zone* editor_allocate_camera_focus_zone(void) {
+    assert(editor.tilemap.camera_focus_zone_count < EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT);
+    struct camera_focus_zone* result = &editor.tilemap.camera_focus_zones[editor.tilemap.camera_focus_zone_count++];
     return result;
 }
 
@@ -528,6 +544,7 @@ local void editor_erase_block(int grid_x, int grid_y) {
     }
 
     tile->id = TILE_NONE;
+    editor.tilemap.tile_count -= 1;
 }
 
 local void editor_clear_all(void) {
@@ -539,6 +556,7 @@ local void editor_clear_all(void) {
     editor.tilemap.entity_placement_count  = 0;
     editor.tilemap.trigger_count           = 0;
     editor.tilemap.soul_anchor_count       = 0;
+    editor.tilemap.camera_focus_zone_count = 0;
     camera_reset_transform(&editor_camera);
     editor.tilemap.bounds_min_x            = 0;
     editor.tilemap.bounds_min_y            = 0;
@@ -551,15 +569,16 @@ local void load_tilemap_editor_resources(void) {
         editor.arena = allocate_memory_arena(Megabyte(16));
         editor.arena.name = "Editor Arena";
 
-        editor.tilemap.tiles              = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT         * sizeof(*editor.tilemap.tiles));
-        editor.tilemap.foreground_tiles   = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT         * sizeof(*editor.tilemap.tiles));
-        editor.tilemap.background_tiles   = memory_arena_push(&editor.arena, EDITOR_TILE_MAX_COUNT         * sizeof(*editor.tilemap.tiles));
-        editor.tilemap.transitions        = memory_arena_push(&editor.arena, EDITOR_TRANSITIONS_MAX_COUNT  * sizeof(*editor.tilemap.transitions));
-        editor.tilemap.player_spawn_links = memory_arena_push(&editor.arena, EDITOR_PLAYER_SPAWN_MAX_COUNT * sizeof(*editor.tilemap.player_spawn_links));
-        editor.tilemap.grass_tiles        = memory_arena_push(&editor.arena, EDITOR_TILE_GRASS_MAX_COUNT   * sizeof(*editor.tilemap.grass_tiles));
-        editor.tilemap.entity_placements  = memory_arena_push(&editor.arena, EDITOR_TILE_GRASS_MAX_COUNT   * sizeof(*editor.tilemap.entity_placements));
-        editor.tilemap.triggers           = memory_arena_push(&editor.arena, EDITOR_TRIGGERS_MAX_COUNT     * sizeof(*editor.tilemap.triggers));
-        editor.tilemap.soul_anchors       = memory_arena_push(&editor.arena, EDITOR_SOUL_ANCHOR_MAX_COUNT  * sizeof(*editor.tilemap.soul_anchors));
+        memory_arena_allocate_array(editor.arena, editor.tilemap.tiles,              EDITOR_TILE_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.foreground_tiles,   EDITOR_TILE_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.background_tiles,   EDITOR_TILE_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.camera_focus_zones, EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.transitions,        EDITOR_TRANSITIONS_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.player_spawn_links, EDITOR_PLAYER_SPAWN_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.grass_tiles,        EDITOR_TILE_GRASS_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.entity_placements,  EDITOR_ENTITY_PLACEMENTS_MAX);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.triggers,           EDITOR_TRIGGERS_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.soul_anchors,       EDITOR_SOUL_ANCHOR_MAX_COUNT);
 
         editor.initialized = true;
     }
