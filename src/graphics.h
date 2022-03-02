@@ -98,10 +98,10 @@ void draw_filled_rectangle(float x, float y, float w, float h, union color4f col
 void draw_rectangle(float x, float y, float w, float h, union color4f color);
 void draw_bresenham_filled_rectangle_line(float x_off, float y_off, int x1, int y1, int x2, int y2, float square_size, union color4f color);
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color);
-void draw_texture_ext(texture_id texture, float x, float y, float w, float h, union color4f color, bool flipped);
+void draw_texture_ext(texture_id texture, float x, float y, float w, float h, union color4f color, bool flipped, float angle);
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color);
-void draw_texture_subregion_ext(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color, bool flipped);
-void draw_texture_aligned(texture_id texture, float x, float y, float tw, float th, float scale, float cx, float cy, union color4f color, bool flipped);
+void draw_texture_subregion_ext(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color, bool flipped, float angle);
+void draw_texture_aligned(texture_id texture, float x, float y, float tw, float th, float scale, float cx, float cy, union color4f color, bool flipped, float angle);
 void draw_text(font_id font, float x, float y, const char* cstr, union color4f color);
 void draw_text_right_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color);
 void draw_text_center_justified(font_id font, float x, float y, float w, float h, const char* cstr, union color4f color);

@@ -201,8 +201,7 @@ void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap,
     }
     {
         emitter->x  = emitter->x1 = entity->x + 0.20;
-        emitter->y  = entity->y + 0.55;
-        emitter->y1 = entity->y + 0.55;
+        emitter->y  = emitter->y1 = entity->y + 0.36;
     }
 
     entity->lost_soul_info.fly_time += dt * 1.5;
@@ -231,6 +230,24 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
             }
         }
     }
+    
+        if (entity->lost_soul_info.next_vomit_timer > 0) {
+            entity->lost_soul_info.next_vomit_timer -= dt;
+            if (entity->lost_soul_info.next_vomit_timer <= 0 && entity->lost_soul_info.vomit_timer <= 0) {
+                entity->lost_soul_info.vomit_timer = random_float() * 2 + 2;
+                entity->lost_soul_info.owned_emitter->emission_rate = 0.002;
+                entity->lost_soul_info.owned_emitter->emission_count = 4;
+            }
+        } else {
+
+            if (entity->lost_soul_info.vomit_timer > 0) {
+                entity->lost_soul_info.vomit_timer -= dt;
+            } else {
+                entity->lost_soul_info.next_vomit_timer = random_float() * 3 + 3;
+                entity->lost_soul_info.owned_emitter->emission_rate = 0;
+                entity->lost_soul_info.owned_emitter->emission_count = 0;
+            }
+        }
 }
 
 /* 
@@ -556,11 +573,13 @@ struct entity entity_create_player(float x, float y) {
 struct particle_emitter* entity_lost_soul_particles(float x, float y) {
     struct particle_emitter* emitter = particle_emitter_allocate();
 
-    emitter->emission_rate = 0.002;
-    emitter->emission_count = 2;
+    emitter->emission_rate = 0.0;
+    emitter->emission_count = 0;
     emitter->particle_color = color4f(0.7, 0.1, 0.2, 1.0);
     emitter->particle_texture = particle_textures[0];
     emitter->particle_max_lifetime = 1;
+    emitter->vy_min = 3;
+    emitter->vy_max = 5;
     emitter->collides_with_world = true;
 
     return emitter;
@@ -667,6 +686,7 @@ void initialize_entity(struct entity* entity) {
         case ENTITY_TYPE_VOLATILE_LOST_SOUL:
         case ENTITY_TYPE_HOVERING_LOST_SOUL: {
             entity->lost_soul_info.owned_emitter = entity_lost_soul_particles(entity->x, entity->y);
+            entity->lost_soul_info.next_vomit_timer = random_float() * 3;
         } break;
     }
 }
@@ -776,17 +796,26 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                 draw_texture_aligned(player_idle1,
                                      entity_lerp_x(current_entity, interpolation_value),
                                      entity_lerp_y(current_entity, interpolation_value),
-                                     16, 24, 1, 4, 8, active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1);
+                                     16, 24, 1, 4, 8, active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
             }
         } break;
         default: {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
                 /* These alignments... Are broken lol */
-                draw_texture_aligned(lostsoul_idle1,
-                                     entity_lerp_x(current_entity, interpolation_value),
-                                     entity_lerp_y(current_entity, interpolation_value),
-                                     16, 16, 0.75,
-                                     3, 4, active_colorscheme.primary, 0);
+                if (current_entity->lost_soul_info.vomit_timer > 0) {
+                    /* shake while vomitting */
+                    draw_texture_aligned(lostsoul_idle1,
+                                         entity_lerp_x(current_entity, interpolation_value),
+                                         entity_lerp_y(current_entity, interpolation_value),
+                                         16, 16, 0.75,
+                                         3, 4, active_colorscheme.primary, 0, random_ranged_float(-1.2, 1.2) * 5 * M_PI);
+                } else {
+                    draw_texture_aligned(lostsoul_closedidle1,
+                                         entity_lerp_x(current_entity, interpolation_value),
+                                         entity_lerp_y(current_entity, interpolation_value),
+                                         16, 16, 0.75,
+                                         3, 4, active_colorscheme.primary, 0, 0);
+                }
             }
         } break;
     }

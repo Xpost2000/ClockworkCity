@@ -167,21 +167,21 @@ void draw_rectangle(float x, float y, float w, float h, union color4f color) {
 }
 
 void draw_texture(texture_id texture, float x, float y, float w, float h, union color4f color) {
-    draw_texture_ext(texture, x, y, w, h, color, false);
+    draw_texture_ext(texture, x, y, w, h, color, false, 0);
 }
 
-void draw_texture_ext(texture_id texture, float x, float y, float w, float h, union color4f color, bool flipped) {
+void draw_texture_ext(texture_id texture, float x, float y, float w, float h, union color4f color, bool flipped, float angle) {
     int dimens[2];
     get_texture_dimensions(texture, dimens, dimens+1);
-    draw_texture_subregion_ext(texture, x, y, w, h, 0, 0, dimens[0], dimens[1], color, flipped);
+    draw_texture_subregion_ext(texture, x, y, w, h, 0, 0, dimens[0], dimens[1], color, flipped, angle);
 }
 
 void draw_texture_subregion(texture_id texture, float x, float y, float w, float h,
                             int srx, int sry, int srw, int srh, union color4f color) {
-    draw_texture_subregion_ext(texture, x, y, w, h, srx, sry, srw, srh, color, false);
+    draw_texture_subregion_ext(texture, x, y, w, h, srx, sry, srw, srh, color, false, 0);
 }
 
-void draw_texture_subregion_ext(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color, bool flipped) {
+void draw_texture_subregion_ext(texture_id texture, float x, float y, float w, float h, int srx, int sry, int srw, int srh, union color4f color, bool flipped, float angle) {
     SDL_Texture* texture_object = textures[texture.id].texture_object;
 
     x *= _camera_render_scale(_active_camera);
@@ -205,16 +205,17 @@ void draw_texture_subregion_ext(texture_id texture, float x, float y, float w, f
             SDL_RenderCopyEx(global_renderer, texture_object,
                              &(SDL_Rect){srx, sry, srw, srh},
                              &(SDL_Rect){x, y, w, h},
-                             0, 0, SDL_FLIP_HORIZONTAL);
+                             angle, 0, SDL_FLIP_HORIZONTAL);
         } else {
-            SDL_RenderCopy(global_renderer, texture_object,
-                           &(SDL_Rect){srx, sry, srw, srh},
-                           &(SDL_Rect){x, y, w, h});
+            SDL_RenderCopyEx(global_renderer, texture_object,
+                             &(SDL_Rect){srx, sry, srw, srh},
+                             &(SDL_Rect){x, y, w, h},
+                             angle, 0, SDL_FLIP_NONE);
         }
     }
 }
 
-void draw_texture_aligned(texture_id texture, float x, float y, float tw, float th, float scale, float cx, float cy, union color4f color, bool flipped) {
+void draw_texture_aligned(texture_id texture, float x, float y, float tw, float th, float scale, float cx, float cy, union color4f color, bool flipped, float angle) {
     float texture_width_in_units     = tw * scale;
     texture_width_in_units          *= (VPIXEL_SZ);
     float texture_height_in_units    = th * scale;
@@ -230,7 +231,7 @@ void draw_texture_aligned(texture_id texture, float x, float y, float tw, float 
     draw_texture_ext(texture,
                      render_x, render_y,
                      texture_width_in_units, texture_height_in_units, color,
-                     flipped);
+                     flipped, angle);
 
 #ifdef DEV
     draw_filled_rectangle(render_x, render_y, 0.1, 0.1, COLOR4F_RED);

@@ -6,9 +6,8 @@
   
   TODO(jerry): work in progress
   
-  TODO(jerry):
-  Specify particle direction,
-  and particle velocity & acceleration.
+  TODO(jerry): I wish I had render order in my engine. I could implement it I guess, but so much
+  retrofitting...
   
   NOTE(jerry):
   Since particle emitters "own" their particles, I don't variably size them like I do for

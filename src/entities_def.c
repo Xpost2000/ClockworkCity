@@ -7,6 +7,7 @@ local texture_id player_idle1 = {}; /*16x24*/
 /* END PLAYER */
 /* LOST SOUL */
 local texture_id lostsoul_idle1 = {};
+local texture_id lostsoul_closedidle1 = {};
 /* END LOST SOUL */
 
 /*
@@ -263,6 +264,8 @@ struct entity {
     /* per instance data */
     struct {
         float fly_time;
+        float vomit_timer;
+        float next_vomit_timer;
         struct particle_emitter* owned_emitter;
     } lost_soul_info;
 #endif
@@ -279,6 +282,7 @@ shared_storage const char* get_facing_direction_string(int x) {
 void initialize_entity_assets(void) {
     player_idle1   = load_texture("assets/player/1.png");
     lostsoul_idle1 = load_texture("assets/lostsoul/1idle.png");
+    lostsoul_closedidle1 = load_texture("assets/lostsoul/1idleclosed.png");
 }
 
 /* 
