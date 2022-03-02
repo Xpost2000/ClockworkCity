@@ -195,15 +195,20 @@ void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap,
             entity->y = normalized_sinf((entity->lost_soul_info.fly_time)) * 0.67 + entity->initial_y;
         } break;
     }
-    struct particle_emitter* emitter = entity->lost_soul_info.owned_emitter;
+    struct particle_emitter* emitter1 = entity->lost_soul_info.owned_vomit_emitter;
+    struct particle_emitter* emitter2 = entity->lost_soul_info.owned_flames_emitter;
 
     if (entity->health == 0) {
-        emitter->alive = 0;
+        emitter1->alive = 0;
+        emitter2->alive = 0;
     } else {
-        emitter->alive = 1;
+        emitter1->alive = 1;
+        emitter2->alive = 1;
         {
-            emitter->x  = emitter->x1 = entity->x + 0.20;
-            emitter->y  = emitter->y1 = entity->y + 0.36;
+            emitter1->x  = emitter1->x1 = entity->x + 0.20;
+            emitter1->y  = emitter1->y1 = entity->y + 0.36;
+            emitter2->x  = emitter2->x1 = entity->x + 0.20;
+            emitter2->y  = emitter2->y1 = entity->y + 0.16;
         }
 
         entity->lost_soul_info.fly_time += dt * 1.5;
@@ -267,16 +272,16 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
             entity->lost_soul_info.next_vomit_timer -= dt;
             if (entity->lost_soul_info.next_vomit_timer <= 0 && entity->lost_soul_info.vomit_timer <= 0) {
                 entity->lost_soul_info.vomit_timer = random_float() * 2 + 2;
-                entity->lost_soul_info.owned_emitter->emission_rate = 0.002;
-                entity->lost_soul_info.owned_emitter->emission_count = 4;
+                entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0.002;
+                entity->lost_soul_info.owned_vomit_emitter->emission_count = 4;
             }
         } else {
             if (entity->lost_soul_info.vomit_timer > 0) {
                 entity->lost_soul_info.vomit_timer -= dt;
             } else {
                 entity->lost_soul_info.next_vomit_timer = random_float() * 3 + 3;
-                entity->lost_soul_info.owned_emitter->emission_rate = 0;
-                entity->lost_soul_info.owned_emitter->emission_count = 0;
+                entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0;
+                entity->lost_soul_info.owned_vomit_emitter->emission_count = 0;
             }
         }
     }
@@ -601,7 +606,29 @@ struct entity entity_create_player(float x, float y) {
     return result;
 }
 
-struct particle_emitter* entity_lost_soul_particles(float x, float y) {
+struct particle_emitter* entity_lost_soul_particles_soul_flames(float x, float y) {
+    struct particle_emitter* emitter = particle_emitter_allocate();
+
+    emitter->emission_rate = 0.01;
+    emitter->reserved = 1;
+    emitter->background_layer = 1;
+    emitter->emission_count = 32;
+    emitter->particle_color = color4f(0, 0, 0, 1);
+    emitter->particle_texture = particle_textures[0];
+    emitter->particle_max_lifetime = 0.3;
+    emitter->min_w = emitter->min_h = 0.15;
+    emitter->max_w = emitter->max_h = 0.18;
+    /* emitter->vy_max = -6; */
+    /* emitter->vy_min = -2; */
+    emitter->v_magnitude_min = 1;
+    emitter->v_magnitude_max = 2;
+    emitter->centripetal         = true;
+    emitter->collides_with_world = true;
+    emitter->affected_by_gravity = false;
+
+    return emitter;
+}
+struct particle_emitter* entity_lost_soul_particles_bloodvomit(float x, float y) {
     struct particle_emitter* emitter = particle_emitter_allocate();
 
     emitter->emission_rate = 0.0;
@@ -717,7 +744,8 @@ void initialize_entity(struct entity* entity) {
         case ENTITY_TYPE_LOST_SOUL:
         case ENTITY_TYPE_VOLATILE_LOST_SOUL:
         case ENTITY_TYPE_HOVERING_LOST_SOUL: {
-            entity->lost_soul_info.owned_emitter = entity_lost_soul_particles(entity->x, entity->y);
+            entity->lost_soul_info.owned_vomit_emitter  = entity_lost_soul_particles_bloodvomit(entity->x, entity->y);
+            entity->lost_soul_info.owned_flames_emitter = entity_lost_soul_particles_soul_flames(entity->x, entity->y);
             entity->lost_soul_info.next_vomit_timer = random_float() * 3;
         } break;
     }
@@ -969,11 +997,15 @@ void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilem
 }
 
 void cleanup_for_entity(struct entity* entity) {
-    if (entity->lost_soul_info.owned_emitter) {
-        particle_emitter_clear_all_particles(entity->lost_soul_info.owned_emitter);
-        entity->lost_soul_info.owned_emitter->alive    = false;
-        entity->lost_soul_info.owned_emitter->reserved = false;
-        entity->lost_soul_info.owned_emitter = 0;
+    if (entity->lost_soul_info.owned_vomit_emitter && entity->lost_soul_info.owned_flames_emitter) {
+        particle_emitter_clear_all_particles(entity->lost_soul_info.owned_vomit_emitter);
+        particle_emitter_clear_all_particles(entity->lost_soul_info.owned_flames_emitter);
+        entity->lost_soul_info.owned_vomit_emitter->alive    = false;
+        entity->lost_soul_info.owned_vomit_emitter->reserved = false;
+        entity->lost_soul_info.owned_vomit_emitter = 0;
+        entity->lost_soul_info.owned_flames_emitter->alive    = false;
+        entity->lost_soul_info.owned_flames_emitter->reserved = false;
+        entity->lost_soul_info.owned_flames_emitter = 0;
     }
 }
 

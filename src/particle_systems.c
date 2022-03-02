@@ -110,6 +110,8 @@ struct particle_emitter {
     struct memory_arena* arena;
     bool alive;
     bool reserved;
+    bool affected_by_gravity;
+    bool centripetal;
 
     float x;
     float y;
@@ -131,10 +133,14 @@ struct particle_emitter {
     float particle_max_lifetime;
     /*TEMPORARY, should be under flags*/
     bool collides_with_world;
+    bool background_layer; /* oh you think I'm joking I bet. I'm really not LOL. I'm going to hell for this. */
 
     /* second per emission */
     float emission_rate;
     float emission_timer;
+
+    float v_magnitude_min; /* used for centripetal */
+    float v_magnitude_max; /* used for centripetal */
 
     float vx_min;
     float vx_max;
@@ -240,6 +246,7 @@ struct particle_emitter* particle_emitter_allocate(void) {
             emitter->chunks.head = emitter->chunks.tail = &particle_chunk_list_sentinel;
             emitter->arena = &game_memory_arena; /* hack for now */
             emitter->alive = true;
+            emitter->affected_by_gravity = true;
 
             /* these are the default settings when all settings were hard coded :) */
             emitter->color_variance = COLOR4F_BLACK;
@@ -362,6 +369,14 @@ local void emit_particles(struct particle_emitter* emitter) {
 
         emitted_particle->vx = lerp(emitter->vx_min, emitter->vx_max, random_float());
         emitted_particle->vy = lerp(emitter->vy_min, emitter->vy_max, random_float());
+
+        if (emitter->centripetal) {
+            float random_angle = random_ranged_float(-2 * M_PI, 2 * M_PI);
+            float magnitude    = random_ranged_float(emitter->v_magnitude_min, emitter->v_magnitude_max);
+            emitted_particle->vx = cosf(random_angle) * magnitude;
+            emitted_particle->vy = sinf(random_angle) * magnitude;
+        }
+
         /* emitted_particle->lifetime_max = emitted_particle->lifetime = lerp(emitter->lifetime_min, emitter->lifetime_max, random_float()); */
         emitted_particle->lifetime_max = emitted_particle->lifetime = emitter->particle_max_lifetime + random_float() * 0.4;
     }
@@ -400,7 +415,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
                 particle->vx += particle->ax * dt;
                 particle->vy += particle->ay * dt;
-                particle->vy += GRAVITY_CONSTANT * dt;
+                if (emitter->affected_by_gravity)
+                    particle->vy += GRAVITY_CONSTANT * dt;
 
                 do_particle_horizontal_collision_response(world, (struct entity*) particle, dt);
                 do_particle_vertical_collision_response(world, (struct entity*) particle, dt);
@@ -419,7 +435,8 @@ local void update_particle_emitter(struct particle_emitter* emitter, struct tile
 
                 particle->vx += particle->ax * dt;
                 particle->vy += particle->ay * dt;
-                particle->vy += GRAVITY_CONSTANT * dt;
+                if (emitter->affected_by_gravity)
+                    particle->vy += GRAVITY_CONSTANT * dt;
 
                 particle->last_x = particle->x;
                 particle->x += particle->vx * dt;
@@ -479,9 +496,16 @@ void update_all_particle_systems(struct tilemap* world, float dt) {
     }
 }
 
+
+void draw_all_background_particle_systems(float interpolation) {
+    for (unsigned index = 0; index < particle_emitter_count; ++index) {
+        struct particle_emitter* emitter = particle_emitter_pool + index;
+        if (emitter->background_layer) draw_particle_emitter_particles(emitter, interpolation);
+    }
+}
 void draw_all_particle_systems(float interpolation) {
     for (unsigned index = 0; index < particle_emitter_count; ++index) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
-        draw_particle_emitter_particles(emitter, interpolation);
+        if (!emitter->background_layer) draw_particle_emitter_particles(emitter, interpolation);
     }
 }

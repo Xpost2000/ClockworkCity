@@ -155,6 +155,8 @@ local void game_update_render_frame(float dt) {
         draw_filled_rectangle(0, 0, 9999, 9999, active_colorscheme.secondary);
     } end_graphics_frame();
     begin_graphics_frame(&game_camera); {
+        draw_all_background_particle_systems(particle_interpolation_value);
+
         {
             draw_tiles(tilemap->background_tiles, tilemap->background_tile_count, active_colorscheme.primary_background);
         }

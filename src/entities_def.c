@@ -270,7 +270,8 @@ struct entity {
         float vomit_timer;
         float next_vomit_timer;
         float resurrection_timer;
-        struct particle_emitter* owned_emitter;
+        struct particle_emitter* owned_vomit_emitter;
+        struct particle_emitter* owned_flames_emitter;
     } lost_soul_info;
 #endif
 };
