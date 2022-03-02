@@ -6,8 +6,11 @@
 local texture_id player_idle1 = {}; /*16x24*/
 /* END PLAYER */
 /* LOST SOUL */
-local texture_id lostsoul_idle1 = {};
+local texture_id lostsoul_idle1       = {};
 local texture_id lostsoul_closedidle1 = {};
+
+local texture_id lostsoul_idle1_cracked       = {};
+local texture_id lostsoul_closedidle1_cracked = {};
 /* END LOST SOUL */
 
 /*
@@ -282,8 +285,11 @@ shared_storage const char* get_facing_direction_string(int x) {
 
 void initialize_entity_assets(void) {
     player_idle1   = load_texture("assets/player/1.png");
-    lostsoul_idle1 = load_texture("assets/lostsoul/1idle.png");
+
+    lostsoul_idle1       = load_texture("assets/lostsoul/1idle.png");
     lostsoul_closedidle1 = load_texture("assets/lostsoul/1idleclosed.png");
+    lostsoul_idle1_cracked       = load_texture("assets/lostsoul/1idlea.png");
+    lostsoul_closedidle1_cracked = load_texture("assets/lostsoul/1idlecloseda.png");
 }
 
 /* 

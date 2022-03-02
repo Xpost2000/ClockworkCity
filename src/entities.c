@@ -395,7 +395,6 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     if (entity->dash) {
         entity->ax = 0;
 
-        fprintf(stderr, "%d\n", entity->facing_dir);
         const int MAX_SPEED = (DISTANCE_PER_DASH / ENTITY_DASH_TIME_MAX);
         entity->vx = MAX_SPEED * entity->facing_dir;
         entity->dash_timer -= dt;
@@ -835,20 +834,31 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
         default: {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
                 /* These alignments... Are broken lol */
+                texture_id texture;
+                float angle = 0;
+
                 if (current_entity->lost_soul_info.vomit_timer > 0) {
                     /* shake while vomitting */
-                    draw_texture_aligned(lostsoul_idle1,
-                                         entity_lerp_x(current_entity, interpolation_value),
-                                         entity_lerp_y(current_entity, interpolation_value),
-                                         16, 16, 0.75,
-                                         3, 4, active_colorscheme.primary, 0, random_ranged_float(-1.2, 1.2) * 5 * M_PI);
+                    angle = random_ranged_float(-1.2, 1.2) * 5 * M_PI;
+
+                    if (current_entity->health == 1) {
+                        texture = lostsoul_idle1_cracked;
+                    } else {
+                        texture = lostsoul_idle1;
+                    }
                 } else {
-                    draw_texture_aligned(lostsoul_closedidle1,
-                                         entity_lerp_x(current_entity, interpolation_value),
-                                         entity_lerp_y(current_entity, interpolation_value),
-                                         16, 16, 0.75,
-                                         3, 4, active_colorscheme.primary, 0, 0);
+                    if (current_entity->health == 1) {
+                        texture = lostsoul_closedidle1_cracked;
+                    } else {
+                        texture = lostsoul_closedidle1;
+                    }
                 }
+                
+                draw_texture_aligned(texture,
+                                     entity_lerp_x(current_entity, interpolation_value),
+                                     entity_lerp_y(current_entity, interpolation_value),
+                                     16, 16, 0.75,
+                                     3, 4, active_colorscheme.primary, 0, angle);
             }
         } break;
     }
