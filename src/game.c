@@ -428,7 +428,7 @@ void update_render_frame(float dt) {
             focus_zone_count = game_state->loaded_level->camera_focus_zone_count;
         }
 
-        camera_update(&game_camera,   focus_zones, focus_zone_count, dt);
+        camera_update(&game_camera, focus_zones, focus_zone_count, dt);
     }
     camera_update(&editor_camera, 0, 0, dt);
 }

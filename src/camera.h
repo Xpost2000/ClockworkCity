@@ -21,6 +21,14 @@ struct camera_focus_zone { /* technically this is from the tilemap file, but I'm
     float interpolation_speed[3];
 };
 
+#define INTERPOLATION_DIMENSIONS (3)
+struct camera_state {
+    float target_position_x;
+    float target_position_y;
+    float target_zoom_level;
+    float interpolation_speed[INTERPOLATION_DIMENSIONS];
+};
+
 struct camera {
     struct camera_focus_zone* active_focus_zone;
     /*So cameras now dictate the rendering scale. This will probably break lots of shit.*/
@@ -38,7 +46,8 @@ struct camera {
     float target_position_y;
     float target_zoom_level;
 
-#define INTERPOLATION_DIMENSIONS (3)
+    struct camera_state original_camera_state;
+
     float interpolation_time[INTERPOLATION_DIMENSIONS];
     float interpolation_speed[INTERPOLATION_DIMENSIONS];
 #undef INTERPOLATION_DIMENSIONS
@@ -83,6 +92,7 @@ void camera_reset_transform(struct camera* camera);
 /*based on the renderer scale / game units*/
 void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y);
 void camera_clear_bounds(struct camera* camera);
+void camera_set_active_focus_zone(struct camera* camera, struct camera_focus_zone* zone);
 
 void transform_point_into_camera_space(struct camera* camera, int* x, int* y);
 struct rectangle camera_get_bounds(struct camera* camera);

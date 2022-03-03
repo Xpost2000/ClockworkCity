@@ -43,6 +43,32 @@ void camera_set_focus_position(struct camera* camera, float x, float y) {
     camera->interpolation_time[0] = camera->interpolation_time[1] = 0;
 }
 
+void camera_set_active_focus_zone(struct camera* camera, struct camera_focus_zone* zone) {
+    if (zone != camera->active_focus_zone) {
+        camera->active_focus_zone = zone;
+
+        if (zone) {
+            camera->original_camera_state = (struct camera_state) {
+                .target_position_x      = camera->target_position_x,
+                .target_position_y      = camera->target_position_y,
+                .target_zoom_level      = (camera->target_zoom_level == 0) ? 1 : camera->target_zoom_level,
+                .interpolation_speed[0] = camera->interpolation_speed[0],
+                .interpolation_speed[1] = camera->interpolation_speed[1],
+                .interpolation_speed[2] = (camera->interpolation_speed[2] == 0) ? 1 : camera->interpolation_speed[2],
+            };
+
+            camera_set_focus_speed_x(camera, zone->interpolation_speed[0]);
+            camera_set_focus_speed_y(camera, zone->interpolation_speed[1]);
+            camera_set_focus_speed_zoom(camera, zone->interpolation_speed[2]);
+            camera_set_focus_zoom_level(camera, zone->zoom);
+        } else {
+            camera_set_focus_speed_x(camera, camera->original_camera_state.interpolation_speed[0]);
+            camera_set_focus_speed_y(camera, camera->original_camera_state.interpolation_speed[1]);
+            camera_set_focus_speed_zoom(camera, camera->original_camera_state.interpolation_speed[2]);
+            camera_set_focus_zoom_level(camera, camera->original_camera_state.target_zoom_level);
+        }
+    }
+}
 
 void camera_set_zoom(struct camera* camera, float level) {
     camera->visual_zoom_level = camera->target_zoom_level = camera->last_zoom_level = level;
@@ -145,11 +171,9 @@ void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones,
         struct rectangle screen_bounds = camera_get_bounds(camera);
         float area = ((camera->bounds_max_x - camera->bounds_min_x) * (camera->bounds_max_y - camera->bounds_min_y));
 
-        if (area > 0) {
-            camera_constrict_view_to_rectangle(camera, camera->bounds_min_x, camera->bounds_max_x, camera->bounds_min_y, camera->bounds_max_y);
-
-#if 1
-            struct camera_focus_zone* focus_zone = camera->active_focus_zone;
+        struct camera_focus_zone* focus_zone = camera->active_focus_zone;
+        /* focus zones provide area to the camera */
+        if (area > 0 || focus_zone) {
             if (focus_zone) {
                 if (rectangle_overlapping_v(screen_bounds.x, screen_bounds.y,
                                             screen_bounds.w, screen_bounds.h,
@@ -159,13 +183,14 @@ void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones,
                                                        (float)focus_zone->x, (float)(focus_zone->x + focus_zone->w),
                                                        (float)focus_zone->y, (float)(focus_zone->y + focus_zone->h));
 
-                    camera_set_focus_speed_x(camera, focus_zone->interpolation_speed[0]);
-                    camera_set_focus_speed_y(camera, focus_zone->interpolation_speed[1]);
-                    camera_set_focus_speed_zoom(camera, focus_zone->interpolation_speed[2]);
-                    camera_set_focus_zoom_level(camera, focus_zone->zoom);
+                    /* camera_set_focus_speed_x(camera, focus_zone->interpolation_speed[0]); */
+                    /* camera_set_focus_speed_y(camera, focus_zone->interpolation_speed[1]); */
+                    /* camera_set_focus_speed_zoom(camera, focus_zone->interpolation_speed[2]); */
+                    /* camera_set_focus_zoom_level(camera, focus_zone->zoom); */
                 }
+            } else {
+                camera_constrict_view_to_rectangle(camera, camera->bounds_min_x, camera->bounds_max_x, camera->bounds_min_y, camera->bounds_max_y);
             }
-#endif
         }
     }
 

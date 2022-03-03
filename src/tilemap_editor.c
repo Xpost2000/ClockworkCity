@@ -641,15 +641,19 @@ local void editor_erase_block(int grid_x, int grid_y) {
 
     struct tile* tile = NULL;
 
+    int removal_index;
     switch (editor.editting_tile_layer) {
         case TILE_LAYER_FOREGROUND: {
             tile = existing_block_at(editor.tilemap.foreground_tiles, editor.tilemap.foreground_tile_count, grid_x, grid_y);
+            removal_index = tile - editor.tilemap.foreground_tiles;
         } break;
         case TILE_LAYER_BACKGROUND: {
             tile = existing_block_at(editor.tilemap.background_tiles, editor.tilemap.background_tile_count, grid_x, grid_y);
+            removal_index = tile - editor.tilemap.background_tiles;
         } break;
         case TILE_LAYER_PLAYABLE: {
             tile = existing_block_at(editor.tilemap.tiles, editor.tilemap.tile_count, grid_x, grid_y);
+            removal_index = tile - editor.tilemap.tiles;
         } break;
     }
 
@@ -658,7 +662,8 @@ local void editor_erase_block(int grid_x, int grid_y) {
     }
 
     tile->id = TILE_NONE;
-    editor.tilemap.tile_count -= 1;
+    /* This is breaks things for now. (I should just do the manual removal loop that I did before.) */
+    /* editor.tilemap.tile_count -= 1; */
 }
 
 local void editor_clear_all(void) {
@@ -1682,6 +1687,26 @@ local void tilemap_editor_painting_camera_focus_zones(struct memory_arena* frame
 
             if (!is_editting_text()) {
                 static char temporary_buffers[32][128] = {};
+
+                if (is_key_pressed(KEY_1)) {
+                    memset(temporary_buffers[0], 0, 128);
+                    editor_open_text_edit_prompt("FOCUS ZONE ZOOM", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                }
+
+                if (is_key_pressed(KEY_2)) {
+                    memset(temporary_buffers[0], 0, 128);
+                    editor_open_text_edit_prompt("FOCUS ZONE INTERPOLATION SPEED X", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                }
+
+                if (is_key_pressed(KEY_3)) {
+                    memset(temporary_buffers[0], 0, 128);
+                    editor_open_text_edit_prompt("FOCUS ZONE INTERPOLATION SPEED Y", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                }
+
+                if (is_key_pressed(KEY_4)) {
+                    memset(temporary_buffers[0], 0, 128);
+                    editor_open_text_edit_prompt("FOCUS ZONE INTERPOLATION SPEED ZOOM", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                }
             }
         }
     }
@@ -1723,16 +1748,28 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
 }
 
 void editor_on_prompt_submission(void) {
+    assert(editor.context != NULL && "Hmm, this should be impossible");
+    char* prompt_title = editor.text_edit.prompt_title;
+
     if (editor.tool == EDITOR_TOOL_PAINT_ENTITIES) {
-        if (editor.entity_painting_subtype) {
+        if (editor.entity_painting_subtype == ENTITY_PAINTING_SUBTYPE_TRIGGERS) {
             struct trigger* already_selected = (struct trigger*) editor.context;
-            if (already_selected) {
-                if (already_selected->type == TRIGGER_TYPE_PROMPT) {
-                    /* pointer comparison */
-                    if (editor.text_edit.prompt_title == "SET PROMPT ID") {
-                        already_selected->params[0] = atoi(editor.text_edit.buffer_target);
-                    }
+            if (already_selected->type == TRIGGER_TYPE_PROMPT) {
+                /* pointer comparison */
+                if (prompt_title == "SET PROMPT ID") {
+                    already_selected->params[0] = atoi(editor.text_edit.buffer_target);
                 }
+            }
+        } else if (editor.entity_painting_subtype == ENTITY_PAINTING_SUBTYPE_CAMERA_FOCUS_ZONES) {
+            struct camera_focus_zone* already_selected = (struct camera_focus_zone*) editor.context;
+            if (prompt_title == "FOCUS ZONE ZOOM") {
+                already_selected->zoom = atof(editor.text_edit.buffer_target);
+            } else if (prompt_title == "FOCUS ZONE INTERPOLATION SPEED X") {
+                already_selected->interpolation_speed[0] = atof(editor.text_edit.buffer_target);
+            } else if (prompt_title == "FOCUS ZONE INTERPOLATION SPEED Y") {
+                already_selected->interpolation_speed[1] = atof(editor.text_edit.buffer_target);
+            } else if (prompt_title == "FOCUS ZONE INTERPOLATION SPEED ZOOM") {
+                already_selected->interpolation_speed[2] = atof(editor.text_edit.buffer_target);
             }
         }
     }

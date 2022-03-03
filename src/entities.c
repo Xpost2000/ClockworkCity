@@ -317,7 +317,7 @@ void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, fl
     /* entity->w += dt; */
     /* entity->h += dt; */
 }
-
+local bool block_player_input = false;
 void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     struct game_controller* gamepad = get_gamepad(gamepad_id);
 
@@ -347,7 +347,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             && left_stick_angle > -(180 - ANGLE_AIMING_THRESHOLD_IN_DEGREES));
 
     entity->ax = 0;
-
+    if (block_player_input) return;
 
     if (pause) {
         game_state->menu_mode = GAMEPLAY_UI_PAUSEMENU;
@@ -543,14 +543,13 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     entity->attack_cooldown_timer -= dt;
 }
 
-local bool block_player_input = false;
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     if (entity->death_state != DEATH_STATE_ALIVE)
         return;
 
     if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
 
-    if (animation_id == GAME_ANIMATION_ID_NONE && !block_player_input) {
+    if (animation_id == GAME_ANIMATION_ID_NONE) {
         do_player_entity_input(entity, 0, dt);
     }
     /* game collisions, not physics */
@@ -612,12 +611,12 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
                                        camera_focus_zone->x, camera_focus_zone->y,
                                        camera_focus_zone->w, camera_focus_zone->h)) {
                 hit_any_focus_zone = true;
-                game_camera.active_focus_zone = camera_focus_zone;
+                camera_set_active_focus_zone(&game_camera, camera_focus_zone);
             }
         }
 
         if (!hit_any_focus_zone) {
-            game_camera.active_focus_zone = NULL;
+            camera_set_active_focus_zone(&game_camera, NULL);
         }
     }
     /* check if I hit transition then change level */
@@ -888,9 +887,9 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                     shadow_color.g /= 3;
                     shadow_color.b /= 3;
                     shadow_color.a = interpolation_clamp(shadow->t / ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT);
-                    shadow->t -= dt;
+                    shadow->t -= dt/2;
 
-                    draw_filled_rectangle(shadow->x, shadow->y, current_entity->w, current_entity->h, shadow_color);
+                    draw_texture_aligned(player_idle1, shadow->x, shadow->y, 16, 24, 1, 4, 8, shadow_color, current_entity->facing_dir == 1 ? 0 : 1, 0);
 
                     if (shadow->t <= 0.0) {
                         current_entity->linger_shadows[shadow_index] = current_entity->linger_shadows[--current_entity->linger_shadow_count];
