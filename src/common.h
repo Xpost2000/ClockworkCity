@@ -252,6 +252,10 @@ inline shared_storage float distance(float x1, float y1, float x2, float y2) {
     return sqrtf(distance_sq(x1, y1, x2, y2));
 }
 
+inline shared_storage float fractional(float a) {
+    return (a - floorf(a));
+}
+
 inline shared_storage float degrees_to_radians(float deg) {
     return (deg * M_PI/180.0f);
 }

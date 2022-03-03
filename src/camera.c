@@ -182,11 +182,6 @@ void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones,
                     camera_constrict_view_to_rectangle(camera,
                                                        (float)focus_zone->x, (float)(focus_zone->x + focus_zone->w),
                                                        (float)focus_zone->y, (float)(focus_zone->y + focus_zone->h));
-
-                    /* camera_set_focus_speed_x(camera, focus_zone->interpolation_speed[0]); */
-                    /* camera_set_focus_speed_y(camera, focus_zone->interpolation_speed[1]); */
-                    /* camera_set_focus_speed_zoom(camera, focus_zone->interpolation_speed[2]); */
-                    /* camera_set_focus_zoom_level(camera, focus_zone->zoom); */
                 }
             } else {
                 camera_constrict_view_to_rectangle(camera, camera->bounds_min_x, camera->bounds_max_x, camera->bounds_min_y, camera->bounds_max_y);
