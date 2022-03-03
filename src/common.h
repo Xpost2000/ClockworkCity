@@ -42,6 +42,9 @@
 #define zero_buffer_memory(x, l) memset(x, 0, l)
 #define zero_array(x) zero_buffer_memory(x, array_count(x) * sizeof(*x))
 
+shared_storage const char* yesno[]     = {"no", "yes"};
+shared_storage const char* truefalse[] = {"false", "true"};
+
 #define swap(t, a, b)                           \
     do {                                        \
         t _tmp = a;                             \

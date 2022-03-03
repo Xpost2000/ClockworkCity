@@ -9,6 +9,73 @@
 #define EDITOR_SOUL_ANCHOR_MAX_COUNT       (256)
 
 /*
+ * Duplicated code macros
+ * no templates in C, and cannot use polymorphic trick because types are different in memory layout!
+ 
+ These macros are pretty evil and satanic, and rely on the fact I have a regular naming convention...
+ Also breaks indenting the next line in emacs???
+
+ Ahhhh... this must be a Hunter's Nightmare.
+ */
+#define Generate_Rectangle_Sizing_Code(object)          \
+    do {                                                \
+    if (is_key_pressed(KEY_DOWN)) {                     \
+        object->h += 1;                                 \
+    } else if (is_key_pressed(KEY_UP)) {                \
+        object->h -= 1;                                 \
+    }                                                   \
+    if (is_key_pressed(KEY_RIGHT)) {                    \
+        object->w += 1;                                 \
+    } else if (is_key_pressed(KEY_LEFT)) {              \
+        object->w -= 1;                                 \
+    }                                           \ 
+    if (object->w < 1) object->w = 1;         \ 
+    if (object->h < 1) object->h = 1;         \
+} while (0)
+
+#define Generate_Rectangle_Drag_Or_Place_Code(object, type, default_w, default_h) \
+      do {                                                              \
+      if (left_click) {                                                 \
+          if (object) {                                                 \
+              if (!editor.dragging &&                                   \
+                  rectangle_overlapping_v(object->x, object->y, object->w, object->h, mouse_position[0], mouse_position[1], 1, 1)) { \
+                  editor.dragging = true;                               \
+              } else if (editor.dragging) {                             \
+                  object->x = mouse_position[0];                        \
+                  object->y = mouse_position[1];                        \
+              }                                                         \
+          } else {                                                      \
+              struct type * type = editor_existing_##type##_at(editor.tilemap.type##s, editor.tilemap.type##_count, mouse_position[0], mouse_position[1]); \
+              if (!type) {                                              \
+                  type = editor_allocate_##type();                      \
+                  type->x = mouse_position[0];                          \
+                  type->y = mouse_position[1];                          \
+                  type->w = default_w;                                  \
+                  type->h = default_h;                                  \
+              }                                                         \
+              editor.context = type;                                    \
+          }                                                             \
+      } else {                                                          \
+          editor.dragging = false;                                      \
+      }                                                                 \
+      } while (0)
+
+#define Generate_Rectangle_Deletion_Or_Unselect_Code(type)              \
+      do {                                                              \
+      if (right_click) {                                                \
+          struct type* type = editor_existing_##type##_at(editor.tilemap.type##s, editor.tilemap.type##_count, mouse_position[0], mouse_position[1]); \
+          if (type) {                                                   \
+              unsigned index = (type - editor.tilemap.type##s);         \
+              editor.tilemap.type##s[index] = editor.tilemap.type##s[--editor.tilemap.type##_count]; \
+          } else {                                                      \
+              editor.context = NULL;                                    \
+          }                                                             \
+      }                                                                 \
+      if (is_key_pressed(KEY_ESCAPE)) {                                 \
+          editor.context = NULL;                                        \
+      }                                                                 \
+      } while(0)
+/*
   NOTE(jerry):
   Almost everything is expressed in tile coordinates at the moment.
 
@@ -38,8 +105,8 @@
 /*This data structure may be different from the game runtime, which is why it's duplicated*/
 struct editable_tilemap {
     uint32_t tile_count;
-    uint8_t transition_zone_count;
-    uint8_t player_spawn_link_count;
+    uint8_t  transition_zone_count;
+    uint8_t  player_spawn_link_count;
     uint16_t entity_placement_count;
     uint16_t trigger_count;
     uint16_t soul_anchor_count;
@@ -383,6 +450,10 @@ struct entity_placement* editor_existing_entity_at(struct entity_placement* enti
     }
 
     return NULL;
+}
+/* exists for the macro */
+struct entity_placement* editor_existing_entity_placement_at(struct entity_placement* entities, size_t entity_count, int integer_x, int integer_y) {
+    return editor_existing_entity_at(entities, entity_count, integer_x, integer_y);
 }
 
 /* TODO(jerry): negatives are bad! */
@@ -1133,6 +1204,7 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
         /* cursor */
         {
             struct transition_zone* already_selected = (struct transition_zone*) editor.context;
+            /* Not deduplicated, because of irregular naming convention LOL. It's okay I guess. */
             if (left_click) {
                 if (already_selected) {
                     /*handle*/
@@ -1173,6 +1245,10 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
                 }
             }
 
+            if (is_key_pressed(KEY_ESCAPE)) {
+                editor.context = NULL;
+            }
+
             if (already_selected) draw_rectangle(already_selected->x, already_selected->y, already_selected->w, already_selected->h, color4f(0.2, 0.3, 1.0, 1.0));
         }
     } end_graphics_frame();
@@ -1191,20 +1267,7 @@ local void tilemap_editor_handle_paint_transition_mode(struct memory_arena* fram
                                                       already_selected->identifier, already_selected->x, already_selected->y, already_selected->w, already_selected->h, already_selected->zone_filename, already_selected->zone_link), COLOR4F_WHITE);
             } end_graphics_frame();
 
-            if (is_key_pressed(KEY_DOWN)) {
-                already_selected->h += 1;
-            } else if (is_key_pressed(KEY_UP)) {
-                already_selected->h -= 1;
-            }
-
-            if (is_key_pressed(KEY_RIGHT)) {
-                already_selected->w += 1;
-            } else if (is_key_pressed(KEY_LEFT)) {
-                already_selected->w -= 1;
-            }
-
-            if (already_selected->w < 1) already_selected->w = 1;
-            if (already_selected->h < 1) already_selected->h = 1;
+            Generate_Rectangle_Sizing_Code(already_selected);
 
             if (!is_editting_text()) {
                 if (is_key_down(KEY_1)) {
@@ -1311,6 +1374,7 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
                 editor.dragging = false;
             }
 
+            /* cannot be deduplicated. */
             if (right_click) {
                 struct player_spawn_link* spawn = editor_existing_spawn_at(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count, mouse_position[0], mouse_position[1]);
 
@@ -1322,6 +1386,10 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
                 } else {
                     editor.context = NULL;
                 }
+            }
+
+            if (is_key_pressed(KEY_ESCAPE)) {
+                editor.context = NULL;
             }
 
             if (already_selected) {
@@ -1365,6 +1433,7 @@ local void tilemap_editor_painting_entities(struct memory_arena* frame_arena, fl
 
             struct entity_placement* already_selected = (struct entity_placement*) editor.context;
 
+            /* cannot be deduplicated since width/height is *known*. */
             if (left_click) {
                 if (already_selected) {
                     float entity_w;
@@ -1396,16 +1465,7 @@ local void tilemap_editor_painting_entities(struct memory_arena* frame_arena, fl
                 editor.dragging = false;
             }
 
-            if (right_click) {
-                struct entity_placement* entity = editor_existing_entity_at(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count, mouse_position[0], mouse_position[1]);
-
-                if (entity) {
-                    unsigned index = (entity - editor.tilemap.entity_placements);
-                    editor.tilemap.entity_placements[index] = editor.tilemap.entity_placements[--editor.tilemap.entity_placement_count];
-                } else {
-                    editor.context = NULL;
-                }
-            }
+            Generate_Rectangle_Deletion_Or_Unselect_Code(entity_placement);
 
             if (already_selected) {
                 if (!is_editting_text()) {
@@ -1486,45 +1546,8 @@ local void tilemap_editor_painting_triggers(struct memory_arena* frame_arena, fl
         {
             struct trigger* already_selected = (struct trigger*) editor.context;
 
-            if (left_click) {
-                if (already_selected) {
-                    /*handle*/
-                    if (!editor.dragging &&
-                        rectangle_overlapping_v(already_selected->x, already_selected->y, already_selected->w, already_selected->h, mouse_position[0], mouse_position[1], 1, 1)) {
-                        editor.dragging = true;
-                    } else if (editor.dragging) {
-                        already_selected->x = mouse_position[0];
-                        already_selected->y = mouse_position[1];
-                    }
-                } else {
-                    struct trigger* trigger = editor_existing_trigger_at(editor.tilemap.triggers, editor.tilemap.trigger_count, mouse_position[0], mouse_position[1]);
-
-                    if (!trigger) {
-                        trigger = editor_allocate_trigger();
-                        trigger->x = mouse_position[0];
-                        trigger->y = mouse_position[1];
-                        trigger->w = 5;
-                        trigger->h = 5;
-                    }
-
-                    editor.context = trigger;
-                }
-            } else {
-                editor.dragging = false;
-            }
-
-            if (right_click) {
-                /*
-                  This only works cause it's an array. And this is actually okay.
-                */
-                struct trigger* trigger = editor_existing_trigger_at(editor.tilemap.triggers, editor.tilemap.trigger_count, mouse_position[0], mouse_position[1]);
-                if (trigger) {
-                    unsigned index = (trigger - editor.tilemap.triggers);
-                    editor.tilemap.triggers[index] = editor.tilemap.triggers[--editor.tilemap.trigger_count];
-                } else {
-                    editor.context = NULL;
-                }
-            }
+            Generate_Rectangle_Drag_Or_Place_Code(already_selected, trigger, 5, 5);
+            Generate_Rectangle_Deletion_Or_Unselect_Code(trigger);
 
             if (already_selected) draw_rectangle(already_selected->x, already_selected->y, already_selected->w, already_selected->h, color4f(0.2, 0.3, 1.0, 1.0));
         }
@@ -1539,38 +1562,52 @@ local void tilemap_editor_painting_triggers(struct memory_arena* frame_arena, fl
                 int dimens[2];
                 get_screen_dimensions(dimens, dimens+1);
 
+                const int lines = 7; /* manually counted for layout reasons... */
                 draw_text_right_justified(test_font, 0, 0, dimens[0],
-                                          format_temp("TRIGGER PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\n",
-                                                      already_selected->identifier, already_selected->x, already_selected->y, already_selected->w, already_selected->h), COLOR4F_WHITE);
+                                          format_temp("TRIGGER PROPERTIES(TYPE: %s)\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\nonce only?: %s\n",
+                                                      trigger_type_strings[already_selected->type],
+                                                      already_selected->identifier,
+                                                      already_selected->x, already_selected->y,
+                                                      already_selected->w, already_selected->h, yesno[already_selected->once_only]), COLOR4F_WHITE);
+                switch (already_selected->type) {
+                    case TRIGGER_TYPE_PROMPT: {
+                        draw_text_right_justified(test_font, 0, (lines+1) * font_height, dimens[0],
+                                                  format_temp("prompt id: %d\n", already_selected->params[0]),
+                                                  COLOR4F_WHITE);
+                    } break;
+                    case TRIGGER_TYPE_SPECIAL_EVENT: {
+                        /* ??? Needed? */
+                    } break;
+                }
             } end_graphics_frame();
 
-            if (is_key_pressed(KEY_DOWN)) {
-                already_selected->h += 1;
-            } else if (is_key_pressed(KEY_UP)) {
-                already_selected->h -= 1;
+            if (is_key_pressed(KEY_TAB)) {
+                already_selected->type += 1;
+                already_selected->type %= TRIGGER_TYPE_COUNT;
             }
 
-            if (is_key_pressed(KEY_RIGHT)) {
-                already_selected->w += 1;
-            } else if (is_key_pressed(KEY_LEFT)) {
-                already_selected->w -= 1;
-            }
-
-            if (already_selected->w < 1) already_selected->w = 1;
-            if (already_selected->h < 1) already_selected->h = 1;
+            Generate_Rectangle_Sizing_Code(already_selected);
 
             if (!is_editting_text()) {
-#if 0
-                if (is_key_down(KEY_1)) {
-                    editor_open_text_edit_prompt("SET TRANSITION ZONE NAME", already_selected->identifier, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->identifier));
+                static char temporary_buffers[32][128] = {};
+
+                switch (already_selected->type) {
+                    case TRIGGER_TYPE_PROMPT: {
+                        if (is_key_pressed(KEY_1)) {
+                            Toggle_Boolean(already_selected->once_only);
+                        }
+
+                        if (is_key_pressed(KEY_2)) {
+                            memset(temporary_buffers[0], 0, 128);
+                            editor_open_text_edit_prompt("SET PROMPT ID", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                        }
+
+                        already_selected->params[0] = atoi(temporary_buffers[0]);
+                    } break;
+                    case TRIGGER_TYPE_SPECIAL_EVENT: {
+                        /* ??? Needed? */
+                    } break;
                 }
-                if (is_key_down(KEY_2)) {
-                    editor_open_text_edit_prompt("SET TRANSITION ZONE FILENAME", already_selected->zone_filename, FILENAME_MAX_LENGTH, strlen(already_selected->zone_filename));
-                }
-                if (is_key_down(KEY_3)) {
-                    editor_open_text_edit_prompt("SET TRANSITION ZONE LINKNAME", already_selected->zone_link, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH, strlen(already_selected->zone_link));
-                }
-#endif
             }
         }
     }
