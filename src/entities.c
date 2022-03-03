@@ -128,6 +128,7 @@ void entity_halt_motion(struct entity* entity) {
 /*
   Honestly... There is no reason this should be special.
 */
+void entity_trigger_active(struct entity* entity, struct trigger* trigger);
 void do_player_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     if (noclip) {
         entity->vx      = entity->ax;
@@ -440,6 +441,9 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             }
 
             if (entity->sliding_against_wall) {
+                /* entity_apply_impulse( */
+                /*     -entity->facing_dir, 0, 15, 0.15 */
+                /* ); */
                 entity->apply_wall_jump_force_timer = 0.15;
                 entity->opposite_facing_direction = -entity->facing_dir;
                 entity->facing_dir *= -1;
@@ -573,6 +577,20 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
                         restore_player_to_last_good_grounded();
                     }
                 }
+            }
+        }
+    }
+    /* check for trigger intersections */
+    {
+        for (unsigned index = 0; index < tilemap->trigger_count; ++index) {
+            struct trigger* trigger = tilemap->triggers + index;
+
+            /* handle that else where. */
+            if (trigger->requires_interaction) continue;
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
+                                       trigger->x, trigger->y, trigger->w, trigger->h)) {
+                entity_trigger_activate(entity, trigger);
+                break;
             }
         }
     }
@@ -973,6 +991,20 @@ void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* t
             }
         }
     }
+}
+
+void entity_trigger_activate(struct entity* entity, struct trigger* trigger) {
+    if (trigger->once_only && trigger->activations > 0)
+        return;
+
+    switch (trigger->type) {
+        case TRIGGER_TYPE_PROMPT: {
+            game_activate_prompt(trigger->params[0]);
+        } break;
+        default: unimplemented();
+    }
+
+    trigger->activations += 1;
 }
 
 void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {

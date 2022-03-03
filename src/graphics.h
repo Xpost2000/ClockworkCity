@@ -53,6 +53,8 @@ struct image_buffer {
 #define COLOR4F_WHITE    (union color4f) {{1, 1, 1, 1}}
 #define COLOR4F_YELLOW   (union color4f) {{1, 1, 0.6235, 1}}
 #define COLOR4F_DARKGRAY (union color4f) {{0.3, 0.3, 0.3, 1}}
+#define COLOR4F_MAGENTA  (union color4f) {{1, 0, 1, 1}}
+#define COLOR4F_PURPLE   (union color4f) {{0.5, 0, 0.5, 1}}
 
 union color4f color4f_lerp(union color4f a, union color4f b, float t);
 union color4f color4f(float r, float g, float b, float a);

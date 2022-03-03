@@ -110,6 +110,7 @@ struct player_spawn_link {
    In the emergency case I need more.
 */
 #define TRIGGER_PARAMETERS_MAX (4)
+#define TRIGGER_IDENTIFIER_STRING_LENGTH (16)
 /* What they sound like. */
 enum trigger_type {
     TRIGGER_TYPE_PROMPT, /*????*/
@@ -121,11 +122,19 @@ local const char* trigger_type_strings[] = {
 };
 /* Simplified by the fact only a player can interact with it. */
 struct trigger {
-    uint8_t                     once_only;
-    uint8_t                     requires_interaction; /* interaction button like a door */
-    uint32_t                    type;
-    int32_t                     params[TRIGGER_PARAMETERS_MAX];
-    float                       fparams[TRIGGER_PARAMETERS_MAX];
+    char identifier[TRIGGER_IDENTIFIER_STRING_LENGTH];
+
+    int32_t x;
+    int32_t y;
+    int32_t w;
+    int32_t h;
+    
+    uint8_t  once_only;
+    uint8_t  requires_interaction; /* interaction button like a door */
+    uint16_t activations;
+    uint16_t type;
+    int32_t  params[TRIGGER_PARAMETERS_MAX];
+    float    fparams[TRIGGER_PARAMETERS_MAX];
 };
 /* Our rest points */
 #define SOUL_ANCHOR_IDENTIFIER_STRING_LENGTH (8)
@@ -387,6 +396,24 @@ void draw_transitions(struct transition_zone* transitions, size_t count) {
     for (unsigned index = 0; index < count; ++index) {
         struct transition_zone* t = &transitions[index];
         draw_rectangle(t->x, t->y, t->w, t->h, COLOR4F_RED);
+    } 
+}
+
+void draw_triggers(struct trigger* triggers, size_t count) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct trigger* t = &triggers[index];
+        union color4f color = COLOR4F_MAGENTA;
+        color.a /= 2;
+        draw_filled_rectangle(t->x, t->y, t->w, t->h, color);
+    } 
+}
+
+void draw_camera_focus_zones(struct camera_focus_zone* camera_focus_zones, size_t count) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct camera_focus_zone* t = &camera_focus_zones[index];
+        union color4f color = COLOR4F_PURPLE;
+        color.a /= 2;
+        draw_filled_rectangle(t->x, t->y, t->w, t->h, color);
     } 
 }
 

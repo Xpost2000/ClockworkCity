@@ -117,6 +117,8 @@ local int font_size_aspect_ratio_independent(float percentage) {
    Cause C can't correct references to types that haven't been declared
    yet :/
 */
+local void game_activate_prompt(uint32_t id);
+local void game_close_prompt(void);
 #include "persistent_state_def.c"
 #include "entities_def.c"
 #include "game_menus_defs.c"

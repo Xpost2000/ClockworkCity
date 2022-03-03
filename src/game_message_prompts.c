@@ -389,10 +389,25 @@ local char* story1_prompt_text[] = {
     "Destroy the guardians.",
     "Become whole.",
     "Ascend.",
-    "Free from this unlife."
 };
 
-Define_Text_Based_Prompt(prompt_story1, story1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1)
+local char*  comfort1_prompt_text[] = {
+    "Comfort.",
+    "Safety.",
+    "Venture into the unknown to ascend.",
+};
+
+
+local char* death1_prompt_text[] = {
+    "Do not fear your death.",
+    "Return stronger."
+};
+
+Define_Text_Based_Prompt(prompt_story1, story1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
+/*( TODO)*/
+Define_Text_Based_Prompt(prompt_comfort1, comfort1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
+/*( TODO)*/
+Define_Text_Based_Prompt(prompt_first_death, death1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
 
 local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {
     [PROMPT_ID_TEST_PROMPT]          = DEVTEST_prompt1,
