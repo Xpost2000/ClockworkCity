@@ -582,16 +582,42 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
     }
     /* check for trigger intersections */
     {
-        for (unsigned index = 0; index < tilemap->trigger_count; ++index) {
+        bool hit_any_trigger = false;
+        
+        for (unsigned index = 0; index < tilemap->trigger_count && !hit_any_trigger; ++index) {
             struct trigger* trigger = tilemap->triggers + index;
 
             /* handle that else where. */
             if (trigger->requires_interaction) continue;
             if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
                                        trigger->x, trigger->y, trigger->w, trigger->h)) {
+                hit_any_trigger = true;
                 entity_trigger_activate(entity, trigger);
-                break;
             }
+        }
+
+        if (!hit_any_trigger) {
+            entity->occupied_trigger = NULL;
+        }
+    }
+    /* camera zone collision checks */
+    {
+        bool hit_any_focus_zone = false;
+        
+        for (unsigned index = 0; index < tilemap->camera_focus_zone_count && !hit_any_focus_zone; ++index) {
+            struct camera_focus_zone* camera_focus_zone = tilemap->camera_focus_zones + index;
+
+            /* handle that else where. */
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
+                                       camera_focus_zone->x, camera_focus_zone->y,
+                                       camera_focus_zone->w, camera_focus_zone->h)) {
+                hit_any_focus_zone = true;
+                game_camera.active_focus_zone = camera_focus_zone;
+            }
+        }
+
+        if (!hit_any_focus_zone) {
+            game_camera.active_focus_zone = NULL;
         }
     }
     /* check if I hit transition then change level */
@@ -996,6 +1022,12 @@ void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* t
 void entity_trigger_activate(struct entity* entity, struct trigger* trigger) {
     if (trigger->once_only && trigger->activations > 0)
         return;
+
+    if (entity->occupied_trigger != trigger) {
+        entity->occupied_trigger = trigger;
+    } else {
+        return;
+    }
 
     switch (trigger->type) {
         case TRIGGER_TYPE_PROMPT: {

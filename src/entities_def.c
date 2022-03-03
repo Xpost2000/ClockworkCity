@@ -235,14 +235,12 @@ struct entity {
     /*temporary*/
     int8_t facing_dir; /* don't know why this is not an enum either... */
     int8_t opposite_facing_direction; /* this state is needed for wall jump. Weird, I know. */
-    bool dash;
-    float dash_timer; /* may phase out bool dash, since if this dash_timer > 0, implies dashing */
-    /*end temporary*/
 
     float   coyote_jump_timer;
     float   player_variable_jump_time;
     uint8_t current_jump_count;
     uint8_t max_allowed_jump_count;
+    /*end temporary*/
 
     float linger_shadow_sample_record_timer;
     uint8_t                   linger_shadow_count;
@@ -258,10 +256,16 @@ struct entity {
        force* forces;
        
        But who said I was a wise man?
+       
+       NOTE(jerry): all fields here are related to impulses/forces. In case I ever clean it up.
      */
+    bool dash;
+    float dash_timer; /* may phase out bool dash, since if this dash_timer > 0, implies dashing */
     uint8_t attack_direction;
     float apply_wall_jump_force_timer;
     float apply_attack_knockback_force_timer;
+
+    struct trigger* occupied_trigger;
 
 #if 1
     /* per instance data */

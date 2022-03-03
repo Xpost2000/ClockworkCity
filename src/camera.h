@@ -6,8 +6,12 @@
   
   TODO(jerry): (interpolate zoom)
 */
+#define CAMERA_FOCUS_ZONE_IDENTIFIER_LENGTH (16)
 struct camera_focus_zone { /* technically this is from the tilemap file, but I'm not making a _def.c / .h file. */
     /* does not need identifier? */
+    char identifier[CAMERA_FOCUS_ZONE_IDENTIFIER_LENGTH];
+    uint8_t active;
+
     int32_t x;
     int32_t y;
     int32_t w;
@@ -18,6 +22,7 @@ struct camera_focus_zone { /* technically this is from the tilemap file, but I'm
 };
 
 struct camera {
+    struct camera_focus_zone* active_focus_zone;
     /*So cameras now dictate the rendering scale. This will probably break lots of shit.*/
     float render_scale; 
 
@@ -69,6 +74,7 @@ void camera_set_focus_speed_y(struct camera* camera, float speed);
 void camera_set_focus_speed_zoom(struct camera* camera, float speed);
 void camera_set_focus_position(struct camera* camera, float x, float y);
 void camera_set_focus_zoom_level(struct camera* camera, float level);
+/* TODO(jerry): remove unused arguments. */
 void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones, size_t focus_zone_count, float dt);
 void camera_force_clamp_to_bounds(struct camera* camera);
 void camera_stop_tracking(struct camera* camera);

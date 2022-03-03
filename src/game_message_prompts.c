@@ -59,6 +59,7 @@ enum prompt_id {
 */
     PROMPT_ID_EXPOSITION_STORY1,
     PROMPT_ID_FIRSTDEATH_STORY2,
+    PROMPT_ID_FOUND_HUB_STORY3,
     /*
      * what it sounds like
      */
@@ -410,11 +411,13 @@ Define_Text_Based_Prompt(prompt_comfort1, comfort1_prompt_text, PROMPT_TIME_PER_
 Define_Text_Based_Prompt(prompt_first_death, death1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
 
 local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {
-    [PROMPT_ID_TEST_PROMPT]          = DEVTEST_prompt1,
-    [PROMPT_ID_TEST1_PROMPT]         = DEVTEST_prompt2,
-    [PROMPT_ID_TEST2_PROMPT]         = DEVTEST_prompt3,
+    [PROMPT_ID_TEST_PROMPT]             = DEVTEST_prompt1,
+    [PROMPT_ID_TEST1_PROMPT]            = DEVTEST_prompt2,
+    [PROMPT_ID_TEST2_PROMPT]            = DEVTEST_prompt3,
     [PROMPT_ID_CONTROL_SCHEME_OVERVIEW] = prompt_control_scheme_overview,
     [PROMPT_ID_EXPOSITION_STORY1]       = prompt_story1,
+    [PROMPT_ID_FIRSTDEATH_STORY2]       = prompt_first_death,
+    [PROMPT_ID_FOUND_HUB_STORY3]        = prompt_comfort1,
 };
 
 local void update_render_game_prompt(struct game_controller* controller, float dt) {

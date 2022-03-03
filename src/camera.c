@@ -148,9 +148,9 @@ void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones,
         if (area > 0) {
             camera_constrict_view_to_rectangle(camera, camera->bounds_min_x, camera->bounds_max_x, camera->bounds_min_y, camera->bounds_max_y);
 
-            for (unsigned index = 0; index < focus_zone_count; ++index) {
-                struct camera_focus_zone* focus_zone = focus_zones + index;
-
+#if 1
+            struct camera_focus_zone* focus_zone = camera->active_focus_zone;
+            if (focus_zone) {
                 if (rectangle_overlapping_v(screen_bounds.x, screen_bounds.y,
                                             screen_bounds.w, screen_bounds.h,
                                             (float)focus_zone->x, (float)focus_zone->y,
@@ -163,9 +163,9 @@ void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones,
                     camera_set_focus_speed_y(camera, focus_zone->interpolation_speed[1]);
                     camera_set_focus_speed_zoom(camera, focus_zone->interpolation_speed[2]);
                     camera_set_focus_zoom_level(camera, focus_zone->zoom);
-                    break;
                 }
             }
+#endif
         }
     }
 

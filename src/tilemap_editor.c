@@ -8,6 +8,8 @@
 #define EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT (256)
 #define EDITOR_SOUL_ANCHOR_MAX_COUNT       (256)
 
+/* Do I rival VVVVVVV for code quality right here? */
+
 /*
  * Duplicated code macros
  * no templates in C, and cannot use polymorphic trick because types are different in memory layout!
@@ -287,6 +289,10 @@ local struct soul_anchor* editor_allocate_soul_anchor(void) {
 local struct camera_focus_zone* editor_allocate_camera_focus_zone(void) {
     assert(editor.tilemap.camera_focus_zone_count < EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT);
     struct camera_focus_zone* result = &editor.tilemap.camera_focus_zones[editor.tilemap.camera_focus_zone_count++];
+    /* default init */
+    result->active = 1;
+    result->zoom = 1;
+    result->interpolation_speed[0] = result->interpolation_speed[1] = result->interpolation_speed[2] = 1;
     return result;
 }
 
@@ -384,6 +390,18 @@ struct tile* occupied_block_at(struct tile* tiles, int tile_count, int grid_x, i
         struct tile* t = tiles + index;
 
         if (t->x == grid_x && t->y == grid_y) {
+            return t;
+        }
+    }
+
+    return NULL;
+}
+
+struct camera_focus_zone* editor_existing_camera_focus_zone_at(struct camera_focus_zone* camera_focus_zones, size_t camera_focus_zone_count, int grid_x, int grid_y) {
+    for (unsigned index = 0; index < camera_focus_zone_count; ++index) {
+        struct camera_focus_zone* t = camera_focus_zones + index;
+
+        if (rectangle_intersects_v(t->x, t->y, t->w, t->h, grid_x, grid_y, 0.5, 0.5)) {
             return t;
         }
     }
@@ -705,6 +723,12 @@ local void editor_serialize(struct binary_serializer* serializer) {
 
             if (version_id >= 4) {
                 Serialize_Fixed_Array(serializer, u16, editor.tilemap.entity_placement_count, editor.tilemap.entity_placements);
+
+                if (version_id >= 5) {
+                    Serialize_Fixed_Array(serializer, u16, editor.tilemap.trigger_count, editor.tilemap.triggers);
+                    Serialize_Fixed_Array(serializer, u16, editor.tilemap.camera_focus_zone_count, editor.tilemap.camera_focus_zones);
+                    Serialize_Fixed_Array(serializer, u16, editor.tilemap.soul_anchor_count, editor.tilemap.soul_anchors);
+                }
             }
         }
     }
@@ -1022,11 +1046,18 @@ local void tilemap_editor_update_render_frame(float dt) {
             }
 
             if (is_key_pressed(KEY_ESCAPE)) {
-                end_text_edit(0, 0);
-                editor.text_edit.open = false;
+                if (editor.text_edit.open) {
+                    end_text_edit(0, 0);
+                    editor.text_edit.open = false;
+                }
             } else if (is_key_pressed(KEY_RETURN)) {
-                end_text_edit(editor.text_edit.buffer_target, editor.text_edit.buffer_length);
-                editor.text_edit.open = false;
+                if (editor.text_edit.open) {
+                    end_text_edit(editor.text_edit.buffer_target, editor.text_edit.buffer_length);
+                    editor.text_edit.open = false;
+                    /* hardcoded response to return */
+                    void editor_on_prompt_submission(void);
+                    editor_on_prompt_submission();
+                }
             }
         }
     } end_graphics_frame();
@@ -1601,8 +1632,6 @@ local void tilemap_editor_painting_triggers(struct memory_arena* frame_arena, fl
                             memset(temporary_buffers[0], 0, 128);
                             editor_open_text_edit_prompt("SET PROMPT ID", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
                         }
-
-                        already_selected->params[0] = atoi(temporary_buffers[0]);
                     } break;
                     case TRIGGER_TYPE_SPECIAL_EVENT: {
                         /* ??? Needed? */
@@ -1614,7 +1643,48 @@ local void tilemap_editor_painting_triggers(struct memory_arena* frame_arena, fl
 }
 
 local void tilemap_editor_painting_camera_focus_zones(struct memory_arena* frame_arena, float dt) {
-    
+    int mouse_position[2];
+    bool left_click, right_click;
+
+    get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+    get_mouse_buttons(&left_click, 0, &right_click);
+
+    begin_graphics_frame(&editor_camera); {
+        /* cursor */
+        {
+            struct camera_focus_zone* already_selected = (struct camera_focus_zone*) editor.context;
+
+            Generate_Rectangle_Drag_Or_Place_Code(already_selected, camera_focus_zone, 5, 5);
+            Generate_Rectangle_Deletion_Or_Unselect_Code(camera_focus_zone);
+
+            if (already_selected) draw_rectangle(already_selected->x, already_selected->y, already_selected->w, already_selected->h, color4f(0.2, 0.3, 1.0, 1.0));
+        }
+    } end_graphics_frame();
+
+    /* editor ui */
+    {
+        struct camera_focus_zone* already_selected = (struct camera_focus_zone*) editor.context;
+        if (already_selected)  {
+            begin_graphics_frame(NULL); {
+                float font_height = font_size_aspect_ratio_independent(0.03);
+                int dimens[2];
+                get_screen_dimensions(dimens, dimens+1);
+
+                draw_text_right_justified(test_font, 0, 0, dimens[0],
+                                          format_temp("FOCUS ZONE PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\ntarget zoom: %f\ninterp speeds (%f, %f, %f)\n",
+                                                      already_selected->identifier,
+                                                      already_selected->x, already_selected->y,
+                                                      already_selected->w, already_selected->h,
+                                                      already_selected->zoom, already_selected->interpolation_speed[0], already_selected->interpolation_speed[1], already_selected->interpolation_speed[2]), COLOR4F_WHITE);
+            } end_graphics_frame();
+
+            Generate_Rectangle_Sizing_Code(already_selected);
+
+            if (!is_editting_text()) {
+                static char temporary_buffers[32][128] = {};
+            }
+        }
+    }
 }
 
 local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_arena, float dt) {
@@ -1650,4 +1720,20 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
             draw_text_right_justified(test_font, 0, 0, dimens[0], editor_painting_subtype_strings[editor.entity_painting_subtype], COLOR4F_WHITE);
         } end_graphics_frame();
     } end_graphics_frame();
+}
+
+void editor_on_prompt_submission(void) {
+    if (editor.tool == EDITOR_TOOL_PAINT_ENTITIES) {
+        if (editor.entity_painting_subtype) {
+            struct trigger* already_selected = (struct trigger*) editor.context;
+            if (already_selected) {
+                if (already_selected->type == TRIGGER_TYPE_PROMPT) {
+                    /* pointer comparison */
+                    if (editor.text_edit.prompt_title == "SET PROMPT ID") {
+                        already_selected->params[0] = atoi(editor.text_edit.buffer_target);
+                    }
+                }
+            }
+        }
+    }
 }
