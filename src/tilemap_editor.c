@@ -7,6 +7,11 @@
 #define EDITOR_TRIGGERS_MAX_COUNT          (512)
 #define EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT (256)
 #define EDITOR_SOUL_ANCHOR_MAX_COUNT       (256)
+#define EDITOR_ACTIVATION_SWITCH_MAX_COUNT (128)
+#define EDITOR_SPRITE_PROP_MAX_COUNT       (512)
+#define EDITOR_CRUSHER_PLATFORM_MAX_COUNT  (512)
+#define EDITOR_DOOR_MAX_COUNT              (512)
+#define EDITOR_OBSCURING_ZONE_MAX_COUNT    (512)
 
 /* Do I rival VVVVVVV for code quality right here? */
 
@@ -113,6 +118,11 @@ struct editable_tilemap {
     uint16_t trigger_count;
     uint16_t soul_anchor_count;
     uint16_t camera_focus_zone_count;
+    uint16_t activation_switch_count;
+    uint16_t sprite_prop_count;
+    uint16_t door_count;
+    uint16_t crusher_platform_count;
+    uint16_t obscuring_zone_count;
 
     uint32_t width;
     uint32_t height;
@@ -137,6 +147,12 @@ struct editable_tilemap {
     struct trigger*           triggers;
     struct transition_zone*   transitions;
     struct player_spawn       default_spawn;
+    struct crusher_platform*  crusher_platforms;
+    struct obscuring_zone*    obscuring_zones;
+    struct door*              doors;
+    struct sprite_prop*       sprite_props;
+    /* regular naming convention. I know it's switches */
+    struct activation_switch* activation_switchs;
 };
 enum editor_tool_mode {
     EDITOR_TOOL_PAINT_TILE,
@@ -676,6 +692,11 @@ local void editor_clear_all(void) {
     editor.tilemap.trigger_count           = 0;
     editor.tilemap.soul_anchor_count       = 0;
     editor.tilemap.camera_focus_zone_count = 0;
+    editor.tilemap.activation_switch_count = 0;
+    editor.tilemap.crusher_platform_count  = 0;
+    editor.tilemap.obscuring_zone_count    = 0;
+    editor.tilemap.door_count              = 0;
+    editor.tilemap.sprite_prop_count       = 0;
     camera_reset_transform(&editor_camera);
     editor.tilemap.bounds_min_x            = 0;
     editor.tilemap.bounds_min_y            = 0;
@@ -698,6 +719,11 @@ local void load_tilemap_editor_resources(void) {
         memory_arena_allocate_array(editor.arena, editor.tilemap.entity_placements,  EDITOR_ENTITY_PLACEMENTS_MAX);
         memory_arena_allocate_array(editor.arena, editor.tilemap.triggers,           EDITOR_TRIGGERS_MAX_COUNT);
         memory_arena_allocate_array(editor.arena, editor.tilemap.soul_anchors,       EDITOR_SOUL_ANCHOR_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.obscuring_zones,    EDITOR_OBSCURING_ZONE_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.doors,              EDITOR_DOOR_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.crusher_platforms,  EDITOR_CRUSHER_PLATFORM_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.activation_switchs, EDITOR_ACTIVATION_SWITCH_MAX_COUNT);
+        memory_arena_allocate_array(editor.arena, editor.tilemap.sprite_props,       EDITOR_SPRITE_PROP_MAX_COUNT);
 
         editor.initialized = true;
     }

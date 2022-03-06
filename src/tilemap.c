@@ -136,6 +136,93 @@ struct trigger {
     int32_t  params[TRIGGER_PARAMETERS_MAX];
     float    fparams[TRIGGER_PARAMETERS_MAX];
 };
+
+/* TODO(jerry): Stuff that isn't done yet */
+#define DOOR_IDENTIFIER_STRING_LENGTH (8)
+#define SPRITE_IDENTIFIER_STRING_LENGTH (8)
+#define ACTIVATION_SWITCH_STRING_LENGTH (8)
+#define ACTIVATION_SWITCH_TARGET_MAX (10) /* as many targets as there are number keys lol. */
+#define CRUSHER_PLATFORM_STRING_LENGTH (8)
+#define ACTIVATION_TARGET_IDENTIFIER_STRING_LENGTH (16)
+enum door_state {
+    DOOR_STATE_CLOSED,
+    DOOR_STATE_OPENED
+};
+enum sprite_prop_ids {
+    PROP_ID_COUNT,
+};
+struct sprite_prop {
+    char     identifier[SPRITE_IDENTIFIER_STRING_LENGTH];
+    uint16_t type;
+    int32_t  x;
+    int32_t  y;
+
+    bool active;
+};
+enum activation_switch_target_type {
+    ACTIVATION_TARGET_NONE,
+    ACTIVATION_TARGET_DOOR,
+    ACTIVATION_TARGET_TRIGGER,
+    ACTIVATION_TARGET_CRUSHER_PLATFORM,
+};
+struct activation_switch_target {
+    uint8_t type;
+    char identifier[16];
+};
+struct activation_switch {
+    int32_t x;
+    int32_t y;
+    uint16_t activations; /* activated == (activations >= 1) */
+    struct activation_switch_target targets[ACTIVATION_SWITCH_TARGET_MAX];
+};
+/* Fades away when touching player. Useful for hiding "secrets" */
+struct obscuring_zone {
+    int32_t x;
+    int32_t y;
+    int32_t w;
+    int32_t h;
+
+    /* 
+       these will always take the same amount of time to fade away,
+       so don't even bother. Adding custom t. 
+    */
+    float fade_t;
+};
+struct door {
+    /* when last_state != current_state, animate until t = 1, then set last_state == current_state */
+    char identifier[DOOR_IDENTIFIER_STRING_LENGTH];
+
+    /* These are the positions/dimensions when the door is closed. */
+    int32_t x;
+    int32_t y;
+    int32_t w; /* doors should always have a width of 1, however I need this field to allow for the rectangle sizer code to just be reused. */
+    int32_t h;
+
+    uint8_t last_state;
+    uint8_t current_state;
+    float animation_t;
+};
+/* Technically this *is* an entity type, but it's very simple... */
+struct crusher_platform {
+    char identifier[CRUSHER_PLATFORM_STRING_LENGTH];
+
+    int32_t x;
+    int32_t y;
+    int32_t w;
+    int32_t h;
+
+    uint8_t active;
+    uint8_t is_horizontal;
+
+    float initial_t; /* feel free to set negative, for extra delay. */
+
+    float delay_t; /* cool down period */
+    float total_t; /* time of crushing */
+
+    float timer; /* percent = timer / total_t */
+};
+/* End of stuff that isn't done yet */
+
 /* Our rest points */
 #define SOUL_ANCHOR_IDENTIFIER_STRING_LENGTH (8)
 struct soul_anchor {

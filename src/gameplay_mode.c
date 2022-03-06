@@ -67,7 +67,11 @@ local void try_and_record_player_grounded_position(float dt) {
 
     if (player->onground) {
         if (game_state->last_good_grounded_position_recording_timer <= 0) {
-            game_state->last_good_grounded_position_x = (int32_t)ceilf(player->x);
+            /* TODO(jerry):
+               I should scan surrounding area for a better position
+               If it's an edge then it has to be special cased. Otherwise we can do whatever we want really.
+             */
+            game_state->last_good_grounded_position_x = (int32_t)floorf(player->x);
             game_state->last_good_grounded_position_y = (int32_t)floorf(player->y);
             game_state->last_good_grounded_position_recording_timer = LAST_GROUNDED_POSITION_RECORD_TIMER_MAX;
             game_state->have_a_good_grounded_position = true;
