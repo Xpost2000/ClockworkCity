@@ -580,6 +580,47 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
             }
         }
     }
+
+#if 0
+    /*
+      Honestly on modern hardware caring about struct size, as long as it's not obviously bad is a bit pointless. It caused
+      me to duplicate code simply because it was not the same type, and thus had I reused the code it may not have reliably produced
+      the same results.
+      
+      Other than codesize bloat, it also made me physically have to write more stupid crap like this...
+      
+      What I should've done (which unlike the editor thing, which IS a code only change, this would break all of my currently saved levels
+      since it requires a data layout change...)
+     */
+    bool any_rectangle_intersections_ext(struct rectanglef a, struct rectanglef* base, size_t count, size_t pitch) {
+        /* this trick is from eskil steenberg, it's actually really neat, it prevents me from writing more code and it's pretty fast. */
+        char* byte_ptr = base;
+
+        for (unsigned element_index = 0; element_index < count; ++element_index) {
+            struct rectanglef* rect = (byte_ptr + (element_index * pitch));
+
+            if (rectangle_intersects_v(... crap I had before ...)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool any_rectangle_intersections(struct rectanglef a, struct rectanglef* base, size_t count) {
+        return any_rectangle_intersections_ext(a, base, count, sizeof(*base));
+    }
+
+    /* Then all of this code could be */
+
+    { /* soul anchor */
+        if (any_rectangle_intersects_ext(a->bounding_box, &soul_anchors[0]->bounding_box, soul_anchor_count, sizeof(soul_anchor))) {
+            
+        }
+
+        /* repeat... */
+    }
+#endif
     /* check for soul anchor intersections and signal to the main game what to do... */
     {
         bool hit_any_soul_anchor = false;
