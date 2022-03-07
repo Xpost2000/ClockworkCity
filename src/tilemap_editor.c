@@ -170,6 +170,7 @@ enum entity_painting_subtype {
     ENTITY_PAINTING_SUBTYPE_ENTITIES,
     ENTITY_PAINTING_SUBTYPE_TRIGGERS,
     ENTITY_PAINTING_SUBTYPE_CAMERA_FOCUS_ZONES,
+    ENTITY_PAINTING_SUBTYPE_SOUL_ANCHORS,
     ENTITY_PAINTING_SUBTYPE_COUNT,
 };
 enum editor_tile_layer {
@@ -184,7 +185,7 @@ const local char* editor_tool_mode_strings[] = {
     "Paint Tile", "Edit Transitions", "Player Spawn Placement", "Establish Level Bounds", "Paint Entities", "Paint Triggers", "?"
 };
 const local char* editor_painting_subtype_strings[] = {
-    "entities", "triggers", "camera focus zones"
+    "entities", "triggers", "camera focus zones", "soul anchors"
 };
 struct editor_text_edit {
     bool open;
@@ -295,13 +296,6 @@ local struct transition_zone* editor_allocate_transition(void) {
     return result;
 }
 
-local struct soul_anchor* editor_allocate_soul_anchor(void) {
-    assert(editor.tilemap.soul_anchor_count < EDITOR_SOUL_ANCHOR_MAX_COUNT);
-    struct soul_anchor* result = &editor.tilemap.soul_anchors[editor.tilemap.soul_anchor_count++];
-    zero_array(result->identifier);
-    return result;
-}
-
 local struct camera_focus_zone* editor_allocate_camera_focus_zone(void) {
     assert(editor.tilemap.camera_focus_zone_count < EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT);
     struct camera_focus_zone* result = &editor.tilemap.camera_focus_zones[editor.tilemap.camera_focus_zone_count++];
@@ -332,6 +326,13 @@ local struct entity_placement* editor_allocate_entity_placement(void) {
 local struct player_spawn_link* editor_allocate_spawn(void) {
     assert(editor.tilemap.player_spawn_link_count < EDITOR_PLAYER_SPAWN_MAX_COUNT);
     struct player_spawn_link* result = &editor.tilemap.player_spawn_links[editor.tilemap.player_spawn_link_count++];
+    zero_array(result->identifier);
+    return result;
+}
+
+local struct soul_anchor* editor_allocate_soul_anchor(void) {
+    assert(editor.tilemap.soul_anchor_count < EDITOR_SOUL_ANCHOR_MAX_COUNT);
+    struct soul_anchor* result = &editor.tilemap.soul_anchors[editor.tilemap.soul_anchor_count++];
     zero_array(result->identifier);
     return result;
 }
@@ -418,6 +419,19 @@ struct camera_focus_zone* editor_existing_camera_focus_zone_at(struct camera_foc
         struct camera_focus_zone* t = camera_focus_zones + index;
 
         if (rectangle_intersects_v(t->x, t->y, t->w, t->h, grid_x, grid_y, 0.5, 0.5)) {
+            return t;
+        }
+    }
+
+    return NULL;
+}
+
+
+struct soul_anchor* editor_existing_soul_anchor_at(struct soul_anchor* anchors, size_t anchor_count, int grid_x, int grid_y) {
+    for (unsigned index = 0; index < anchor_count; ++index) {
+        struct soul_anchor* t = anchors + index;
+
+        if (rectangle_intersects_v(t->x, t->y, 1, 2, grid_x, grid_y, 0.5, 0.5)) {
             return t;
         }
     }
@@ -749,6 +763,7 @@ local void editor_serialize(struct binary_serializer* serializer) {
         Serialize_Fixed_Array(serializer, u32, editor.tilemap.foreground_tile_count, editor.tilemap.foreground_tiles);
         Serialize_Fixed_Array(serializer, u32, editor.tilemap.background_tile_count, editor.tilemap.background_tiles);
 
+        /* Probably doesn't have to be nested. */
         if (version_id >= 3) {
             Serialize_Fixed_Array(serializer, u32, editor.tilemap.grass_tile_count, editor.tilemap.grass_tiles);
 
@@ -968,6 +983,7 @@ local void tilemap_editor_update_render_frame(float dt) {
             draw_camera_focus_zones(editor.tilemap.camera_focus_zones, editor.tilemap.camera_focus_zone_count);
             draw_transitions(editor.tilemap.transitions, editor.tilemap.transition_zone_count);
             draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
+            draw_soul_anchors(editor.tilemap.soul_anchors, editor.tilemap.soul_anchor_count);
             draw_triggers(editor.tilemap.triggers, editor.tilemap.trigger_count);
             editor_draw_entity_placements(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count);
             draw_player_spawn(&editor.tilemap.default_spawn);
@@ -1595,6 +1611,89 @@ local void tilemap_editor_painting_entities(struct memory_arena* frame_arena, fl
     } end_graphics_frame();
 }
 
+local void tilemap_editor_painting_soul_anchors(struct memory_arena* frame_arena, float dt) {
+    begin_graphics_frame(&editor_camera); {
+        {
+            int mouse_position[2];
+            bool left_click, right_click;
+
+            get_mouse_location_in_camera_space(mouse_position, mouse_position+1);
+            get_mouse_buttons(&left_click, 0, &right_click);
+
+            struct soul_anchor* already_selected = (struct soul_anchor*) editor.context;
+
+            /* cannot be deduplicated since width/height is *known*. */
+            if (left_click) {
+                if (already_selected) {
+                    float entity_w = 1;
+                    float entity_h = 2;
+
+                    if (!editor.dragging &&
+                        rectangle_overlapping_v(already_selected->x, already_selected->y,
+                                                entity_w, entity_h, mouse_position[0], mouse_position[1], 1, 1)) {
+                        editor.dragging = true;
+                    } else if (editor.dragging) {
+                        already_selected->x = mouse_position[0];
+                        already_selected->y = mouse_position[1];
+                    }
+                } else {
+                    struct soul_anchor* entity = editor_existing_soul_anchor_at(editor.tilemap.soul_anchors, editor.tilemap.entity_placement_count, mouse_position[0], mouse_position[1]);
+
+                    if (!entity) {
+                        entity       = editor_allocate_soul_anchor();
+                        entity->x    = mouse_position[0];
+                        entity->y    = mouse_position[1];
+                    }
+
+                    editor.context = entity;
+                }
+            } else {
+                editor.dragging = false;
+            }
+
+            Generate_Rectangle_Deletion_Or_Unselect_Code(soul_anchor);
+
+            if (already_selected) {
+                {
+                    float entity_w = 1;
+                    float entity_h = 2;
+
+                    draw_rectangle(already_selected->x, already_selected->y, entity_w, entity_h, color4f(0.2, 0.3, 1.0, 1.0));
+                }
+            }
+        }
+    } end_graphics_frame();
+
+    begin_graphics_frame(NULL); {
+        {
+            draw_text(test_font, 0, 0, format_temp("soul anchors present: %d\n", editor.tilemap.soul_anchor_count), active_colorscheme.text);
+        }
+        {
+            struct soul_anchor* already_selected = (struct soul_anchor*) editor.context;
+
+            if (already_selected) {
+                float font_height = font_size_aspect_ratio_independent(0.03);
+                int dimens[2];
+                get_screen_dimensions(dimens, dimens+1);
+
+                draw_text_right_justified(test_font, 0, 0, dimens[0],
+                                          format_temp("SOUL ANCHOR PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\n",
+                                                      already_selected->identifier,
+                                                      already_selected->x,
+                                                      already_selected->y),
+                                          COLOR4F_WHITE);
+
+                if (!is_editting_text()) {
+                    if (is_key_down(KEY_1)) {
+                        editor_open_text_edit_prompt("SET NAME", already_selected->identifier, SOUL_ANCHOR_IDENTIFIER_STRING_LENGTH, strlen(already_selected->identifier));
+                    }
+                }
+            }
+        }
+    } end_graphics_frame();
+
+}
+
 /* copy and pastes of the transition editting code since both of these are just editting rectangles */
 local void tilemap_editor_painting_triggers(struct memory_arena* frame_arena, float dt) {
     int mouse_position[2];
@@ -1759,6 +1858,9 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
         } break;
         case ENTITY_PAINTING_SUBTYPE_CAMERA_FOCUS_ZONES: {
             tilemap_editor_painting_camera_focus_zones(frame_arena, dt);
+        } break;
+        case ENTITY_PAINTING_SUBTYPE_SOUL_ANCHORS: {
+            tilemap_editor_painting_soul_anchors(frame_arena, dt);
         } break;
     }
 

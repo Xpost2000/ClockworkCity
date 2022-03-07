@@ -579,6 +579,25 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
             }
         }
     }
+    /* check for soul anchor intersections and signal to the main game what to do... */
+    {
+        bool hit_any_soul_anchor = false;
+        for (unsigned index = 0; index < tilemap->soul_anchor_count && !hit_any_soul_anchor; ++index) {
+            struct soul_anchor* anchor = tilemap->soul_anchors + index;
+
+            if (rectangle_intersects_v(
+                    entity->x, entity->y, entity->w, entity->h,
+                    anchor->x, anchor->y, 1, 2
+                )) {
+                game_signal_rest_prompt(anchor);
+                hit_any_soul_anchor = true;
+            }
+        }
+
+        if (!hit_any_soul_anchor) {
+            game_cancel_rest_prompt();
+        }
+    }
     /* check for trigger intersections */
     {
         bool hit_any_trigger = false;

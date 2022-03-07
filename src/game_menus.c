@@ -18,9 +18,17 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
                 draw_texture(ui_health_slice, x_cursor, square_size, square_size, square_size, COLOR4F_WHITE);
                 x_cursor += square_size;
             }
+
+
+            if (game_state->rest_prompt.active) {
+                /* fade in */
+                draw_text(game_ui_menu_font, 0, 0, "Light Here(1)", active_colorscheme.text);
+            } else {
+                /* fade out */
+                draw_text(game_ui_menu_font, 0, 0, "Rest Here", active_colorscheme.text);
+            }
         } end_graphics_frame();
     }
-
     update_render_game_prompt(controller, dt);
 }
 

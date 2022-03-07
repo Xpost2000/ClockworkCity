@@ -432,6 +432,13 @@ void draw_player_spawn(struct player_spawn* spawn) {
     draw_filled_rectangle(spawn->x+0.5-0.125, spawn->y+2, 0.25, 0.25, COLOR4F_WHITE);
 }
 
+void draw_soul_anchors(struct soul_anchor* soul_anchors, size_t count) {
+    for (unsigned index = 0; index < count; ++index) {
+        struct soul_anchor* current_anchor = soul_anchors + index;
+        draw_filled_rectangle(current_anchor->x, current_anchor->y, 1, 2, active_colorscheme.primary);
+    }
+}
+
 /*
   NOTE(jerry):
   Will source from a randomized table. I don't know if I have the time to make decent looking "wind".

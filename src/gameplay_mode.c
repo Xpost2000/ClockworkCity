@@ -165,6 +165,7 @@ local void game_update_render_frame(float dt) {
         }
 
         struct entity_iterator entities = game_state_entity_iterator(game_state);
+        draw_soul_anchors(tilemap->soul_anchors, tilemap->soul_anchor_count);
         draw_all_entities(&entities, dt, physics_interpolation_value);
         draw_all_particle_systems(particle_interpolation_value);
         {

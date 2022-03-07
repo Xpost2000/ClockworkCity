@@ -130,7 +130,19 @@ local void game_close_prompt(void);
 #include "game_animations_def.c"
 
 #define PERSISTENT_ENTITY_COUNT_MAX (256)
+struct last_rest_location {
+    bool     can_revive;
+    char     level[FILENAME_MAX_LENGTH];
+    uint32_t soul_anchor_index;
+};
+struct rest_prompt_state {
+    bool active;
+    struct soul_anchor* anchor;
+    float t;
+};
 struct game_state {
+    char current_level_filename[FILENAME_MAX_LENGTH];
+
     uint8_t menu_mode;
     uint8_t menu_transition_state;
 
@@ -152,6 +164,8 @@ struct game_state {
     uint16_t entity_count;
     struct entity             persistent_entities[PERSISTENT_ENTITY_COUNT_MAX];
     struct persistent_changes persistent_changes;
+    struct last_rest_location last_rest_location;
+    struct rest_prompt_state  rest_prompt;
 
     /* use this! Then a fade out mayhaps? */
     bool  have_a_good_grounded_position;
@@ -179,6 +193,46 @@ local struct game_state* game_state;
 
 enum game_mode mode = GAME_MODE_PLAYING;
 void game_queue_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
+
+void game_activate_soul_anchor(struct soul_anchor* anchor) {
+    if (!anchor->unlocked) {
+        anchor->unlocked = true;
+    }
+
+    strncpy(game_state->last_rest_location.level, game_state->current_level_filename, FILENAME_MAX_LENGTH);
+    game_state->last_rest_location.soul_anchor_index = anchor - game_state->loaded_level->soul_anchors;
+}
+
+void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
+void game_revive_to_last_soul_anchor(void) {
+    if (!game_state->last_rest_location.can_revive)
+        return;
+
+    struct entity* player = &game_state->persistent_entities[0];
+    player->health = player->max_health;
+    /* play a little wakeup animation... */
+    if (strncmp(game_state->current_level_filename, game_state->last_rest_location.level, FILENAME_MAX_LENGTH) != 0) {
+        game_load_level(&game_memory_arena, game_state->last_rest_location.level, NULL);
+    }
+
+    struct soul_anchor* target_anchor = game_state->loaded_level->soul_anchors + game_state->last_rest_location.soul_anchor_index;
+    player->x = target_anchor->x;
+    player->y = target_anchor->y;
+}
+
+void game_signal_rest_prompt(struct soul_anchor* anchor) {
+    if (game_state->rest_prompt.anchor != anchor) {
+        game_state->rest_prompt.t      = 0;
+        game_state->rest_prompt.active = true;
+        game_state->rest_prompt.anchor = anchor;
+    }
+}
+
+void game_cancel_rest_prompt(void) {
+    game_state->rest_prompt.active = false;
+    game_state->rest_prompt.anchor = 0;
+}
+
 #include "entities.c"
 
 struct entity_iterator game_state_entity_iterator(struct game_state* game_state) {
@@ -328,7 +382,6 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                 struct entity_placement* entity_placements = memory_arena_push(&conversion_arena, entity_placement_count * sizeof(*entity_placements));
                 serialize_bytes(serializer, entity_placements, entity_placement_count * sizeof(*entity_placements));
 
-#if 1
                 {
                     game_state->loaded_level->entity_count = entity_placement_count;
                     struct entity* unpacked_entities = memory_arena_push_top(arena, sizeof(*unpacked_entities) * entity_placement_count);
@@ -356,7 +409,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                         Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u16, game_state->loaded_level->soul_anchor_count, game_state->loaded_level->soul_anchors);
                     }
                 }
-#endif
+
                 end_temporary_memory(&conversion_arena);
             }
         }
@@ -408,6 +461,7 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     struct binary_serializer file = open_read_file_serializer(filename);
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
+    strncpy(game_state->current_level_filename, filename, FILENAME_MAX_LENGTH);
     serializer_finish(&file);
 }
 
