@@ -115,10 +115,11 @@ struct player_spawn_link {
 enum trigger_type {
     TRIGGER_TYPE_PROMPT, /*????*/
     TRIGGER_TYPE_SPECIAL_EVENT, /* Special cased in code... Probably */
+    TRIGGER_TYPE_BOSS, /* Boss fights are set per type. (Since the design dictates there is only one boss type.) (int32_t params[0]) */
     TRIGGER_TYPE_COUNT,
 };
 local const char* trigger_type_strings[] = {
-    "(prompt)", "(special?)"
+    "(prompt)", "(special?)", "(boss fight)"
 };
 /* Simplified by the fact only a player can interact with it. */
 struct trigger {
@@ -197,6 +198,10 @@ struct door {
     int32_t y;
     int32_t w; /* doors should always have a width of 1, however I need this field to allow for the rectangle sizer code to just be reused. */
     int32_t h;
+
+    /* closes when a boss fight starts, opens when it ends */
+    bool    listens_for_boss_death;
+    bool    horizontal;
 
     uint8_t last_state;
     uint8_t current_state;
