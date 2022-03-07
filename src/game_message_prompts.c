@@ -397,8 +397,6 @@ local char*  comfort1_prompt_text[] = {
     "Safety.",
     "Venture into the unknown to ascend.",
 };
-
-
 local char* death1_prompt_text[] = {
     "Do not fear your death.",
     "Return stronger."

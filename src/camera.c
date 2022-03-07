@@ -206,8 +206,10 @@ void camera_update(struct camera* camera, struct camera_focus_zone* focus_zones,
 }
 
 void camera_reset_transform(struct camera* camera) {
+    float old_render_scale = camera->render_scale;
     (*camera) = (struct camera) {
-        .interpolation_speed[0] = 1.0, .interpolation_speed[1] = 1.0
+        .interpolation_speed[0] = 1.0, .interpolation_speed[1] = 1.0, .interpolation_speed[2] = 1.0,
+        .render_scale = old_render_scale
     };
 }
 

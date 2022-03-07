@@ -357,7 +357,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     }
 
     /* basic movements */
-    const int MAX_ACCELERATION = 30;
+    const int MAX_ACCELERATION = 22;
     {
         if (fabs(gamepad->left_stick.axes[0]) >= 0.2) {
             entity->ax = MAX_ACCELERATION * gamepad->left_stick.axes[0];
@@ -573,6 +573,7 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
                         t->id == TILE_SPIKE_UP) {
                         /* for now just restore a bad fall */
                         /* NOTE(jerry): global. Shit! */
+                        entity->health -= 1;
                         restore_player_to_last_good_grounded();
                     }
                 }

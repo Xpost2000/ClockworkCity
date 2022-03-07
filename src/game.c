@@ -461,6 +461,8 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at) {
     struct binary_serializer file = open_read_file_serializer(filename);
     game_load_level_from_serializer(arena, &file, transition_link_to_spawn_at);
+    game_close_prompt();
+    block_player_input = false;
     strncpy(game_state->current_level_filename, filename, FILENAME_MAX_LENGTH);
     serializer_finish(&file);
 }
