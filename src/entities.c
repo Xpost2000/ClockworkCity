@@ -651,7 +651,8 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
                     entity->x, entity->y, entity->w, entity->h,
                     anchor->x, anchor->y, 1, 2
                 )) {
-                if (!anchor->unlocked) {
+                if (!game_state->last_rest_location.can_revive ||
+                    index != game_state->last_rest_location.soul_anchor_index) {
                     game_signal_rest_prompt(anchor);
                     hit_any_soul_anchor = true;
                 }
