@@ -32,13 +32,15 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
                 } else {
                     game_state->rest_prompt.t -= dt;
                     if (game_state->rest_prompt.t <= 0) game_state->rest_prompt.t = 0;
-                    fprintf(stderr, "%f\n", alpha);
                 }
 
                 color.a = alpha;
 
                 if (game_state->rest_prompt.t != 0) {
                     char* cstr = "Bind to Soul Anchor";
+                    if (game_state->rest_prompt.anchor && game_state->rest_prompt.anchor->unlocked) {
+                        cstr = "Align to Soul Anchor";
+                    }
                     
                     int screen_dimens[2];
                     get_screen_dimensions(screen_dimens, screen_dimens+1);

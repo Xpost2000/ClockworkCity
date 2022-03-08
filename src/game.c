@@ -201,6 +201,7 @@ void game_activate_soul_anchor(struct soul_anchor* anchor) {
 
     strncpy(game_state->last_rest_location.level, game_state->current_level_filename, FILENAME_MAX_LENGTH);
     game_state->last_rest_location.soul_anchor_index = anchor - game_state->loaded_level->soul_anchors;
+    game_state->last_rest_location.can_revive = true;
 }
 
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
@@ -210,10 +211,11 @@ void game_revive_to_last_soul_anchor(void) {
 
     struct entity* player = &game_state->persistent_entities[0];
     player->health = player->max_health;
+    player->death_state = DEATH_STATE_ALIVE;
     /* play a little wakeup animation... */
-    if (strncmp(game_state->current_level_filename, game_state->last_rest_location.level, FILENAME_MAX_LENGTH) != 0) {
-        game_load_level(&game_memory_arena, game_state->last_rest_location.level, NULL);
-    }
+    /* if (strncmp(game_state->current_level_filename, game_state->last_rest_location.level, FILENAME_MAX_LENGTH) != 0) { */
+    game_load_level(&game_memory_arena, game_state->last_rest_location.level, NULL);
+    /* } */
 
     struct soul_anchor* target_anchor = game_state->loaded_level->soul_anchors + game_state->last_rest_location.soul_anchor_index;
     player->x = target_anchor->x;
@@ -466,6 +468,19 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
     strncpy(game_state->current_level_filename, filename, FILENAME_MAX_LENGTH);
     serializer_finish(&file);
 }
+
+/* without the animation */
+void game_player_revive_warp() {
+    struct entity* player = &game_state->persistent_entities[0];
+    player->health = player->max_health;
+    player->death_state = DEATH_STATE_ALIVE;
+
+    if (game_state->last_rest_location.can_revive) {
+        game_revive_to_last_soul_anchor();
+    } else {
+        game_load_level(&game_memory_arena, game_state->current_level_filename, 0 );
+    }
+} 
 
 void update_render_frame(float dt) {
     clear_color(COLOR4F_BLACK);

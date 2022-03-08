@@ -558,8 +558,13 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 }
 
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    if (entity->death_state != DEATH_STATE_ALIVE)
+    if (entity->death_state != DEATH_STATE_ALIVE) {
+        if (entity->death_state == DEATH_STATE_DYING || entity->death_state == DEATH_STATE_DEAD) {
+            animation_id = GAME_ANIMATION_ID_PLAYER_DEATH;
+        }
+
         return;
+    }
 
     if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
 

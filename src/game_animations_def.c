@@ -15,6 +15,9 @@ enum game_animation_id {
     GAME_ANIMATION_ID_PLAYER_DEATH,
     GAME_ANIMATION_ID_PLAYER_BADFALL,
 };
+char* game_animation_id_strings[] = {
+    "none", "change_level", "player_death", "player_bad_fall", 
+};
 
 enum player_death_animation_state {
     DEATH_ANIMATION_NOT_STARTED,
