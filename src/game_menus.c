@@ -20,12 +20,33 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
             }
 
 
-            if (game_state->rest_prompt.active) {
-                /* fade in */
-                draw_text(game_ui_menu_font, 0, 0, "Light Here(1)", active_colorscheme.text);
-            } else {
-                /* fade out */
-                draw_text(game_ui_menu_font, 0, 0, "Rest Here", active_colorscheme.text);
+            {
+                const float REST_PROMPT_MAX_TIME_FADE = 0.6;
+                union color4f color = active_colorscheme.text;
+                float alpha;
+
+                alpha = game_state->rest_prompt.t / REST_PROMPT_MAX_TIME_FADE;
+                if (game_state->rest_prompt.active) {
+                    game_state->rest_prompt.t += dt;
+                    if (game_state->rest_prompt.t >= REST_PROMPT_MAX_TIME_FADE) game_state->rest_prompt.t = REST_PROMPT_MAX_TIME_FADE;
+                } else {
+                    game_state->rest_prompt.t -= dt;
+                    if (game_state->rest_prompt.t <= 0) game_state->rest_prompt.t = 0;
+                    fprintf(stderr, "%f\n", alpha);
+                }
+
+                color.a = alpha;
+
+                if (game_state->rest_prompt.t != 0) {
+                    char* cstr = "Bind to Soul Anchor";
+                    
+                    int screen_dimens[2];
+                    get_screen_dimensions(screen_dimens, screen_dimens+1);
+                    int text_dimens[2];
+                    get_text_dimensions(game_ui_menu_font, cstr, text_dimens, text_dimens+1);
+
+                    draw_text(game_ui_menu_font, screen_dimens[0]/2 - text_dimens[0]/2, screen_dimens[1] * 0.8 - text_dimens[1], cstr, color);
+                }
             }
         } end_graphics_frame();
     }
