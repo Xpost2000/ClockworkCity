@@ -13,7 +13,8 @@
 #define EDITOR_DOOR_MAX_COUNT              (512)
 #define EDITOR_OBSCURING_ZONE_MAX_COUNT    (512)
 
-/* Do I rival VVVVVVV for code quality right here? */
+/* Do I rival VVVVVVV for code quality right here? Holy fuck I regret this part so much. I should've used IMGUI, or
+ at least spent more than 5 minutes thinking of the editor... */
 
 /*
  * Duplicated code macros
@@ -171,6 +172,8 @@ enum entity_painting_subtype {
     ENTITY_PAINTING_SUBTYPE_TRIGGERS,
     ENTITY_PAINTING_SUBTYPE_CAMERA_FOCUS_ZONES,
     ENTITY_PAINTING_SUBTYPE_SOUL_ANCHORS,
+    ENTITY_PAINTING_SUBTYPE_DOORS,
+    ENTITY_PAINTING_SUBTYPE_ACTIVATORS,
     ENTITY_PAINTING_SUBTYPE_COUNT,
 };
 enum editor_tile_layer {
@@ -185,7 +188,7 @@ const local char* editor_tool_mode_strings[] = {
     "Paint Tile", "Edit Transitions", "Player Spawn Placement", "Establish Level Bounds", "Paint Entities", "Paint Triggers", "?"
 };
 const local char* editor_painting_subtype_strings[] = {
-    "entities", "triggers", "camera focus zones", "soul anchors"
+    "entities", "triggers", "camera focus zones", "soul anchors", "doors", "activators"
 };
 struct editor_text_edit {
     bool open;
@@ -296,6 +299,12 @@ local struct transition_zone* editor_allocate_transition(void) {
     return result;
 }
 
+local struct door* editor_allocate_door(void) {
+    assert(editor.tilemap.door_count < EDITOR_DOOR_MAX_COUNT);
+    struct door* result = &editor.tilemap.doors[editor.tilemap.door_count++];
+    return result;
+}
+
 local struct camera_focus_zone* editor_allocate_camera_focus_zone(void) {
     assert(editor.tilemap.camera_focus_zone_count < EDITOR_CAMERA_FOCUS_ZONE_MAX_COUNT);
     struct camera_focus_zone* result = &editor.tilemap.camera_focus_zones[editor.tilemap.camera_focus_zone_count++];
@@ -334,6 +343,13 @@ local struct soul_anchor* editor_allocate_soul_anchor(void) {
     assert(editor.tilemap.soul_anchor_count < EDITOR_SOUL_ANCHOR_MAX_COUNT);
     struct soul_anchor* result = &editor.tilemap.soul_anchors[editor.tilemap.soul_anchor_count++];
     zero_array(result->identifier);
+    return result;
+}
+
+local struct activation_switch* editor_allocate_activation_switch(void) {
+    assert(editor.tilemap.activation_switch_count < EDITOR_ACTIVATION_SWITCH_MAX_COUNT);
+    struct activation_switch* result = &editor.tilemap.activation_switchs[editor.tilemap.activation_switch_count++];
+    zero_array(result->targets);
     return result;
 }
 
@@ -426,13 +442,36 @@ struct camera_focus_zone* editor_existing_camera_focus_zone_at(struct camera_foc
     return NULL;
 }
 
-
 struct soul_anchor* editor_existing_soul_anchor_at(struct soul_anchor* anchors, size_t anchor_count, int grid_x, int grid_y) {
     for (unsigned index = 0; index < anchor_count; ++index) {
         struct soul_anchor* t = anchors + index;
 
         if (rectangle_intersects_v(t->x, t->y, 1, 2, grid_x, grid_y, 0.5, 0.5)) {
             return t;
+        }
+    }
+
+    return NULL;
+}
+
+struct door* editor_existing_door_at(struct door* doors, size_t door_count, int grid_x, int grid_y) {
+    for (unsigned index = 0; index < door_count; ++index) {
+        struct door* door = doors + index;
+
+        if (rectangle_intersects_v(door->x, door->y, door->w, door->h, grid_x, grid_y, 0.5, 0.5)) {
+            return door;
+        }
+    }
+
+    return NULL;
+}
+
+struct activation_switch* editor_existing_activation_switch_at(struct activation_switch* switches, size_t switch_count, int grid_x, int grid_y) {
+    for (unsigned index = 0; index < switch_count; ++index) {
+        struct activation_switch* _switch = switches + index;
+
+        if (rectangle_intersects_v(_switch->x, _switch->y, _switch->w, _switch->h, grid_x, grid_y, 0.5, 0.5)) {
+            return _switch;
         }
     }
 
@@ -1505,6 +1544,8 @@ local void tilemap_editor_handle_paint_playerspawn_mode(struct memory_arena* fra
 #include "painting_triggers.c"
 #include "painting_entities.c"
 #include "painting_camera_focus_zones.c"
+#include "painting_doors.c"
+#include "painting_activators.c"
 
 local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_arena, float dt) {
     if (is_key_pressed(KEY_MINUS)) {
@@ -1530,6 +1571,12 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
         } break;
         case ENTITY_PAINTING_SUBTYPE_SOUL_ANCHORS: {
             tilemap_editor_painting_soul_anchors(frame_arena, dt);
+        } break;
+        case ENTITY_PAINTING_SUBTYPE_DOORS: {
+            tilemap_editor_painting_doors(frame_arena, dt);
+        } break;
+        case ENTITY_PAINTING_SUBTYPE_ACTIVATORS: {
+            tilemap_editor_painting_activators(frame_arena, dt);
         } break;
     }
 
@@ -1567,6 +1614,45 @@ void editor_on_prompt_submission(void) {
                 already_selected->interpolation_speed[1] = atof(editor.text_edit.buffer_target);
             } else if (prompt_title == "FOCUS ZONE INTERPOLATION SPEED ZOOM") {
                 already_selected->interpolation_speed[2] = atof(editor.text_edit.buffer_target);
+            }
+        } else if (editor.entity_painting_subtype == ENTITY_PAINTING_SUBTYPE_DOORS) {
+            struct door* already_selected = (struct door*) editor.context;
+
+            if (prompt_title == "SET BOSS TYPE ID") {
+                already_selected->boss_type_id = atoi(editor.text_edit.buffer_target);
+            }
+        } else if (editor.entity_painting_subtype == ENTITY_PAINTING_SUBTYPE_ACTIVATORS) {
+            struct activation_switch* already_selected = (struct activation_switch*) editor.context;
+
+            if (prompt_title == "set target1 name") {
+                strncpy(already_selected->targets[0].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target2 name") {
+                strncpy(already_selected->targets[1].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target3 name") {
+                strncpy(already_selected->targets[2].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target4 name") {
+                strncpy(already_selected->targets[3].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target5 name") {
+                strncpy(already_selected->targets[4].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target6 name") {
+                strncpy(already_selected->targets[5].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target7 name") {
+                strncpy(already_selected->targets[6].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target8 name") {
+                strncpy(already_selected->targets[7].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target9 name") {
+                strncpy(already_selected->targets[8].identifier, editor.text_edit.buffer_target, 16);
+            }
+            if (prompt_title == "set target10 name") {
+                strncpy(already_selected->targets[9].identifier, editor.text_edit.buffer_target, 16);
             }
         }
     }

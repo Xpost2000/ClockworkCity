@@ -1,4 +1,4 @@
-#define TILEMAP_CURRENT_VERSION (5) 
+#define TILEMAP_CURRENT_VERSION (6) 
 #define GRASS_DENSITY_PER_TILE  (6) /* in blades */
 #define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
 #define GRASS_BLADE_MAX_HEIGHT  (12) /* in "vpixels" */
@@ -164,6 +164,7 @@ enum activation_switch_target_type {
     ACTIVATION_TARGET_NONE,
     ACTIVATION_TARGET_DOOR,
     ACTIVATION_TARGET_TRIGGER,
+    ACTIVATION_TARGET_TYPE_COUNT,
     ACTIVATION_TARGET_CRUSHER_PLATFORM,
 };
 struct activation_switch_target {
@@ -171,10 +172,21 @@ struct activation_switch_target {
     char identifier[16];
 };
 struct activation_switch {
+    char identifier[ACTIVATION_SWITCH_STRING_LENGTH];
     int32_t x;
     int32_t y;
+    /* here so I don't have to special code more things. Engine always sets these to be their fixed
+     limits though. (in editor code, runtime will avoid this...)*/
+    int32_t w;
+    int32_t h;
     uint16_t activations; /* activated == (activations >= 1) */
     struct activation_switch_target targets[ACTIVATION_SWITCH_TARGET_MAX];
+};
+shared_storage const char* activation_target_strings[] = {
+    [ACTIVATION_TARGET_NONE] = "none",
+    [ACTIVATION_TARGET_DOOR] = "door",
+    [ACTIVATION_TARGET_TRIGGER] = "trigger",
+    [ACTIVATION_TARGET_CRUSHER_PLATFORM] = "crusher_platform"
 };
 /* Fades away when touching player. Useful for hiding "secrets" */
 struct obscuring_zone {
@@ -202,6 +214,7 @@ struct door {
     /* closes when a boss fight starts, opens when it ends */
     bool    listens_for_boss_death;
     bool    horizontal;
+    uint16_t boss_type_id; /* typeid,  */
 
     uint8_t last_state;
     uint8_t current_state;

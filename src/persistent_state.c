@@ -80,8 +80,8 @@ local void persistent_changes_serialize(struct persistent_changes* changes, stru
     /* Since the persistent_change_list doesn't keep a count (for some reason), we cannot compress the change list
      any further, and I'm not in the mood to change it. So we serialize only change lists that we have. Expands to
      probably 3MB+? Not too happy about that but whatever. */
-    Serialize_Structure(serializer, changes->list[0]);
+    Serialize_Structure(serializer, changes->lists[0]);
     for (unsigned index = 0; index < changes->list_count; ++index) {
-        Serialize_Structure(serializer, changes->list[1+index]);
+        Serialize_Structure(serializer, changes->lists[1+index]);
     }
 }
