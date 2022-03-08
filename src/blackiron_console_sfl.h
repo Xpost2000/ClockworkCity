@@ -750,7 +750,6 @@ void console_display(void) {
         {
             /* float x_cursor  = 0; */
             float y_cursor  = input_line_y;
-            draw_text(_console_font, 0, y_cursor, _global_console.input_line, COLOR4F_WHITE);
 
             for (decode__internal_console_utf8_iterator iterator = decode__internal_console_utf8_from(_global_console.input_line, _global_console.input_line_count+1);
                  decode__internal_console_utf8_iterator_valid(&iterator);

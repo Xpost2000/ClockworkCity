@@ -1112,14 +1112,7 @@ void entity_trigger_activate(struct entity* entity, struct trigger* trigger) {
         return;
     }
 
-    switch (trigger->type) {
-        case TRIGGER_TYPE_PROMPT: {
-            game_activate_prompt(trigger->params[0]);
-        } break;
-        default: unimplemented();
-    }
-
-    trigger->activations += 1;
+    activate_trigger(trigger);
 }
 
 void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {

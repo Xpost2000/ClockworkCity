@@ -1598,6 +1598,7 @@ local void tilemap_editor_handle_paint_entities_mode(struct memory_arena* frame_
     } end_graphics_frame();
 }
 
+/* god */
 void editor_on_prompt_submission(void) {
     assert(editor.context != NULL && "Hmm, this should be impossible");
     char* prompt_title = editor.text_edit.prompt_title;

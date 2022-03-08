@@ -1,3 +1,9 @@
+/*
+  NOTE(jerry): heterogeneity was a big mistake. I should have been more homo(geneous).
+  
+  I could have used lots of pointer tricks to reduce the amount of code I would have to write,
+  and that would've been nice. Oh well.
+*/
 #define TILEMAP_CURRENT_VERSION (6) 
 #define GRASS_DENSITY_PER_TILE  (6) /* in blades */
 #define GRASS_BLADE_WIDTH       (VPIXEL_SZ * 16) / ((GRASS_DENSITY_PER_TILE + 0.5))
@@ -146,8 +152,8 @@ struct trigger {
 #define CRUSHER_PLATFORM_STRING_LENGTH (8)
 #define ACTIVATION_TARGET_IDENTIFIER_STRING_LENGTH (16)
 enum door_state {
-    DOOR_STATE_CLOSED,
-    DOOR_STATE_OPENED
+    DOOR_STATE_CLOSE,
+    DOOR_STATE_OPEN
 };
 enum sprite_prop_ids {
     PROP_ID_COUNT,
@@ -180,6 +186,7 @@ struct activation_switch {
     int32_t w;
     int32_t h;
     uint16_t activations; /* activated == (activations >= 1) */
+    uint8_t  once_only;          /**/
     struct activation_switch_target targets[ACTIVATION_SWITCH_TARGET_MAX];
 };
 shared_storage const char* activation_target_strings[] = {
@@ -206,10 +213,13 @@ struct door {
     char identifier[DOOR_IDENTIFIER_STRING_LENGTH];
 
     /* These are the positions/dimensions when the door is closed. */
-    int32_t x;
+    int32_t x; /*initial*/
     int32_t y;
     int32_t w; /* doors should always have a width of 1, however I need this field to allow for the rectangle sizer code to just be reused. */
     int32_t h;
+
+    float current_x;
+    float current_y;
 
     /* closes when a boss fight starts, opens when it ends */
     bool    listens_for_boss_death;
@@ -987,4 +997,151 @@ void do_particle_horizontal_collision_response(struct tilemap* tilemap, struct e
 
 void do_particle_vertical_collision_response(struct tilemap* tilemap, struct entity* entity, float dt) {
     do_moving_entity_vertical_collision_response(tilemap, entity, dt);
+}
+
+local void activate_trigger(struct trigger* trigger) {
+    switch (trigger->type) {
+        case TRIGGER_TYPE_PROMPT: {
+            game_activate_prompt(trigger->params[0]);
+        } break;
+        default: unimplemented();
+    }
+
+    trigger->activations += 1;
+}
+
+/* I might be too lazy to add animation for this... It'll take so much effort to make a synched animation */
+struct door* find_door_by_name(struct tilemap* tilemap, char* name) {
+    for (unsigned index = 0; index < tilemap->door_count; ++index) {
+        struct door* door = tilemap->doors + index;
+
+        if (strncmp(name, door->identifier, DOOR_IDENTIFIER_STRING_LENGTH) == 0) {
+            return door;
+        }
+    }
+
+    return NULL;
+}
+
+struct trigger* find_trigger_by_name(struct tilemap* tilemap, char* name) {
+    for (unsigned index = 0; index < tilemap->trigger_count; ++index) {
+        struct trigger* trigger = tilemap->triggers + index;
+
+        if (strncmp(name, trigger->identifier, TRIGGER_IDENTIFIER_STRING_LENGTH) == 0) {
+            return trigger;
+        }
+    }
+
+    return NULL;
+}
+
+local void close_door(struct door* door) {
+    if (door->current_state != DOOR_STATE_CLOSE) {
+        door->current_state = DOOR_STATE_CLOSE;
+        door->last_state    = DOOR_STATE_OPEN;
+        door->animation_t   = 0;
+    }
+}
+
+local void open_door(struct door* door) {
+    if (door->current_state != DOOR_STATE_OPEN) {
+        door->current_state = DOOR_STATE_OPEN;
+        door->last_state    = DOOR_STATE_CLOSE;
+        door->animation_t   = 0;
+    }
+}
+
+local void toggle_door(struct door* door) {
+    if (door->current_state == DOOR_STATE_OPEN) {
+        close_door(door);
+    } else {
+        open_door(door);
+    }
+}
+
+local void notify_doors_of_boss_battle(struct door* doors, size_t door_count, uint32_t boss_type_id) {
+    for (unsigned index = 0; index < door_count; ++index) {
+        struct door* door = doors + index;
+
+        if (door->listens_for_boss_death) {
+            if (door->boss_type_id == boss_type_id) {
+                close_door(door);
+            }
+        }
+    }
+}
+
+local void notify_doors_of_boss_death(struct door* doors, size_t door_count, uint32_t boss_type_id) {
+    for (unsigned index = 0; index < door_count; ++index) {
+        struct door* door = doors + index;
+
+        if (door->listens_for_boss_death) {
+            if (door->boss_type_id == boss_type_id) {
+                open_door(door);
+            }
+        }
+    }
+}
+
+#define DOOR_ANIMATION_MAX_T (0.45)
+local void update_all_doors(struct tilemap* tilemap, float dt) {
+    for (unsigned index = 0; index < tilemap->door_count; ++index) {
+        struct door* door = tilemap->doors + index;
+
+        /* The doors are always in a continual state of animation. Technically. */
+        switch (door->current_state) {
+            case DOOR_STATE_OPEN: {
+                if (door->animation_t < DOOR_ANIMATION_MAX_T) {
+                    door->animation_t += dt;
+
+                    if (door->animation_t >= DOOR_ANIMATION_MAX_T) {
+                        /* play a sound or particles and screen shake */
+                        door->animation_t = DOOR_ANIMATION_MAX_T;
+                    }
+                }
+            } break;
+            case DOOR_STATE_CLOSE: {
+                if (door->animation_t > 0) {
+                    door->animation_t -= dt;
+
+                    if (door->animation_t <= 0) {
+                        door->animation_t = 0;
+                        /* play a sound or something... */
+                    }
+                }
+            } break;
+        }
+
+        door->current_x = door->x;
+        door->current_y = door->y;
+
+        if (door->horizontal) {
+            door->current_x = lerp(door->x, door->x + door->w, door->animation_t/DOOR_ANIMATION_MAX_T);
+        } else {
+            door->current_y = lerp(door->y, door->y + door->h, door->animation_t/DOOR_ANIMATION_MAX_T);
+        }
+    }
+}
+
+local void activation_switch_use(struct tilemap* tilemap, struct activation_switch* acswitch) {
+    for (unsigned index = 0; index < array_count(acswitch->targets); ++index) {
+        struct activation_switch_target* current_target = acswitch->targets + index;
+
+        if (current_target->type == ACTIVATION_TARGET_NONE)
+            continue;
+
+        switch (current_target->type) {
+            case ACTIVATION_TARGET_DOOR: {
+                struct door* target = find_door_by_name(tilemap, current_target->identifier);
+                toggle_door(target);
+            } break;
+            case ACTIVATION_TARGET_TRIGGER: {
+                struct trigger* target = find_trigger_by_name(tilemap, current_target->identifier);
+                activate_trigger(target);
+            } break;
+            default: {
+                unimplemented();
+            } break;
+        }
+    }
 }

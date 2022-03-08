@@ -133,6 +133,9 @@ local void game_update_render_frame(float dt) {
             update_all_hitboxes(&entities, tilemap, dt);
         }
         {
+            update_all_doors(tilemap, dt);
+        }
+        {
             local float particle_accumulation_timer = 0;
             const int PARTICLES_FRAMERATE = 30;
             const float PARTICLES_TIMESTEP = 1.0f / (float)(PARTICLES_FRAMERATE);
