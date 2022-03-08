@@ -522,4 +522,13 @@ void update_render_frame(float dt) {
     camera_update(&editor_camera, 0, 0, dt);
 }
 
+/* heavily exagerrated controller rumble */
+void notify_camera_traumatize(struct camera* camera, float amount) {
+    struct game_controller* gamepad = get_gamepad(0);
+    /* some bs equation */
+    /* controller_rumble(gamepad, 1, 1, 170 + 485*(5 * (amount+0.35))); */
+    /* rumble does not account for accumulated trauma :/ */
+    controller_rumble(gamepad, 1, 1, (amount * 9.8) * 1000);
+}
+
 #include "persistent_state.c"

@@ -74,6 +74,7 @@ struct camera {
 
 /*normalized values from 0 - 1.0!*/
 void camera_traumatize(struct camera* camera, float amount);
+void notify_camera_traumatize(struct camera* camera, float amount);
 void camera_set_position(struct camera* camera, float x, float y);
 void camera_set_zoom(struct camera* camera, float level);
 void camera_offset_position(struct camera* camera, float x, float y);

@@ -81,8 +81,12 @@ struct game_controller {
     uint8_t                         last_buttons[BUTTON_COUNT];
     struct game_controller_joystick last_left_stick;
     struct game_controller_joystick last_right_stick;
+
+    void* _internal_controller_handle;
 };
 
+/* 1.0 - 0.0 */
+void controller_rumble(struct game_controller* controller, float x_magnitude, float y_magnitude, uint32_t ms);
 bool controller_button_pressed(struct game_controller* controller, uint8_t button_id);
 
 /* KEYPAD keys are left out because I have not mapped them yet. */

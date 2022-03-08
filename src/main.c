@@ -47,7 +47,8 @@ local font_id _console_font;
 SDL_GLContext global_opengl_context;
 SDL_Window* global_window;
 local float global_elapsed_time = 0;
-local SDL_GameController* global_controller_devices[4] = {};
+local SDL_GameController* global_controller_devices[4]      = {};
+local SDL_Haptic*         global_haptic_devices[4] = {};
 bool running = true;
 
 local void reload_all_graphics_resources();
@@ -227,6 +228,7 @@ local void update_all_controller_inputs(void) {
         }
 
         struct game_controller* gamepad = get_gamepad(controller_index);
+        gamepad->_internal_controller_handle = controller;
 
         {
             gamepad->triggers.left  = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / (32767.0f);
@@ -290,6 +292,13 @@ local void update_all_controller_inputs(void) {
             }
         }
     }
+}
+
+void controller_rumble(struct game_controller* controller, float x_magnitude, float y_magnitude, uint32_t ms) {
+    SDL_GameController* sdl_controller = controller->_internal_controller_handle;
+    x_magnitude = clampf(x_magnitude, 0, 1);
+    y_magnitude = clampf(y_magnitude, 0, 1);
+    SDL_GameControllerRumble(sdl_controller, (0xFFFF * x_magnitude), (0xFFFF * y_magnitude), ms);
 }
 
 local void set_window_transparency(float transparency) {

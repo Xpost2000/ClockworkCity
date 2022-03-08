@@ -93,10 +93,12 @@ void end_input_frame(void) {
     for (unsigned index = 0; index < array_count(global_controllers); ++index) {
         struct game_controller* controller = global_controllers + index;
 
-        /* depends on the structure of game controller */
-        memcpy((char*)controller + (sizeof(*controller)/2),
-               (char*)controller,
-               sizeof(*controller)/2);
+        {
+            controller->last_triggers    = controller->triggers;
+            controller->last_left_stick  = controller->last_left_stick;
+            controller->last_right_stick = controller->last_right_stick;
+            memcpy(controller->last_buttons, controller->buttons, sizeof(controller->buttons));
+        }
     }
     /* zero_array(global_input.current_state.keys); */
 }

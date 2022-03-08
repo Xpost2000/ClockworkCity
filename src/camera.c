@@ -102,6 +102,8 @@ void camera_set_focus_speed(struct camera* camera, float speed) {
 
 void camera_traumatize(struct camera* camera, float amount) {
     camera->trauma += amount;
+    /* hack for controller rumble :) */
+    notify_camera_traumatize(camera, amount);
 }
 
 void camera_force_clamp_to_bounds(struct camera* camera) {
