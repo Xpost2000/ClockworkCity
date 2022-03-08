@@ -125,7 +125,6 @@ local void game_close_prompt(void);
 
 #include "tilemap.c"
 #include "particle_systems.c"
-#include "persistent_state.c"
 
 #include "game_animations_def.c"
 
@@ -197,11 +196,18 @@ void game_queue_load_level(struct memory_arena* arena, char* filename, char* tra
 void game_activate_soul_anchor(struct soul_anchor* anchor) {
     if (!anchor->unlocked) {
         anchor->unlocked = true;
+        {
+            struct persistent_change change;
+            change.type = PERSISTENT_CHANGE_SOUL_ANCHOR_ACTIVATED;
+            change.soul_anchor_activated.soul_anchor_index = game_state->last_rest_location.can_revive;
+            persistent_changes_add_change(&game_state->persistent_changes, game_state->current_level_filename, change);
+        }
     }
 
     strncpy(game_state->last_rest_location.level, game_state->current_level_filename, FILENAME_MAX_LENGTH);
     game_state->last_rest_location.soul_anchor_index = anchor - game_state->loaded_level->soul_anchors;
     game_state->last_rest_location.can_revive = true;
+
 }
 
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
@@ -466,6 +472,13 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
     game_close_prompt();
     block_player_input = false;
     strncpy(game_state->current_level_filename, filename, FILENAME_MAX_LENGTH);
+
+    /* load by serializer does not work because it does not know the filename, which is probably a weird oversight. Oh well! */
+    uint32_t changelist_id = persistent_changes_find_change_list_by_name(&game_state->persistent_changes, game_state->current_level_filename);
+
+    persistent_changes_apply_changes(&game_state->persistent_changes, game_state, 0);
+    persistent_changes_apply_changes(&game_state->persistent_changes, game_state, changelist_id);
+
     serializer_finish(&file);
 }
 
@@ -503,3 +516,5 @@ void update_render_frame(float dt) {
     }
     camera_update(&editor_camera, 0, 0, dt);
 }
+
+#include "persistent_state.c"
