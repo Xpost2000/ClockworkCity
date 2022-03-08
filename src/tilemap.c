@@ -297,6 +297,12 @@ struct tilemap {
        the rectangular shape since these are never used for collision
        
        Should I try to parallax these?
+       
+       NOTE(jerry):
+       Sizing these like this, is relatively pointless... Since it makes things less robust and just more hassle
+       since even though they describe the same concept they are slightly different. That is premature optimization.
+       (not that a single integer matters, if anything the using of uint16_t in the entities themselves is actually
+       a smarter move, than this lol.)
     */
     uint32_t foreground_tile_count;
     uint32_t background_tile_count;
@@ -305,6 +311,8 @@ struct tilemap {
     uint16_t camera_focus_zone_count;
     uint16_t trigger_count;
     uint16_t soul_anchor_count;
+    uint16_t activation_switch_count;
+    uint16_t door_count;
 
     struct tile* foreground_tiles;
     struct tile* background_tiles;
@@ -313,6 +321,9 @@ struct tilemap {
     struct soul_anchor*       soul_anchors;
     struct trigger*           triggers;
     struct camera_focus_zone* camera_focus_zones;
+
+    struct door*              doors;
+    struct activation_switch* activation_switches;
 
     uint8_t transition_zone_count;
     uint8_t player_spawn_link_count;
@@ -505,35 +516,58 @@ void draw_tiles(struct tile* tiles, size_t count, union color4f color) {
 }
 
 void draw_transitions(struct transition_zone* transitions, size_t count) {
+#ifdef DEV
     for (unsigned index = 0; index < count; ++index) {
         struct transition_zone* t = &transitions[index];
         draw_rectangle(t->x, t->y, t->w, t->h, COLOR4F_RED);
     } 
+#endif
 }
 
 void draw_triggers(struct trigger* triggers, size_t count) {
+#ifdef DEV
     for (unsigned index = 0; index < count; ++index) {
         struct trigger* t = &triggers[index];
         union color4f color = COLOR4F_MAGENTA;
         color.a /= 2;
         draw_filled_rectangle(t->x, t->y, t->w, t->h, color);
     } 
+#endif
+}
+
+void draw_doors(struct door* doors, size_t door_count) {
+    for (unsigned index = 0; index < door_count; ++index) {
+        struct door* door = doors + index;
+        draw_filled_rectangle(door->x, door->y, door->w, door->h, active_colorscheme.primary);
+    }
+}
+
+void draw_activation_switches(struct activation_switch* switches, size_t switch_count) {
+    /* should have a sprite in the future based. */
+    for (unsigned index = 0; index < switch_count; ++index) {
+        struct activation_switch* _switch = switches + index;
+        draw_filled_rectangle(_switch->x, _switch->y, _switch->w, _switch->h, active_colorscheme.primary);
+    }
 }
 
 void draw_camera_focus_zones(struct camera_focus_zone* camera_focus_zones, size_t count) {
+#ifdef DEV
     for (unsigned index = 0; index < count; ++index) {
         struct camera_focus_zone* t = &camera_focus_zones[index];
         union color4f color = COLOR4F_PURPLE;
         color.a /= 2;
         draw_filled_rectangle(t->x, t->y, t->w, t->h, color);
     } 
+#endif
 }
 
 void draw_player_spawn_links(struct player_spawn_link* spawns, size_t count) {
+#ifdef DEV
     for (unsigned index = 0; index < count; ++index) {
         struct player_spawn_link* spawn = spawns + index;
         draw_player_spawn((struct player_spawn*) spawn);
     }
+#endif
 }
 
 local bool tile_intersects_rectangle(struct tile* t, float x, float y, float w, float h) {

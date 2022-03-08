@@ -813,6 +813,11 @@ local void editor_serialize(struct binary_serializer* serializer) {
                     Serialize_Fixed_Array(serializer, u16, editor.tilemap.trigger_count, editor.tilemap.triggers);
                     Serialize_Fixed_Array(serializer, u16, editor.tilemap.camera_focus_zone_count, editor.tilemap.camera_focus_zones);
                     Serialize_Fixed_Array(serializer, u16, editor.tilemap.soul_anchor_count, editor.tilemap.soul_anchors);
+
+                    if (version_id >= 6) {
+                        Serialize_Fixed_Array(serializer, u16, editor.tilemap.activation_switch_count, editor.tilemap.activation_switchs);
+                        Serialize_Fixed_Array(serializer, u16, editor.tilemap.door_count, editor.tilemap.doors);
+                    }
                 }
             }
         }
@@ -1024,6 +1029,8 @@ local void tilemap_editor_update_render_frame(float dt) {
             draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
             draw_soul_anchors(editor.tilemap.soul_anchors, editor.tilemap.soul_anchor_count);
             draw_triggers(editor.tilemap.triggers, editor.tilemap.trigger_count);
+            draw_doors(editor.tilemap.doors, editor.tilemap.door_count);
+            draw_activation_switches(editor.tilemap.activation_switchs, editor.tilemap.activation_switch_count);
             editor_draw_entity_placements(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count);
             draw_player_spawn(&editor.tilemap.default_spawn);
 

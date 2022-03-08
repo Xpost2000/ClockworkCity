@@ -415,6 +415,11 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                         Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u16, game_state->loaded_level->trigger_count, game_state->loaded_level->triggers);
                         Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u16, game_state->loaded_level->camera_focus_zone_count, game_state->loaded_level->camera_focus_zones);
                         Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u16, game_state->loaded_level->soul_anchor_count, game_state->loaded_level->soul_anchors);
+
+                        if (version_id >= 6) {
+                            Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u16, game_state->loaded_level->activation_switch_count, game_state->loaded_level->activation_switches);
+                            Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u16, game_state->loaded_level->door_count, game_state->loaded_level->doors);
+                        }
                     }
                 }
 

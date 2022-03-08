@@ -169,6 +169,8 @@ local void game_update_render_frame(float dt) {
         draw_all_entities(&entities, dt, physics_interpolation_value);
         draw_all_particle_systems(particle_interpolation_value);
         {
+            draw_doors(tilemap->doors, tilemap->door_count);
+            draw_activation_switches(tilemap->activation_switches, tilemap->activation_switch_count);
             draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
             draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
