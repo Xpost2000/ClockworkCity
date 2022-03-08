@@ -326,7 +326,14 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     bool move_left  = is_key_down(KEY_A)    || gamepad->buttons[DPAD_LEFT];
     bool attack     = is_key_pressed(KEY_J) || controller_button_pressed(gamepad, BUTTON_X);
     bool jump       = is_key_pressed(KEY_SPACE) || controller_button_pressed(gamepad, BUTTON_A);
-    bool dash       = is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) >= 0.75;
+    /* NOTE(jerry):
+       My dualsense controller reports... Really weird results on the trigger side.
+
+       I guess the dash will change to R1... Fuck me.
+     */
+    bool dash = is_key_pressed(KEY_SHIFT) || (gamepad->triggers.right - gamepad->last_triggers.right) > 0.1;
+
+    /* fprintf(stderr, "%f, %f\n", gamepad->triggers.right, gamepad->last_triggers.right); */
 
     /* This state, is not really stored per say. Since the
      game doesn't need to care whether I'm technically lookin up or not?
@@ -540,6 +547,13 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         }
     }
 
+    if (game_state->rest_prompt.anchor) {
+        /* should fix aiming up */
+        if (aiming_up) {
+            game_activate_soul_anchor(game_state->rest_prompt.anchor);
+        }
+    }
+
     entity->attack_cooldown_timer -= dt;
 }
 
@@ -622,6 +636,7 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
     }
 #endif
     /* check for soul anchor intersections and signal to the main game what to do... */
+    /* Anchors have to be rebound constantly, which is okay for a short game I guess. */
     {
         bool hit_any_soul_anchor = false;
         for (unsigned index = 0; index < tilemap->soul_anchor_count && !hit_any_soul_anchor; ++index) {
@@ -631,8 +646,10 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
                     entity->x, entity->y, entity->w, entity->h,
                     anchor->x, anchor->y, 1, 2
                 )) {
-                game_signal_rest_prompt(anchor);
-                hit_any_soul_anchor = true;
+                if (!anchor->unlocked) {
+                    game_signal_rest_prompt(anchor);
+                    hit_any_soul_anchor = true;
+                }
             }
         }
 

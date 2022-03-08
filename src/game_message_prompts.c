@@ -241,9 +241,9 @@ local struct control_scheme_description default_controls_prompt[] = {
         .description = "Jump"
     },
     {
-        .button_glyph[0] = FONT_GLYPH_RT,
+        .button_glyph[0] = FONT_GLYPH_RB,
         .key = FONT_GLYPH_SHIFT,
-        .description = "Dash & Dash Attack"
+        .description = "Dash"
     },
     {
         .button_glyph[0] = FONT_GLYPH_BUTTON_X,

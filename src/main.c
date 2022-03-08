@@ -234,6 +234,11 @@ local void update_all_controller_inputs(void) {
         }
 
         {
+            gamepad->buttons[BUTTON_RB] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+            gamepad->buttons[BUTTON_LB] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+        }
+
+        {
             gamepad->buttons[BUTTON_A] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A);
             gamepad->buttons[BUTTON_B] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_B);
             gamepad->buttons[BUTTON_X] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_X);
@@ -258,11 +263,31 @@ local void update_all_controller_inputs(void) {
         }
 
         {
-            gamepad->left_stick.axes[0] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX) / (32767.0f);
-            gamepad->left_stick.axes[1] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY) / (32767.0f);
+            {
+                float axis_x = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX) / (32767.0f);
+                float axis_y = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY) / (32767.0f);
 
-            gamepad->right_stick.axes[0] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX) / (32767.0f);
-            gamepad->right_stick.axes[1] = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) / (32767.0f);
+                const float DEADZONE_X = 0.01;
+                const float DEADZONE_Y = 0.03;
+                if (fabs(axis_x) < DEADZONE_X) axis_x = 0;
+                if (fabs(axis_y) < DEADZONE_Y) axis_y = 0;
+
+                gamepad->left_stick.axes[0] = axis_x;
+                gamepad->left_stick.axes[1] = axis_y;
+            }
+
+            {
+                float axis_x = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX) / (32767.0f);
+                float axis_y = (float)SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) / (32767.0f);
+
+                const float DEADZONE_X = 0.01;
+                const float DEADZONE_Y = 0.03;
+                if (fabs(axis_x) < DEADZONE_X) axis_x = 0;
+                if (fabs(axis_y) < DEADZONE_Y) axis_y = 0;
+                
+                gamepad->right_stick.axes[0] = axis_x;
+                gamepad->right_stick.axes[1] = axis_y;
+            }
         }
     }
 }

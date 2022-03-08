@@ -19,7 +19,7 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
                 x_cursor += square_size;
             }
 
-
+            /* TODO(jerry): Signal generic prompt system. */
             {
                 const float REST_PROMPT_MAX_TIME_FADE = 0.6;
                 union color4f color = active_colorscheme.text;

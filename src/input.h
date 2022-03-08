@@ -58,6 +58,7 @@ enum keyboard_button {
 enum controller_button {
     BUTTON_A, BUTTON_B, BUTTON_X, BUTTON_Y,
     BUTTON_RS, BUTTON_LS,
+    BUTTON_RB, BUTTON_LB,
     BUTTON_START, BUTTON_BACK,
     DPAD_UP,DPAD_DOWN,DPAD_LEFT,DPAD_RIGHT,
     BUTTON_COUNT,
