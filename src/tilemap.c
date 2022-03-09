@@ -1199,7 +1199,7 @@ local void update_all_doors(struct tilemap* tilemap, float dt) {
 local void activation_switch_use(struct tilemap* tilemap, struct activation_switch* acswitch) {
     console_printf("Using activation_switch\n");
     if (acswitch->once_only) {
-        if (acswitch->activations > 1)
+        if (acswitch->activations >= 1)
             return;
     }
     for (unsigned index = 0; index < array_count(acswitch->targets); ++index) {
