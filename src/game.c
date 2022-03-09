@@ -487,7 +487,7 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
 }
 
 /* without the animation */
-void game_player_revive_warp() {
+void game_player_revive_warp(void) {
     struct entity* player = &game_state->persistent_entities[0];
     player->health = player->max_health;
     player->death_state = DEATH_STATE_ALIVE;

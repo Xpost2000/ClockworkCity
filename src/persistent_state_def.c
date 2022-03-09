@@ -21,17 +21,24 @@ enum persistent_change_type {
     PERSISTENT_CHANGE_NONE,
 
     PERSISTENT_CHANGE_SOUL_ANCHOR_ACTIVATED,
+    PERSISTENT_CHANGE_ADD_PLAYER_MOVEMENT_FLAG,
 
     PERSISTENT_CHANGE_COUNT,
 };
+
 struct persistent_change_soul_anchor_activated {
     uint32_t soul_anchor_index;
+};
+
+struct persistent_change_add_player_movement_flag {
+    uint8_t flag;
 };
 
 struct persistent_change {
     uint16_t type; /* 65535 types of changes... Ought to be good enough for anybody. */
     union {
-        struct persistent_change_soul_anchor_activated soul_anchor_activated;
+        struct persistent_change_soul_anchor_activated    soul_anchor_activated;
+        struct persistent_change_add_player_movement_flag add_player_movement_flag;
         char reserved[16 + 64];
     };
 };

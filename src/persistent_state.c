@@ -52,7 +52,6 @@ local void persistent_changes_apply_changes(struct persistent_changes* changes, 
     
     struct persistent_change_list* change_list = &changes->lists[id];
 
-    fprintf(stderr, "cl %s\n", change_list->level_name);
     if (id != 0) {
         if (!(strncmp(change_list->level_name, state->current_level_filename, FILENAME_MAX_LENGTH) == 0)) {
             /* do not apply if level names do not match */
@@ -65,6 +64,11 @@ local void persistent_changes_apply_changes(struct persistent_changes* changes, 
         struct persistent_change* change = &change_list->changes[index];
 
         switch (change->type) {
+            case PERSISTENT_CHANGE_ADD_PLAYER_MOVEMENT_FLAG: {
+                struct persistent_change_add_player_movement_flag data = change->add_player_movement_flag;
+                struct entity* player = &game_state->persistent_entities[0];
+                player->movement_flags |= data.flag;
+            } break;
             case PERSISTENT_CHANGE_SOUL_ANCHOR_ACTIVATED: {
                 struct persistent_change_soul_anchor_activated data = change->soul_anchor_activated;
                 struct soul_anchor* target = level->soul_anchors + data.soul_anchor_index;
