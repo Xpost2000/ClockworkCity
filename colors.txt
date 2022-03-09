@@ -1,4 +1,23 @@
 LimboScheme
+#363636
+#595959
+#E3E3E3
+#4F462F
+#363636
+
+FrozenSouls
+#393F59
+#505B8C
+#A6986F
+#2D43A6
+#4455A6
+
+Swamp
+#3D5943
+#578060
+#A584D9
+#8AA676
+#3A4A3D
 
 PurpleBlurb
 #ad32a5

@@ -15,7 +15,7 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
         begin_graphics_frame(0); {
             /* should be active colorshceme later */
             for (int i = 0; i < player->health; ++i) {
-                draw_texture(ui_health_slice, x_cursor, square_size, square_size, square_size, COLOR4F_WHITE);
+                draw_texture(ui_health_slice, x_cursor, square_size + ( normalized_sinf(global_elapsed_time * (i+1)) * (square_size/4)), square_size, square_size, active_colorscheme.text);
                 x_cursor += square_size;
             }
 

@@ -35,6 +35,9 @@ void advance_intro_state(void) {
 }
 
 void intro_update_render_frame(float dt) {
+#ifdef DEV
+    intro_state.phase = INTRO_PHASE_DONE;
+#endif
     intro_state.timer += dt;
 
     /* float alpha = clampf(intro_state.timer / intro_phase_times[intro_state.phase], 0, 1); */

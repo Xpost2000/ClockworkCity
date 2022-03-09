@@ -13,11 +13,16 @@
 #define GAME_COLORSCHEME_NAME_STRING_MAX (32)
 struct game_colorscheme {
     char name[GAME_COLORSCHEME_NAME_STRING_MAX];
-    union color4f primary;
-    union color4f secondary;
-    union color4f text;
-    union color4f primary_background;
-    union color4f primary_foreground;
+    union  {
+        struct {
+            union color4f primary;
+            union color4f secondary;
+            union color4f text;
+            union color4f primary_background;
+            union color4f primary_foreground;
+        };
+        union color4f colors[5];
+    }
 };
 
 struct game_colorscheme test1 = {
@@ -28,6 +33,7 @@ struct game_colorscheme test1 = {
 local uint16_t colorscheme_database_size = 0;
 local struct game_colorscheme* colors_database = NULL;
 
+local struct game_colorscheme loaded_colorscheme;
 local struct game_colorscheme active_colorscheme;
 
 uint8_t hex_to_uint8(char hex) {
@@ -146,9 +152,11 @@ void use_colorscheme(char* name) {
     }
 
     if (!found) console_printf("Missing colorscheme?\n");
+    loaded_colorscheme = *colors;
     active_colorscheme = *colors;
 }
 
+/* Will continually eat memory if reinitialized. IE(memory leak and potential overrun if you do this enoughtimes, which is okay since reloading is only needed for development.) */
 void initialize_colorscheme_database(struct memory_arena* arena) {
     /* Just for a base address. */
     colors_database = memory_arena_push(arena, 0);

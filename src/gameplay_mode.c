@@ -200,5 +200,16 @@ local void game_update_render_frame(float dt) {
             } break;
         }
     }
+
+    /* colorscheme fluctuates brightness */
+    {
+        float ambient = 0.9;
+        float alpha = ambient + normalized_sinf(global_elapsed_time * 2) * (1 - ambient);
+        for (unsigned index = 0; index < array_count(loaded_colorscheme.colors); ++index) {
+            active_colorscheme.colors[index].r = loaded_colorscheme.colors[index].r * alpha;
+            active_colorscheme.colors[index].g = loaded_colorscheme.colors[index].g * alpha;
+            active_colorscheme.colors[index].b = loaded_colorscheme.colors[index].b * alpha;
+        }
+    }
     DEBUG_draw_debug_ui_stuff();
 }
