@@ -212,6 +212,8 @@ void register_mouse_button(int button_id, bool state);
 
 bool is_key_down(int keyid);
 bool is_key_pressed(int keyid);
+bool any_key_down(void);
+bool controller_any_button_down(struct game_controller* controller);
 
 void get_mouse_location(int* mx, int* my);
 void get_mouse_buttons(bool* left, bool* middle, bool* right);

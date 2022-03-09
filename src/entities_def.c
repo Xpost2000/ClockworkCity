@@ -26,6 +26,7 @@ enum attack_direction {
 
 enum movement_flags { /* eh? */
     MOVEMENT_FLAG_ALLOW_WALL_JUMP = BIT(0), /*wall grinding*/
+    MOVEMENT_FLAG_ALLOW_DASH      = BIT(1),
 };
 
 #define KINEMATIC_ENTITY_BASE_BODY()            \

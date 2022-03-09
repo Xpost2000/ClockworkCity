@@ -134,3 +134,23 @@ bool is_editting_text(void) {
 char* current_text_buffer(void) {
     return global_input.current_state.text;
 }
+
+bool any_key_down(void) {
+    for (unsigned index = 0; index < array_count(global_input.current_state.keys); ++index) {
+        if (!global_input.last_state.keys[index] && global_input.current_state.keys[index]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool controller_any_button_down(struct game_controller* controller) {
+    for (unsigned index = 0; index < array_count(controller->buttons); ++index) {
+        if (!controller->last_buttons[index] && controller->buttons[index]) {
+            return true;
+        }
+    }
+
+    return false;
+}

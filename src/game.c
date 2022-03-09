@@ -68,6 +68,7 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
 void game_load_level_from_serializer(struct memory_arena* arena, struct binary_serializer* serializer, char* transition_link_to_spawn_at);
 
 enum game_mode {
+    GAME_MODE_STATUS_INTRO,
     GAME_MODE_PLAYING,
     GAME_MODE_EDITOR,
     GAME_MODE_COUNT,
@@ -190,7 +191,7 @@ void game_state_remove_persistent_entity(struct game_state* game_state, uint32_t
 
 local struct game_state* game_state;
 
-enum game_mode mode = GAME_MODE_PLAYING;
+enum game_mode mode = GAME_MODE_STATUS_INTRO;
 void game_queue_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
 
 void game_activate_soul_anchor(struct soul_anchor* anchor) {
@@ -256,6 +257,7 @@ struct entity_iterator game_state_entity_iterator(struct game_state* game_state)
 
 #include "game_message_prompts.c"
 #include "game_menus.c"
+#include "intro.c"
 #include "gameplay_mode.c"
 #include "tilemap_editor.c"
 
@@ -286,6 +288,7 @@ local void load_graphics_resources(void) {
     playersizedblock = load_texture("assets/playersizedblock.png");
 
     load_all_particle_textures();
+    intro_load_resources();
     load_gameplay_resources();
 }
 
@@ -303,11 +306,7 @@ local void load_static_resources(void) {
     use_colorscheme("MonoDefault0");
 
     gameplay_initialize();
-    console_execute_cstr("load t");
-    /* console_execute_cstr("load 1.lvl"); */
-
     initialize_grass_visual_tables();
-    /* console_execute_cstr("noclip"); */
 }
 /*
   This is really reloading all graphical assets... But anyways.
@@ -504,8 +503,9 @@ void update_render_frame(float dt) {
     clear_color(COLOR4F_BLACK);
 
     switch (mode) {
-        case GAME_MODE_PLAYING: game_update_render_frame(dt); break;
-        case GAME_MODE_EDITOR: tilemap_editor_update_render_frame(dt); break;
+        case GAME_MODE_STATUS_INTRO: intro_update_render_frame(dt); break;
+        case GAME_MODE_PLAYING:      game_update_render_frame(dt); break;
+        case GAME_MODE_EDITOR:       tilemap_editor_update_render_frame(dt); break;
     }
 
     {

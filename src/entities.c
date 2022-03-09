@@ -391,17 +391,19 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         }
     }
 
-    if (dash) {
-        if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
-            entity->vy = 0;
+    if (entity->movement_flags & MOVEMENT_FLAG_ALLOW_DASH) {
+        if (dash) {
+            if (!entity->dash && (fabs(entity->ax) > 0 || !entity->onground)) {
+                entity->vy = 0;
 
-            if (entity->sliding_against_wall) {
-                entity->facing_dir *= -1;
+                if (entity->sliding_against_wall) {
+                    entity->facing_dir *= -1;
+                }
+
+                camera_traumatize(&game_camera, 0.0375);
+                entity->dash       = true;
+                entity->dash_timer = ENTITY_DASH_TIME_MAX;
             }
-
-            camera_traumatize(&game_camera, 0.0375);
-            entity->dash       = true;
-            entity->dash_timer = ENTITY_DASH_TIME_MAX;
         }
     }
 
@@ -430,32 +432,44 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         if ((entity->onground ||
              entity->coyote_jump_timer > 0 ||
              entity->current_jump_count < entity->max_allowed_jump_count)) {
-            entity->vy                  = -5.5;
-            entity->player_variable_jump_time = PLAYER_VARIABLE_JUMP_TIME_LIMIT;
-
-            entity->current_jump_count += 1;
-
-            /* jump particles */
-            if (!entity->onground) {
-                struct particle_emitter* splatter = particle_emitter_allocate();
-                splatter->x = splatter->x1 = entity->x;
-                splatter->y = splatter->y1 = entity->y + entity->h;
-                splatter->emission_rate = 0;
-                splatter->emission_count = 7;
-                splatter->max_emissions = 1;
-                splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
-                splatter->particle_max_lifetime = 1;
-            }
-
             if (entity->sliding_against_wall) {
-                /* entity_apply_impulse( */
-                /*     -entity->facing_dir, 0, 15, 0.15 */
-                /* ); */
-                entity->apply_wall_jump_force_timer = 0.15;
-                entity->opposite_facing_direction = -entity->facing_dir;
-                entity->facing_dir *= -1;
-            }
+                if (entity->movement_flags & MOVEMENT_FLAG_ALLOW_WALL_JUMP) {
+                    /* entity_apply_impulse( */
+                    /*     -entity->facing_dir, 0, 15, 0.15 */
+                    /* ); */
+                    entity->apply_wall_jump_force_timer = 0.15;
+                    entity->opposite_facing_direction = -entity->facing_dir;
+                    entity->facing_dir *= -1;
 
+                    /* jump particles */
+                    if (!entity->onground) {
+                        struct particle_emitter* splatter = particle_emitter_allocate();
+                        splatter->x = splatter->x1 = entity->x;
+                        splatter->y = splatter->y1 = entity->y + entity->h;
+                        splatter->emission_rate = 0;
+                        splatter->emission_count = 7;
+                        splatter->max_emissions = 1;
+                        splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
+                        splatter->particle_max_lifetime = 1;
+                    }
+                }
+            } else {
+                entity->vy                  = -5.5;
+                entity->player_variable_jump_time = PLAYER_VARIABLE_JUMP_TIME_LIMIT;
+
+                entity->current_jump_count += 1;
+
+                if (!entity->onground) {
+                    struct particle_emitter* splatter = particle_emitter_allocate();
+                    splatter->x = splatter->x1 = entity->x;
+                    splatter->y = splatter->y1 = entity->y + entity->h;
+                    splatter->emission_rate = 0;
+                    splatter->emission_count = 7;
+                    splatter->max_emissions = 1;
+                    splatter->particle_color = color4f(0.8, 0.8, 0.8, 1.0);
+                    splatter->particle_max_lifetime = 1;
+                }
+            }
             entity->onground            = false;
         }
     }
@@ -507,7 +521,7 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
             switch (entity->attack_direction) {
                 /* on left and right, cancel knockback if you're facing away.
-                 I have no idea how accurate this looks, but this'll probably prevent a weird issue?*/
+                   I have no idea how accurate this looks, but this'll probably prevent a weird issue?*/
                 case ATTACK_DIRECTION_RIGHT: {
                     if (entity->facing_dir == 1) {
                         entity->vx = -KNOCKDOWN_MAGNITUDE_X;
