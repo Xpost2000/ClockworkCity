@@ -545,10 +545,29 @@ void draw_triggers(struct trigger* triggers, size_t count) {
 #endif
 }
 
-void draw_doors(struct door* doors, size_t door_count) {
-    for (unsigned index = 0; index < door_count; ++index) {
-        struct door* door = doors + index;
-        draw_filled_rectangle(door->x, door->y, door->w, door->h, active_colorscheme.primary);
+void draw_doors(struct door* doors, size_t door_count, bool editor) {
+    if (editor) {
+        for (unsigned index = 0; index < door_count; ++index) {
+            struct door* door = doors + index;
+            if (door->horizontal) {
+                draw_filled_rectangle(door->x + 0.025, door->y,
+                                      door->w - 0.05, door->h, active_colorscheme.primary);
+            } else {
+                draw_filled_rectangle(door->x, door->y + (0.025),
+                                      door->w, door->h - 0.05, active_colorscheme.primary);
+            }
+        }
+    } else {
+        for (unsigned index = 0; index < door_count; ++index) {
+            struct door* door = doors + index;
+            if (door->horizontal) {
+                draw_filled_rectangle(door->current_x + 0.025, door->current_y,
+                                      door->w - 0.05, door->h, active_colorscheme.primary);
+            } else {
+                draw_filled_rectangle(door->current_x, door->current_y + (0.025),
+                                      door->w, door->h - 0.05, active_colorscheme.primary);
+            }
+        }
     }
 }
 
@@ -883,6 +902,27 @@ void _do_moving_entity_horizontal_collision_response(struct tilemap* tilemap, st
                 }
             }
         }
+
+        {
+            /* door collisions, they are the only other solid objects in this engine thing */
+            for (unsigned index = 0; index < tilemap->door_count; ++index) {
+                struct door* door = tilemap->doors + index;
+
+                if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
+                                           door->current_x, door->current_y, door->w, door->h)) {
+                    float entity_right_edge = entity->x + entity->w;
+                    float door_right_edge = (door->current_x + door->w);
+
+                    if (entity_right_edge > door->current_x && entity_right_edge < door_right_edge) {
+                        entity->x = door->current_x - (entity->w);
+                        entity->vx = 0;
+                    } else if (entity->x < door_right_edge && entity->x > door->current_x) {
+                        entity->x = door_right_edge;
+                        entity->vx = 0;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -919,6 +959,30 @@ void do_moving_entity_vertical_collision_response(struct tilemap* tilemap, struc
                         default: break;
                     }
                 }
+            }
+        }
+    }
+
+    {
+
+        /* door collisions, they are the only other solid objects in this engine thing */
+        for (unsigned index = 0; index < tilemap->door_count; ++index) {
+            struct door* door = tilemap->doors + index;
+
+            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
+                                       door->current_x, door->current_y, door->w, door->h)) {
+                float entity_bottom_edge = entity->y + entity->h;
+                float door_bottom_edge = (door->current_y + door->h);
+
+                if (entity_bottom_edge >= door->current_y && entity_bottom_edge <= door_bottom_edge) {
+                    entity->y = door->current_y - entity->h;
+                    entity->onground = true;
+                } else if (entity->y <= door_bottom_edge && entity_bottom_edge >= door_bottom_edge) {
+                    entity->y = door_bottom_edge;
+                }
+
+                entity->last_vy = old_vy;
+                entity->vy = 0;
             }
         }
     }
@@ -1037,17 +1101,17 @@ struct trigger* find_trigger_by_name(struct tilemap* tilemap, char* name) {
 
 local void close_door(struct door* door) {
     if (door->current_state != DOOR_STATE_CLOSE) {
+        console_printf("door \"%s\" is closing\n", door->identifier);
         door->current_state = DOOR_STATE_CLOSE;
         door->last_state    = DOOR_STATE_OPEN;
-        door->animation_t   = 0;
     }
 }
 
 local void open_door(struct door* door) {
     if (door->current_state != DOOR_STATE_OPEN) {
+        console_printf("door \"%s\" is opening\n", door->identifier);
         door->current_state = DOOR_STATE_OPEN;
         door->last_state    = DOOR_STATE_CLOSE;
-        door->animation_t   = 0;
     }
 }
 
@@ -1083,7 +1147,16 @@ local void notify_doors_of_boss_death(struct door* doors, size_t door_count, uin
     }
 }
 
-#define DOOR_ANIMATION_MAX_T (0.45)
+#define DOOR_ANIMATION_MAX_T (0.35)
+local void sane_init_all_doors(struct door* doors, size_t door_count) {
+    for (unsigned index = 0; index < door_count; ++index) {
+        struct door* door = doors + index;
+
+        door->current_x = door->x;
+        door->current_y = door->y;
+    }
+}
+
 local void update_all_doors(struct tilemap* tilemap, float dt) {
     for (unsigned index = 0; index < tilemap->door_count; ++index) {
         struct door* door = tilemap->doors + index;
@@ -1116,14 +1189,19 @@ local void update_all_doors(struct tilemap* tilemap, float dt) {
         door->current_y = door->y;
 
         if (door->horizontal) {
-            door->current_x = lerp(door->x, door->x + door->w, door->animation_t/DOOR_ANIMATION_MAX_T);
+            door->current_x = lerp(door->x, door->x - door->w, door->animation_t/DOOR_ANIMATION_MAX_T);
         } else {
-            door->current_y = lerp(door->y, door->y + door->h, door->animation_t/DOOR_ANIMATION_MAX_T);
+            door->current_y = lerp(door->y, door->y - door->h, door->animation_t/DOOR_ANIMATION_MAX_T);
         }
     }
 }
 
 local void activation_switch_use(struct tilemap* tilemap, struct activation_switch* acswitch) {
+    console_printf("Using activation_switch\n");
+    if (acswitch->once_only) {
+        if (acswitch->activations > 1)
+            return;
+    }
     for (unsigned index = 0; index < array_count(acswitch->targets); ++index) {
         struct activation_switch_target* current_target = acswitch->targets + index;
 
@@ -1144,4 +1222,6 @@ local void activation_switch_use(struct tilemap* tilemap, struct activation_swit
             } break;
         }
     }
+
+    acswitch->activations += 1;
 }

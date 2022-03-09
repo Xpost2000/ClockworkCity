@@ -1029,7 +1029,7 @@ local void tilemap_editor_update_render_frame(float dt) {
             draw_player_spawn_links(editor.tilemap.player_spawn_links, editor.tilemap.player_spawn_link_count);
             draw_soul_anchors(editor.tilemap.soul_anchors, editor.tilemap.soul_anchor_count);
             draw_triggers(editor.tilemap.triggers, editor.tilemap.trigger_count);
-            draw_doors(editor.tilemap.doors, editor.tilemap.door_count);
+            draw_doors(editor.tilemap.doors, editor.tilemap.door_count, true);
             draw_activation_switches(editor.tilemap.activation_switchs, editor.tilemap.activation_switch_count);
             editor_draw_entity_placements(editor.tilemap.entity_placements, editor.tilemap.entity_placement_count);
             draw_player_spawn(&editor.tilemap.default_spawn);
@@ -1625,6 +1625,9 @@ void editor_on_prompt_submission(void) {
             }
         } else if (editor.entity_painting_subtype == ENTITY_PAINTING_SUBTYPE_DOORS) {
             struct door* already_selected = (struct door*) editor.context;
+            if (prompt_title == "SET NAME") {
+                strncpy(already_selected->identifier, editor.text_edit.buffer_target, DOOR_IDENTIFIER_STRING_LENGTH);
+            }
 
             if (prompt_title == "SET BOSS TYPE ID") {
                 already_selected->boss_type_id = atoi(editor.text_edit.buffer_target);

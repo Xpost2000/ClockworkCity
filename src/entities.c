@@ -1088,29 +1088,45 @@ void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iter
 }
 
 void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* tilemap) {
-    unsigned total_tile_count = tilemap->width * tilemap->height;
-    for (unsigned index = 0; index < total_tile_count; ++index) {
-        struct tile* t = &tilemap->tiles[index];
+    struct entity* player = &game_state->persistent_entities[0];
 
-        if (t->id == TILE_NONE) continue;
+    {
+        unsigned total_tile_count = tilemap->width * tilemap->height;
+        for (unsigned index = 0; index < total_tile_count; ++index) {
+            struct tile* t = &tilemap->tiles[index];
 
-        if (rectangle_intersects_v(
-                hitbox->x, hitbox->y, hitbox->w, hitbox->h,
-                t->x, t->y, 1, 1
-            )) {
-            switch (t->id) {
-                case TILE_SPIKE_LEFT:
-                case TILE_SPIKE_RIGHT:
-                case TILE_SPIKE_DOWN:
-                case TILE_SPIKE_UP: {
-                    hitbox_try_and_apply_knockback(hitbox, 0.16);
-                    camera_traumatize(&game_camera, 0.01275);
-                    return;
-                } break;
-                default: {
-                    /* create hit particle. otherwise bye bye */
-                    continue;
-                } break;
+            if (t->id == TILE_NONE) continue;
+
+            if (rectangle_intersects_v(
+                    hitbox->x, hitbox->y, hitbox->w, hitbox->h,
+                    t->x, t->y, 1, 1
+                )) {
+                switch (t->id) {
+                    case TILE_SPIKE_LEFT:
+                    case TILE_SPIKE_RIGHT:
+                    case TILE_SPIKE_DOWN:
+                    case TILE_SPIKE_UP: {
+                        hitbox_try_and_apply_knockback(hitbox, 0.16);
+                        camera_traumatize(&game_camera, 0.01275);
+                        return;
+                    } break;
+                    default: {
+                        /* create hit particle. otherwise bye bye */
+                        continue;
+                    } break;
+                }
+            }
+        }
+    }
+
+    if (hitbox->owner == player) {
+        console_printf("Player is owner\n");
+        for (unsigned index = 0; index < tilemap->activation_switch_count; ++index) {
+            struct activation_switch* acswitch = tilemap->activation_switches + index;
+
+            if (rectangle_intersects_v(hitbox->x, hitbox->y, hitbox->w, hitbox->h,
+                                       acswitch->x, acswitch->y, acswitch->w, acswitch->h)) {
+                activation_switch_use(tilemap, acswitch);
             }
         }
     }
@@ -1132,6 +1148,12 @@ void entity_trigger_activate(struct entity* entity, struct trigger* trigger) {
 void update_all_hitboxes(struct entity_iterator* entities, struct tilemap* tilemap, float dt) {
     for (int index = hitbox_count-1; index >= 0; --index) {
         struct hitbox* current_hitbox = hitbox_pool + index;
+
+        {
+            struct entity* player = &game_state->persistent_entities[0];
+            if (current_hitbox->owner == player) {
+            }
+        }
 
         hitbox_handle_entity_interactions(current_hitbox, entities);
         hitbox_handle_tilemap_interactions(current_hitbox, tilemap);

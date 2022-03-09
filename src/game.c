@@ -466,6 +466,10 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
         player->y = game_state->loaded_level->default_spawn.y;
     }
 
+    player->last_x = player->x;
+    player->last_y = player->y;
+    sane_init_all_doors(game_state->loaded_level->doors, game_state->loaded_level->door_count);
+
     camera_set_position(&game_camera, player->x, player->y);
     camera_force_clamp_to_bounds(&game_camera);
 }

@@ -49,7 +49,7 @@ local void tilemap_editor_painting_activators(struct memory_arena* frame_arena, 
                                                       "TARGET7(%s): %s\n"
                                                       "TARGET8(%s): %s\n"
                                                       "TARGET9(%s): %s\n"
-                                                      "TARGET10(%s): %s\n",
+                                                      "TARGET10(%s): %s\nonce_only? : %s\n",
                                                       already_selected->identifier,
                                                       already_selected->x, already_selected->y,
                                                       already_selected->w, already_selected->h,
@@ -62,7 +62,8 @@ local void tilemap_editor_painting_activators(struct memory_arena* frame_arena, 
                                                       target_line(6),
                                                       target_line(7),
                                                       target_line(8),
-                                                      target_line(9)
+                                                      target_line(9),
+                                                      yesno[already_selected->once_only]
                                           ), COLOR4F_WHITE);
 #undef target_line
             } end_graphics_frame();
@@ -109,8 +110,12 @@ local void tilemap_editor_painting_activators(struct memory_arena* frame_arena, 
                     }
                 } else {
                     if (is_key_pressed(KEY_1)) {
-                        memset(temporary_buffers[0], 0, 128);
-                        editor_open_text_edit_prompt("set target1 name", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                        if (is_key_down(KEY_SPACE)) {
+                            Toggle_Boolean(already_selected->once_only);
+                        } else {
+                            memset(temporary_buffers[0], 0, 128);
+                            editor_open_text_edit_prompt("set target1 name", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                        }
                     }
                     if (is_key_pressed(KEY_2)) {
                         memset(temporary_buffers[0], 0, 128);

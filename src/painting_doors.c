@@ -28,11 +28,11 @@ local void tilemap_editor_painting_doors(struct memory_arena* frame_arena, float
 
                 const int lines = 7; /* manually counted for layout reasons... */
                 draw_text_right_justified(test_font, 0, 0, dimens[0],
-                                          format_temp("DOOR PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\listens to boss_death?: %s\nhorizontal: %s\n",
+                                          format_temp("DOOR PROPERTIES\nNAME: \"%s\"\nX: %d\nY: %d\nW: %d\nH: %d\nlistens to boss_death?: %s(%d type)\nhorizontal: %s\n",
                                                       already_selected->identifier,
                                                       already_selected->x, already_selected->y,
                                                       already_selected->w, already_selected->h,
-                                                      yesno[already_selected->listens_for_boss_death], yesno[already_selected->horizontal]), COLOR4F_WHITE);
+                                                      yesno[already_selected->listens_for_boss_death], already_selected->boss_type_id, yesno[already_selected->horizontal]), COLOR4F_WHITE);
             } end_graphics_frame();
 
             Generate_Rectangle_Sizing_Code(already_selected);
@@ -40,14 +40,18 @@ local void tilemap_editor_painting_doors(struct memory_arena* frame_arena, float
             if (!is_editting_text()) {
                 static char temporary_buffers[32][128] = {};
                 if (is_key_pressed(KEY_1)) {
+                    memset(temporary_buffers[0], 0, 128);
+                    editor_open_text_edit_prompt("SET NAME", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
+                }
+                if (is_key_pressed(KEY_2)) {
                     Toggle_Boolean(already_selected->listens_for_boss_death);
                 }
 
-                if (is_key_pressed(KEY_2)) {
+                if (is_key_pressed(KEY_3)) {
                     Toggle_Boolean(already_selected->horizontal);
                 }
 
-                if (is_key_pressed(KEY_3)) {
+                if (is_key_pressed(KEY_4)) {
                     memset(temporary_buffers[0], 0, 128);
                     editor_open_text_edit_prompt("SET BOSS TYPE ID", temporary_buffers[0], 128, strlen(temporary_buffers[0]));
                 }
