@@ -326,6 +326,22 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     bool move_left  = is_key_down(KEY_A)    || gamepad->buttons[DPAD_LEFT];
     bool attack     = is_key_pressed(KEY_J) || controller_button_pressed(gamepad, BUTTON_X);
     bool jump       = is_key_pressed(KEY_SPACE) || controller_button_pressed(gamepad, BUTTON_A);
+
+
+    /* special case for transition code lol */
+    {
+        if (animation_id == GAME_ANIMATION_ID_CHANGE_LEVEL) {
+            /* may result in weird movements... */
+            if (entity->onground) {
+                if (entity->facing_dir == 1) {
+                    move_right = true;
+                } else {
+                    move_left = true;
+                }
+            }
+        }
+    }
+
     /* NOTE(jerry):
        My dualsense controller reports... Really weird results on the trigger side.
 
