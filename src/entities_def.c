@@ -277,6 +277,19 @@ struct entity {
         float resurrection_timer;
         struct particle_emitter* owned_vomit_emitter;
         struct particle_emitter* owned_flames_emitter;
+
+        /* lost souls cannot collide with each other. */
+        /* always the player. Attack state. */
+#define LOST_SOUL_TRY_TO_SEEK_TIMER_MAX (1)
+#define LOST_SOUL_RETRACTION_TIMER_MAX  (0.76)
+#define LOST_SOUL_NEXT_SEEK_TIMER_MIN (1.0)
+#define LOST_SOUL_NEXT_SEEK_TIMER_MAX (2.0)
+        bool seeking_towards_target;
+        float try_to_seek_timer;
+        float direction_to_target_x;
+        float direction_to_target_y;
+        float retraction_timer;
+        float next_seek_timer;
     } lost_soul_info;
 #endif
 };

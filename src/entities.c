@@ -213,14 +213,43 @@ void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap,
         }
 
         entity->lost_soul_info.fly_time += dt * 1.5;
+
+        const int MAGNITUDE_OF_LOST_SOUL_SEEK = 3;
+
+        entity->vx = 0;
+        entity->vy = 0;
+
+        if (entity->lost_soul_info.seeking_towards_target) {
+            if (entity->lost_soul_info.try_to_seek_timer > 0) {
+                entity->vx = entity->lost_soul_info.direction_to_target_x * MAGNITUDE_OF_LOST_SOUL_SEEK;
+                entity->vy = entity->lost_soul_info.direction_to_target_y * MAGNITUDE_OF_LOST_SOUL_SEEK;
+
+                entity->lost_soul_info.try_to_seek_timer -= dt;
+            } else {
+                entity->lost_soul_info.retraction_timer = LOST_SOUL_RETRACTION_TIMER_MAX;
+                entity->lost_soul_info.seeking_towards_target = false;
+            }
+        }
+
+        if (entity->lost_soul_info.retraction_timer > 0) {
+            entity->vx = -entity->lost_soul_info.direction_to_target_x * MAGNITUDE_OF_LOST_SOUL_SEEK;
+            entity->vy = -entity->lost_soul_info.direction_to_target_y * MAGNITUDE_OF_LOST_SOUL_SEEK;
+
+            entity->lost_soul_info.retraction_timer -= dt;
+        }
+
+        entity->x += entity->vx * dt;
+        entity->y += entity->vy * dt;
     }
-    /* entity->x  += entity->vx *                       dt; */
-    /* entity->y  += entity->vy *                       dt; */
 }
 
 void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float dt) {
     /* these guys do respawn. For platforming reasons lol. */
     const float SECONDS_PER_RESURRECTION = 3;
+
+    bool is_mortal = (entity->type == ENTITY_TYPE_VOLATILE_LOST_SOUL);
+    bool is_mobile = (entity->type == ENTITY_TYPE_LOST_SOUL || entity->type == ENTITY_TYPE_VOLATILE_LOST_SOUL);
+
     if (entity->death_state != DEATH_STATE_ALIVE) {
         if (entity->death_state == DEATH_STATE_DYING) {
             entity->death_state = DEATH_STATE_DEAD;
@@ -239,11 +268,11 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                 camera_traumatize(&game_camera, 0.0152);
             }
 
-            if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL || entity->type == ENTITY_TYPE_LOST_SOUL) {
+            if (!is_mortal) {
                 entity->lost_soul_info.resurrection_timer = SECONDS_PER_RESURRECTION;
             }
         } else if (entity->death_state == DEATH_STATE_DEAD) {
-            if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL || entity->type == ENTITY_TYPE_LOST_SOUL) {
+            if (entity->lost_soul_info.resurrection_timer > 0) {
                 entity->lost_soul_info.resurrection_timer -= dt;
 
                 if (entity->lost_soul_info.resurrection_timer <= 0) {
@@ -268,7 +297,22 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
         }
     }
     
-    if (entity->death_state == DEATH_STATE_ALIVE) {
+    bool is_idle = true;
+
+    if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL) {
+        is_idle = true;
+    } else {
+        if (entity->lost_soul_info.seeking_towards_target) {
+            is_idle = false;
+        }
+
+        if (entity->lost_soul_info.retraction_timer > 0) {
+            is_idle == false;
+        }
+    }
+
+    /* only vomit when idle. */
+    if (entity->death_state == DEATH_STATE_ALIVE && is_idle) {
         if (entity->lost_soul_info.next_vomit_timer > 0) {
             entity->lost_soul_info.next_vomit_timer -= dt;
             if (entity->lost_soul_info.next_vomit_timer <= 0 && entity->lost_soul_info.vomit_timer <= 0) {
@@ -284,6 +328,33 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                 entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0;
                 entity->lost_soul_info.owned_vomit_emitter->emission_count = 0;
             }
+        }
+    }
+
+    if (is_mobile) {
+        /* not going to check for line of sight for now... Just seek blindly */ 
+        struct entity* player = &game_state->persistent_entities[0];
+
+        float distance_to_player_sq = distance_sq(player->x, player->y, entity->x, entity->y);
+        float DISTANCE_OF_ATTRACTION = 5; DISTANCE_OF_ATTRACTION *= DISTANCE_OF_ATTRACTION;
+
+        if (entity->lost_soul_info.next_seek_timer <= 0) {
+            if (distance_to_player_sq <= DISTANCE_OF_ATTRACTION) {
+                entity->lost_soul_info.seeking_towards_target = true;
+
+                float delta_x   = player->x - entity->x;
+                float delta_y   = player->y - entity->y;
+
+                float magnitude =  sqrtf(delta_x * delta_x + delta_y * delta_y);
+
+                entity->lost_soul_info.direction_to_target_x = delta_x / magnitude;
+                entity->lost_soul_info.direction_to_target_y = delta_y / magnitude;
+                entity->lost_soul_info.next_seek_timer = random_ranged_float(LOST_SOUL_NEXT_SEEK_TIMER_MIN, LOST_SOUL_NEXT_SEEK_TIMER_MAX);
+
+                entity->lost_soul_info.try_to_seek_timer = LOST_SOUL_TRY_TO_SEEK_TIMER_MAX;
+            }
+        } else {
+            entity->lost_soul_info.next_seek_timer -= dt;
         }
     }
 }
@@ -1071,6 +1142,9 @@ local bool hitbox_check_is_entity_ignored(struct hitbox* hitbox, struct entity* 
 
     return false;
 }
+
+/* void entity_apply_knockback(struct entity* entity, int direction) { */
+/* } */
 
 void hitbox_try_and_apply_knockback(struct hitbox* hitbox, float time) {
     if (hitbox->type == HITBOX_TYPE_HURT_WITH_KNOCKBACK && hitbox->owner) {
