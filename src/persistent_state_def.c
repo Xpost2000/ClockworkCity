@@ -22,8 +22,13 @@ enum persistent_change_type {
 
     PERSISTENT_CHANGE_SOUL_ANCHOR_ACTIVATED,
     PERSISTENT_CHANGE_ADD_PLAYER_MOVEMENT_FLAG,
+    PERSISTENT_CHANGE_KILLED_BOSS,
 
     PERSISTENT_CHANGE_COUNT,
+};
+
+struct persistent_change_killed_boss {
+    uint32_t number;
 };
 
 struct persistent_change_soul_anchor_activated {
@@ -39,6 +44,7 @@ struct persistent_change {
     union {
         struct persistent_change_soul_anchor_activated    soul_anchor_activated;
         struct persistent_change_add_player_movement_flag add_player_movement_flag;
+        struct persistent_change_killed_boss              killed_boss;
         char reserved[16 + 64];
     };
 };

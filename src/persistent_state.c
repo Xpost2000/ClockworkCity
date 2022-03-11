@@ -74,6 +74,10 @@ local void persistent_changes_apply_changes(struct persistent_changes* changes, 
                 struct soul_anchor* target = level->soul_anchors + data.soul_anchor_index;
                 target->unlocked = true;
             } break;
+            case PERSISTENT_CHANGE_KILLED_BOSS: {
+                struct persistent_change_killed_boss data = change->killed_boss;
+                globally_tracked_boss_kills[data.number] = true;
+            } break;
         }
     }
 }

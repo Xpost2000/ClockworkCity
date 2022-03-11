@@ -1135,6 +1135,8 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
 /* technically... Entities should know their visual position as separate state instead of
  having this here but whatever.*/
 local void draw_entity(struct entity* current_entity, float dt, float interpolation_value) {
+    float entity_x = entity_lerp_x(current_entity, interpolation_value); 
+    float entity_y = entity_lerp_y(current_entity, interpolation_value); 
     switch (current_entity->type) {
         case ENTITY_TYPE_PLAYER: {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
@@ -1155,13 +1157,13 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                     }
                 }
 
-                draw_texture_aligned(player_idle1,
-                                     entity_lerp_x(current_entity, interpolation_value),
-                                     entity_lerp_y(current_entity, interpolation_value),
-                                     16, 24, 1, 4, 8, active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                draw_texture_aligned(player_idle1, entity_x, entity_y, 16, 24, 1, 4, 8,
+                                     active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
             }
         } break;
-        default: {
+        case ENTITY_TYPE_HOVERING_LOST_SOUL:
+        case ENTITY_TYPE_LOST_SOUL:
+        case ENTITY_TYPE_VOLATILE_LOST_SOUL: {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
                 /* These alignments... Are broken lol */
                 texture_id texture;
@@ -1185,10 +1187,14 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                 }
                 
                 draw_texture_aligned(texture,
-                                     entity_lerp_x(current_entity, interpolation_value),
-                                     entity_lerp_y(current_entity, interpolation_value) + sinf((current_entity->lost_soul_info.fly_time)) * 0.25,
+                                     entity_x, entity_y + sinf((current_entity->lost_soul_info.fly_time)) * 0.25,
                                      16, 16, 0.75,
                                      3, 4, active_colorscheme.primary, 0, angle);
+            }
+        } break;
+        default: {
+            if (current_entity->death_state == DEATH_STATE_ALIVE) {
+                draw_filled_rectangle(entity_x, entity_y, current_entity->w, current_entity->h, active_colorscheme.primary);
             }
         } break;
     }
@@ -1231,7 +1237,7 @@ void hitbox_try_and_apply_knockback(struct hitbox* hitbox, struct entity* attack
     if (hitbox->type == HITBOX_TYPE_HURT_WITH_KNOCKBACK && hitbox->owner) {
         entity_apply_attack_knockback(hitbox->owner, hitbox->direction, time);
         if (attacked)
-            entity_apply_damage_knockback(attacked, opposite_attack_direction(hitbox->direction), time);
+            entity_apply_damage_knockback(attacked, opposite_attack_direction(hitbox->direction), time*1.5);
     }
 }
 

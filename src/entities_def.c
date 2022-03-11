@@ -79,6 +79,14 @@ enum entity_type {
     ENTITY_TYPE_HOVERING_LOST_SOUL = 2,
     ENTITY_TYPE_LOST_SOUL          = 3,
     ENTITY_TYPE_VOLATILE_LOST_SOUL = 4,
+
+    ENTITY_TYPE_CHARGING_IMP       = 5,
+    ENTITY_TYPE_MELEE_IMP          = 6,
+
+    ENTITY_TYPE_BOSS1              = 7,
+    ENTITY_TYPE_BOSS2              = 7,
+    ENTITY_TYPE_BOSS3              = 8,
+    ENTITY_TYPE_BOSS4              = 9,
     /* ENTITY_TYPE_MEPHIT_MINOR       = 5, */
     /* ENTITY_TYPE_MEPHIT             = 6, */
 
@@ -226,12 +234,120 @@ struct entity_dash_shadow {
     float x; float y; float t;
 };
 
+/* lost souls cannot collide with each other. */
+/* always the player. Attack state. */
+#define LOST_SOUL_TRY_TO_SEEK_TIMER_MAX (4)
+#define LOST_SOUL_RETRACTION_TIMER_MAX  (2.5)
+#define LOST_SOUL_NEXT_SEEK_TIMER_MIN (1.0)
+#define LOST_SOUL_NEXT_SEEK_TIMER_MAX (2.0)
+struct entity_lost_soul {
+    float fly_time;
+    float vomit_timer;
+    float next_vomit_timer;
+    float resurrection_timer;
+    struct particle_emitter* owned_vomit_emitter;
+    struct particle_emitter* owned_flames_emitter;
+
+    bool  seeking_towards_target;
+    float try_to_seek_timer;
+    float direction_to_target_x;
+    float direction_to_target_y;
+    float retraction_timer;
+    bool  idle_during_retraction;
+    float next_seek_timer;
+};
+
+struct entity_imp {
+    bool chasing_enemy;
+    /* if not chasing anyways, decide whether to be idle or not. */
+    float next_think_time;
+};
+
+/* 
+   this guy is like Elder Hu from Hollow Knight (gives dash).
+   
+   Basically just Elder Hu, but can use dash for evasion sometimes. (if player is to be attacking in range.)
+*/
+struct entity_boss1 {
+    
+};
+
+/* Maybe Hive Knight-ish? (gives walljump),
+
+ mainly attacks by using wall jump and buttslaming for damage. Can melee */
+struct entity_boss2 {
+    
+};
+
+/* Guardian. More like false knight */
+struct entity_boss3 {
+    
+};
+
+/*
+  The final boss.
+  
+  Giant thing. Damage the hands enough and it'll fall down for hitting?
+*/
+
+struct entity_boss4_hand {
+    int health;
+    float x;
+    float y;
+}
+struct entity_boss4 {
+    struct entity_boss4_hand left_hand;
+    struct entity_boss4_hand right_hand;
+
+    bool stunned;
+    float stunned_animation_timer[2];
+    float head_downtime;
+
+    /* animating this... Is a going to be a bitch! Thankfully this thing doesn't have to move. */
+    float attack_hand_timer;
+    float attack_hand_linger_timer;
+
+    /* /\* in second phase, just attack regardless of what enemies are still present. *\/ */
+    /* int phase; */
+    /* /\* check if summoned entities are still alive *\/ */
+    /* int  summoned_enemies[6]; */
+};
+
+/* TODO(jerry): do something about this */
+/*
+  While the original plan was to use a special trigger in the starting area.
+  The shorter plan is to just change recall to do something else in the end.
+  
+  :)
+*/
+local bool already_played_finale_prompt   = false;
+local bool globally_tracked_boss_kills[4] = {};
+local bool can_face_final_boss(void) {
+    if (globally_tracked_boss_kills[0] &&
+        globally_tracked_boss_kills[1] &&
+        globally_tracked_boss_kills[2]) {
+        return true;
+    }
+
+    return false;
+}
+
+struct entity_boss_kind {
+    bool active;
+    union {
+        struct entity_boss1 boss1_info;
+        struct entity_boss2 boss2_info;
+        struct entity_boss3 boss3_info;
+    };
+};
+
 struct entity {
     KINEMATIC_ENTITY_BASE_BODY();
     char identifier[ENTITY_STRING_IDENTIFIER_MAX_LENGTH];
 
     /*
       NOTE(jerry):
+      (jesus, this thing has diabetes.)
       These two are unusually fat, but this gives me lots of flexibility,
       (as in I don't need to deprecate any entities per say. Since I have lots of bits to play with.
       (IE I don't need to change the binary format when serializing, which is the most important part since I don't
@@ -283,31 +399,11 @@ struct entity {
 
     struct trigger* occupied_trigger;
 
-#if 1
-    /* per instance data */
-    struct {
-        float fly_time;
-        float vomit_timer;
-        float next_vomit_timer;
-        float resurrection_timer;
-        struct particle_emitter* owned_vomit_emitter;
-        struct particle_emitter* owned_flames_emitter;
-
-        /* lost souls cannot collide with each other. */
-        /* always the player. Attack state. */
-#define LOST_SOUL_TRY_TO_SEEK_TIMER_MAX (4)
-#define LOST_SOUL_RETRACTION_TIMER_MAX  (2.5)
-#define LOST_SOUL_NEXT_SEEK_TIMER_MIN (1.0)
-#define LOST_SOUL_NEXT_SEEK_TIMER_MAX (2.0)
-        bool  seeking_towards_target;
-        float try_to_seek_timer;
-        float direction_to_target_x;
-        float direction_to_target_y;
-        float retraction_timer;
-        bool  idle_during_retraction;
-        float next_seek_timer;
-    } lost_soul_info;
-#endif
+    union {
+        struct entity_lost_soul lost_soul_info;
+        struct entity_imp       imp_info;
+        struct entity_boss_kind boss_info;
+    };
 };
 shared_storage const char* get_facing_direction_string(int x) {
     switch (x) {
