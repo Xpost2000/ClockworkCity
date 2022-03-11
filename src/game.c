@@ -48,6 +48,8 @@ local struct memory_arena game_memory_arena;
 
 #include "prompt_font_info.h"
 
+/* thankgod for being a small game. I can load all assets into memory at start up */
+
 local texture_id playersizedblock; /* NOTE(jerry): This is exclusively for testing out a death screen! */
 local texture_id test_guy;
 local texture_id knight_twoview;
@@ -284,7 +286,7 @@ local void load_graphics_resources(void) {
     game_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
     editor_camera.render_scale = ratio_with_screen_width(TILES_PER_SCREEN);
 
-    initialize_entity_assets();
+    initialize_entity_graphics_assets();
     playersizedblock = load_texture("assets/playersizedblock.png");
 
     load_all_particle_textures();
@@ -293,6 +295,7 @@ local void load_graphics_resources(void) {
 }
 
 local void load_static_resources(void) {
+    initialize_entity_audio_assets();
     test_sound     = load_sound("assets/emp.wav");
     test_sound2    = load_sound("assets/explosion_b.wav");
 

@@ -1,0 +1,10 @@
+;; Auto generated in build process.
+(manifest-data
+
+('player_idle1                 :texture "assets/player/1.png")
+('lostsoul_idle1               :texture "assets/lostsoul/1idle.png")
+('lostsoul_closedidle1         :texture "assets/lostsoul/1idleclosed.png")
+('lostsoul_idle1_cracked       :texture "assets/lostsoul/1idlea.png")
+('lostsoul_closedidle1_cracked :texture "assets/lostsoul/1idlecloseda.png")
+
+)

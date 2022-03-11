@@ -2,16 +2,8 @@
   Entity assets
  */
 
-/* PLAYER */
-local texture_id player_idle1 = {}; /*16x24*/
-/* END PLAYER */
-/* LOST SOUL */
-local texture_id lostsoul_idle1       = {};
-local texture_id lostsoul_closedidle1 = {};
-
-local texture_id lostsoul_idle1_cracked       = {};
-local texture_id lostsoul_closedidle1_cracked = {};
-/* END LOST SOUL */
+/* FINAL BOSS(BOSS4) */
+/* END FINAL BOSS(BOSS4) */
 
 /*
   A vast majority of the entity code is kind of else where because the tilemaps is probably
@@ -292,9 +284,13 @@ struct entity_boss3 {
 
 struct entity_boss4_hand {
     int health;
+
     float x;
     float y;
-}
+
+    bool clenched;
+};
+/* NOTE(jerry): root x,y is the head */
 struct entity_boss4 {
     struct entity_boss4_hand left_hand;
     struct entity_boss4_hand right_hand;
@@ -307,10 +303,12 @@ struct entity_boss4 {
     float attack_hand_timer;
     float attack_hand_linger_timer;
 
-    /* /\* in second phase, just attack regardless of what enemies are still present. *\/ */
-    /* int phase; */
-    /* /\* check if summoned entities are still alive *\/ */
-    /* int  summoned_enemies[6]; */
+#if 0
+    /* in second phase, just attack regardless of what enemies are still present. */
+    int phase;
+    /* check if summoned entities are still alive */
+    int  summoned_enemies[6];
+#endif
 };
 
 /* TODO(jerry): do something about this */
@@ -414,15 +412,7 @@ shared_storage const char* get_facing_direction_string(int x) {
     return "?";
 }
 
-void initialize_entity_assets(void) {
-    player_idle1   = load_texture("assets/player/1.png");
-
-    lostsoul_idle1       = load_texture("assets/lostsoul/1idle.png");
-    lostsoul_closedidle1 = load_texture("assets/lostsoul/1idleclosed.png");
-    lostsoul_idle1_cracked       = load_texture("assets/lostsoul/1idlea.png");
-    lostsoul_closedidle1_cracked = load_texture("assets/lostsoul/1idlecloseda.png");
-}
-
+#include "generated_initialize_entity_assets.c"
 /* 
    NOTE(jerry):
    This was the solution I found that would be quickest to implement and least amount of effort,
