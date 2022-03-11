@@ -8,6 +8,7 @@ enum {
     INTRO_PHASE_BANNER,
     INTRO_PHASE_DISCLAIMER,
     INTRO_PHASE_DISCLAIMER2,
+    INTRO_PHASE_DISCLAIMER3,
     INTRO_PHASE_DONE,
     INTRO_PHASE_COUNT,
 };
@@ -16,7 +17,8 @@ local float intro_phase_times[] = {
     [INTRO_PHASE_PRELUDE]     = 2,
     [INTRO_PHASE_BANNER]      = 3.5,
     [INTRO_PHASE_DISCLAIMER]  = 5,
-    [INTRO_PHASE_DISCLAIMER2] = 4,
+    [INTRO_PHASE_DISCLAIMER2] = 5,
+    [INTRO_PHASE_DISCLAIMER3]  = 4,
     [INTRO_PHASE_DONE]        = 0.0
 };
 
@@ -85,6 +87,17 @@ void intro_update_render_frame(float dt) {
                 draw_text(game_ui_menu_font, render_x, render_y, text, COLOR4F_WHITE);
             } break;
             case INTRO_PHASE_DISCLAIMER2: {
+                const char* text = "INFACT ACTUALLY, THIS ISN'T FINISHED.\nALTHOUGH IT IS PLAYABLE START TO FINISH\n";
+
+                int text_dimens[2];
+                get_text_dimensions(game_ui_menu_font, text, text_dimens, text_dimens+1);
+
+                float render_x = screen_dimensions[0]/2 - text_dimens[0]/2;
+                float render_y = screen_dimensions[1]/2 - text_dimens[1]/2;
+
+                draw_text(game_ui_menu_font, render_x, render_y, text, COLOR4F_WHITE);
+            } break;
+            case INTRO_PHASE_DISCLAIMER3: {
                 /* real yakuza play with a controller */
                 const char* text = "THERE IS ALSO CONTROLLER SUPPORT :)\nINCLUDING RUMBLE (IF SUPPORTED)\n\nTHIS IS PROBABLY BEST PLAYED\nWITH A CONTROLLER IF POSSIBLE\n";
 

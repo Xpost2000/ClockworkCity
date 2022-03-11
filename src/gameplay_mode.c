@@ -109,7 +109,7 @@ local void game_update_render_frame(float dt) {
     if (game_state->menu_mode == GAMEPLAY_UI_INGAME) {
         {
             local float physics_accumulation_timer = 0;
-            const int PHYSICS_FRAMERATE = 300;
+            const int PHYSICS_FRAMERATE = 250;
             const float PHYSICS_TIMESTEP = 1.0f / (float)(PHYSICS_FRAMERATE);
 
             struct entity_iterator entities = game_state_entity_iterator(game_state);
@@ -169,12 +169,12 @@ local void game_update_render_frame(float dt) {
 
         struct entity_iterator entities = game_state_entity_iterator(game_state);
         draw_soul_anchors(tilemap->soul_anchors, tilemap->soul_anchor_count);
-        draw_all_entities(&entities, dt, physics_interpolation_value);
         draw_all_particle_systems(particle_interpolation_value);
         {
             draw_doors(tilemap->doors, tilemap->door_count, false);
             draw_activation_switches(tilemap->activation_switches, tilemap->activation_switch_count);
             draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
+            draw_all_entities(&entities, dt, physics_interpolation_value);
             draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
             draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
         }

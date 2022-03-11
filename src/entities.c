@@ -1,3 +1,4 @@
+/* SOMETHING IS WRONG WITH MY SPRITE ALIGNMENT CODE (and I'm not in the mood to try and fix that honestly...), I HAVE TO MANUALLY CHECK IF THE NUMBERS WORK.......... FUUUUUUUUUUUUUUUUUU */
 /* general entity procedures */
 /*
   NOTE(jerry):
@@ -569,6 +570,9 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
     }
 }
 
+
+void do_imp_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+}
 /* 
    technically physics updates for all entities should nearly be identical...
    However for now I only have the player so... I can't say.
@@ -725,8 +729,6 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
 
     entity_handle_jump(entity, jump);
     entity_handle_basic_melee_attack(entity, attack, aiming_up, aiming_down);
-
-    entity->attack_cooldown_timer -= dt;
 }
 
 void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
@@ -896,8 +898,8 @@ struct entity entity_create_player(float x, float y) {
         .type = ENTITY_TYPE_PLAYER,
         .w = (0.5),
         .h = 1,
-        .health = 3,
-        .max_health = 3,
+        .health = 4,
+        .max_health = 4,
         .flags = ENTITY_FLAGS_PERMENANT,
         /* .movement_flags = MOVEMENT_FLAG_ALLOW_WALL_JUMP, */
         .max_allowed_jump_count = 2,
@@ -978,6 +980,29 @@ struct entity entity_create_volatile_lost_soul(float x, float y) {
     return result;
 }
 
+struct entity entity_create_imp(float x, float y) {
+    struct entity result = {
+        .x = x, .y = y,
+        .type = ENTITY_TYPE_CHARGING_IMP,
+        .w = (0.5), .h = (1),
+        .health = 4, .max_health = 4,
+    };
+
+    return result;
+}
+
+struct entity entity_create_imp_melee(float x, float y) {
+    struct entity result = {
+        .x = x, .y = y,
+        .type = ENTITY_TYPE_MELEE_IMP,
+        .w = (0.5), .h = (1),
+        .health = 4, .max_health = 4,
+    };
+
+    return result;
+}
+
+
 /* TODO(jerry):
    A nice way would just be to create a table of "templates", which would
    also work nicely for avoiding duplication.
@@ -996,6 +1021,11 @@ void entity_get_type_dimensions(uint32_t type, float* width, float* height) {
         {
             out_width = 0.5;
             out_height = 0.5;
+        } break;
+        case ENTITY_TYPE_MELEE_IMP:
+        case ENTITY_TYPE_CHARGING_IMP: {
+            out_width  = 0.5;
+            out_height = 1;
         } break;
         default: {} break;
     }
@@ -1019,6 +1049,12 @@ struct entity construct_entity_of_type(uint32_t type, float x, float y) {
         } break;
         case ENTITY_TYPE_LOST_SOUL: {
             result = entity_create_lost_soul(x, y);
+        } break;
+        case ENTITY_TYPE_CHARGING_IMP: {
+            result = entity_create_imp(x, y);
+        } break;
+        case ENTITY_TYPE_MELEE_IMP: {
+            result = entity_create_imp_melee(x, y);
         } break;
     }
 
@@ -1125,10 +1161,17 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
             case ENTITY_TYPE_VOLATILE_LOST_SOUL:
                 do_lost_soul_update(current_entity, tilemap, dt);
             break;
+            case ENTITY_TYPE_MELEE_IMP:
+            case ENTITY_TYPE_CHARGING_IMP: {
+                do_imp_update(current_entity, tilemap, dt);
+            } break;
             default:
                 do_generic_entity_update(current_entity, tilemap, dt);
                 break;
         }
+
+        current_entity->animation_timer += dt;
+        current_entity->attack_cooldown_timer -= dt;
     }
 }
 
@@ -1156,9 +1199,71 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                         current_entity->linger_shadows[shadow_index] = current_entity->linger_shadows[--current_entity->linger_shadow_count];
                     }
                 }
+                /* determine if we're idle?? */
 
-                draw_texture_aligned(player_idle1, entity_x, entity_y, 16, 24, 1, 4, 8,
-                                     active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                if (current_entity->onground) {
+                    if (current_entity->attack_cooldown_timer > 0) {
+                        draw_texture_aligned(hero_slash2, entity_x, entity_y, 25, 25, 1, 4.5, 4.5,
+                                             active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                    } else {
+                        if (current_entity->ax != 0) {
+                            if (current_entity->animation_timer >= 0.15) {
+                                current_entity->animation_frame += 1;
+                                current_entity->animation_timer = 0;
+                            }
+
+                            if (current_entity->animation_frame == 3) {
+                                current_entity->animation_frame = 0;
+                            }
+
+                            /* this is what happens when you reuse sprites meant for a different perspective... */
+                            switch (current_entity->animation_frame) {
+                                case 2: {
+                                    draw_texture_aligned(hero_walk3, entity_x, entity_y-0.1, 17, 17, 1, 4, -2,
+                                                         active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                                } break;
+                                case 1: {
+                                    draw_texture_aligned(hero_walk2, entity_x, entity_y-0.1, 17, 17, 1, 4, -2,
+                                                         active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                                } break;
+                                default:
+                                case 0: {
+                                    draw_texture_aligned(hero_walk1, entity_x, entity_y-0.1, 17, 17, 1, 4, -2,
+                                                         active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                                } break;
+                            }
+                        } else {
+                            if (current_entity->animation_timer >= 0.3) {
+                                current_entity->animation_frame += 1;
+                                current_entity->animation_timer = 0;
+                            }
+
+                            if (current_entity->animation_frame == 2) {
+                                current_entity->animation_frame = 0;
+                            }
+
+                            switch (current_entity->animation_frame) {
+                                case 1: {
+                                    draw_texture_aligned(hero_idle2, entity_x, entity_y, 17, 17, 1, 4, -2,
+                                                         active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                                } break;
+                                default:
+                                case 0: {
+                                    draw_texture_aligned(hero_idle1, entity_x, entity_y, 17, 17, 1, 4, -2,
+                                                         active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                                } break;
+                            }
+                        }
+                    }
+                } else {
+                    if (current_entity->attack_cooldown_timer > 0) {
+                        draw_texture_aligned(hero_slash1, entity_x, entity_y, 17, 17, 1, 4, -2,
+                                             active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                    } else {
+                        draw_texture_aligned(hero_idle1, entity_x, entity_y, 17, 17, 1, 4, -2,
+                                             active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+                    }
+                }
             }
         } break;
         case ENTITY_TYPE_HOVERING_LOST_SOUL:
@@ -1191,6 +1296,12 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                                      16, 16, 0.75,
                                      3, 4, active_colorscheme.primary, 0, angle);
             }
+        } break;
+        case ENTITY_TYPE_MELEE_IMP:
+        case ENTITY_TYPE_CHARGING_IMP: {
+            draw_texture_aligned(imp_idle, entity_x, entity_y, 32, 32, 1, 14, 10,
+                                 active_colorscheme.primary, current_entity->facing_dir == 1 ? 0 : 1, 0);
+            draw_rectangle(entity_x, entity_y, current_entity->w, current_entity->h, COLOR4F_RED);
         } break;
         default: {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {

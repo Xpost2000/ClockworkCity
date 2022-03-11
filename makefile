@@ -14,7 +14,7 @@ build: dgame.exe game.exe
 src/generated_initialize_entity_assets.c: src/entity_asset_list.txt src/manifest_meta.lisp
 	sbcl --script src/manifest_meta.lisp
 dgame.exe: src/generated_initialize_entity_assets.c $(SRCFILES)
-	$(CC) src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -ggdb3 -o $@
+	$(CC) src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c -DDEV $(CFLAGS) $(CLIBS) -ggdb3 -o $@
 game.exe: src/generated_initialize_entity_assets.c $(SRCFILES)
 	$(CC) src/main.c src/common.c src/graphics.c src/input.c src/audio.c src/memory_arena.c $(CFLAGS) $(CLIBS) -O2 -o $@
 clean: 

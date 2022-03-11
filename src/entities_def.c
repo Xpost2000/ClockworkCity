@@ -76,9 +76,9 @@ enum entity_type {
     ENTITY_TYPE_MELEE_IMP          = 6,
 
     ENTITY_TYPE_BOSS1              = 7,
-    ENTITY_TYPE_BOSS2              = 7,
-    ENTITY_TYPE_BOSS3              = 8,
-    ENTITY_TYPE_BOSS4              = 9,
+    ENTITY_TYPE_BOSS2              = 8,
+    ENTITY_TYPE_BOSS3              = 9,
+    ENTITY_TYPE_BOSS4              = 10,
     /* ENTITY_TYPE_MEPHIT_MINOR       = 5, */
     /* ENTITY_TYPE_MEPHIT             = 6, */
 
@@ -94,6 +94,10 @@ enum entity_type {
 /* hardcoded type baking. fun */
 local bool entity_is_physics_active(uint32_t entity_type) {
     switch (entity_type) {
+        case ENTITY_TYPE_PLAYER:
+        case ENTITY_TYPE_CHARGING_IMP:
+        case ENTITY_TYPE_MELEE_IMP:
+            return true;
         default:
             return false;
     }
@@ -107,6 +111,13 @@ char* entity_type_strings[] = {
     [ENTITY_TYPE_LOST_SOUL] = "Lost Soul",
     /* these can die */
     [ENTITY_TYPE_VOLATILE_LOST_SOUL] = "Volatile Lost Soul",
+    [ENTITY_TYPE_CHARGING_IMP]       = "Imp (charging)",
+    [ENTITY_TYPE_MELEE_IMP]       = "Imp (can melee)",
+
+    [ENTITY_TYPE_BOSS1]       = "BOSS1",
+    [ENTITY_TYPE_BOSS2]       = "BOSS2",
+    [ENTITY_TYPE_BOSS3]       = "BOSS3",
+    [ENTITY_TYPE_BOSS4]       = "God Eater",
     /* more flying skins */
     /* [ENTITY_TYPE_MEPHIT_MINOR] = "Lesser Mephit", */
     /* [ENTITY_TYPE_MEPHIT] = "Mephit", */
@@ -215,7 +226,7 @@ shared_storage char* death_state_strings[] = {
 #define ENTITY_STRING_IDENTIFIER_MAX_LENGTH        (9) /*entity12*/ /*use for hardcoded triggers*/
 #define PLAYER_VARIABLE_JUMP_TIME_LIMIT            (0.17)
 #define PLAYER_VARIABLE_JUMP_ACCELERATION          (GRAVITY_CONSTANT*1.3)
-#define PLAYER_ATTACK_COOLDOWN_TIMER_MAX           (0.2)
+#define PLAYER_ATTACK_COOLDOWN_TIMER_MAX           (0.3)
 #define ENTITY_DASH_SHADOW_MAX_AMOUNT              (64)
 #define ENTITY_DASH_SHADOW_MAX_LINGER_LIMIT        (0.7) /*seconds*/
 #define ENTITY_DASH_SHADOW_SAMPLE_RECORD_TIMER_MAX (0.01)
@@ -358,6 +369,10 @@ struct entity {
     int32_t  max_health;
     int32_t  health;
     uint8_t  death_state; /* use this for animation setting. */
+
+    /* LOOLOLOLOLOLOLOL FML, FOR NOT HAVING SPRITE ANIMATION LOLOLOLOLOLOLOLOLOL */
+    float animation_timer;
+    int animation_frame;
 
     /*temporary*/
     int8_t facing_dir; /* don't know why this is not an enum either... */

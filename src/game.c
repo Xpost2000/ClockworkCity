@@ -33,8 +33,17 @@
   Consider adding props very soon. They're technically also entities but a subtype.
   add particle placements (allow line placement for rains!)
  */
-#define DEV
+/* #define DEV */
 #define LAST_GROUNDED_POSITION_RECORD_TIMER_MAX (5.0f) /* seconds */
+
+/* HARDCODED LEVELLIST ASSOCIATION */
+local struct {
+    char* level_name;
+    char* colorscheme_name;
+} global_level_colorscheme_list[] = {
+    { "limbo1", "LimboScheme" },
+    { "hub",    "LimboScheme" },
+};
 
 local struct camera game_camera   = {};
 local struct camera editor_camera = {};
@@ -489,6 +498,16 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
 
     persistent_changes_apply_changes(&game_state->persistent_changes, game_state, 0);
     persistent_changes_apply_changes(&game_state->persistent_changes, game_state, changelist_id);
+
+    /* apply_colorscheme_to_current_level */
+    {
+        for (unsigned index = 0; index < array_count(global_level_colorscheme_list); ++index) {
+            if (!strcmp(global_level_colorscheme_list[index].level_name, game_state->current_level_filename)) {
+                use_colorscheme(global_level_colorscheme_list[index].colorscheme_name);
+                break; 
+            }
+        }
+    }
 
     serializer_finish(&file);
 }
