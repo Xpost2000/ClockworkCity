@@ -26,7 +26,7 @@
   
   Worry about it later.
 */
-#define MAX_PARTICLE_EMITTER_COUNT (512) /* With the new particle storage system. GO NUTS!*/
+#define MAX_PARTICLE_EMITTER_COUNT (4096) /* With the new particle storage system. GO NUTS!*/
 
 struct particle {
     KINEMATIC_ENTITY_BASE_BODY();
@@ -174,6 +174,7 @@ struct particle_emitter {
 local size_t particle_emitter_count = 0;
 local struct particle_emitter* particle_emitter_pool = NULL;
 local struct particle_chunk_list particle_chunk_freelist = {};
+local struct particle_emitter sentinel={};
 
 void initialize_particle_emitter_pool(struct memory_arena* arena) {
     particle_emitter_pool  = memory_arena_push(arena, sizeof(*particle_emitter_pool) * MAX_PARTICLE_EMITTER_COUNT);
@@ -184,6 +185,7 @@ void initialize_particle_emitter_pool(struct memory_arena* arena) {
         struct particle_emitter* emitter = particle_emitter_pool + index;
         emitter->chunks.head = emitter->chunks.tail = &particle_chunk_list_sentinel;
     }
+    sentinel.chunks.head = sentinel.chunks.tail = &particle_chunk_list_sentinel;
 
     particle_chunk_freelist.head = particle_chunk_freelist.tail = &particle_chunk_list_sentinel;
 }
@@ -270,7 +272,7 @@ struct particle_emitter* particle_emitter_allocate(void) {
         }
     }
 
-    return NULL;
+    return &sentinel;
 }
 
 local void draw_particle_emitter_particles(struct particle_emitter* emitter, float interpolation) {

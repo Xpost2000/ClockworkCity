@@ -60,6 +60,7 @@ enum prompt_id {
     PROMPT_ID_EXPOSITION_STORY1,
     PROMPT_ID_FIRSTDEATH_STORY2,
     PROMPT_ID_FOUND_HUB_STORY3,
+    PROMPT_ID_CHALLENGE_A,
     /*
      * what it sounds like
      */
@@ -408,17 +409,25 @@ local char* resonation_text[] = {
     "A final confrontation."
 };
 
+local char* challenge_text[] = {
+    "I'd say \"Can you beat this?\"",
+    "But honestly... This shouldn't be difficult",
+    "Especially for someone who\nplays precision platformers :)"
+};
+
 Define_Text_Based_Prompt(prompt_story1, story1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
 /*( TODO)*/
 Define_Text_Based_Prompt(prompt_comfort1, comfort1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
 /*( TODO)*/
 Define_Text_Based_Prompt(prompt_first_death, death1_prompt_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 1);
 Define_Text_Based_Prompt(prompt_battle_preparation, resonation_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 0);
+Define_Text_Based_Prompt(p3, challenge_text, PROMPT_TIME_PER_PAGE_GENERIC, PROMPT_FADE_IN_TIMER_GENERIC, PROMPT_TIME_LINGER_TIME_GENERIC, 0.85, 0);
 
 local prompt_proc game_prompt_update_renders[PROMPT_ID_COUNT] = {
     [PROMPT_ID_TEST_PROMPT]                                   = DEVTEST_prompt1,
     [PROMPT_ID_TEST1_PROMPT]                                  = DEVTEST_prompt2,
     [PROMPT_ID_TEST2_PROMPT]                                  = DEVTEST_prompt3,
+    [PROMPT_ID_CHALLENGE_A]                                   = p3,
     [PROMPT_ID_CONTROL_SCHEME_OVERVIEW]                       = prompt_control_scheme_overview,
     [PROMPT_ID_EXPOSITION_STORY1]                             = prompt_story1,
     [PROMPT_ID_FIRSTDEATH_STORY2]                             = prompt_first_death,
@@ -433,6 +442,7 @@ local void update_render_game_prompt(struct game_controller* controller, float d
         if (!prompt_procedure) {
             fprintf(stderr, "prompt id (%d) not implemented\n", global_prompt_state.id);
             unimplemented();
+            return;
         }
 
         prompt_procedure(controller, dt);

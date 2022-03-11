@@ -41,6 +41,8 @@ local struct {
     char* colorscheme_name;
 } global_level_colorscheme_list[] = {
     { "limbo1", "LimboScheme" },
+    { "challenge1", "LimboScheme" },
+    { "challenge2", "Swamp" },
     { "hub",    "LimboScheme" },
 };
 
@@ -400,10 +402,10 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                 */
                 uint16_t entity_placement_count;
                 serialize_u16(serializer, &entity_placement_count);
-                console_printf("%d entities to unpack\n", entity_placement_count);
                 struct temporary_arena conversion_arena = begin_temporary_memory(arena, entity_placement_count * sizeof(struct entity_placement)); 
                 struct entity_placement* entity_placements = memory_arena_push(&conversion_arena, entity_placement_count * sizeof(*entity_placements));
                 serialize_bytes(serializer, entity_placements, entity_placement_count * sizeof(*entity_placements));
+                end_temporary_memory(&conversion_arena);
 
                 {
                     game_state->loaded_level->entity_count = entity_placement_count;
@@ -419,9 +421,7 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                         *unpack_into = construct_entity_of_type(ep->type, ep->x, ep->y);
                         unpack_into->flags      = ep->flags;
                         unpack_into->facing_dir = ep->facing_direction;
-                        console_printf("Unpacked a %s (%f, %f)\n", entity_type_strings[ep->type], unpack_into->x, unpack_into->y);
-
-                        initialize_entity(unpack_into);
+                        /* initialize_entity(unpack_into); */
                     }
 
                     game_state->loaded_level->entities = unpacked_entities;
@@ -437,22 +437,39 @@ void game_serialize_level(struct memory_arena* arena, struct binary_serializer* 
                         }
                     }
                 }
-
-                end_temporary_memory(&conversion_arena);
             }
         }
     }
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->transition_zone_count, game_state->loaded_level->transitions);
     Serialize_Fixed_Array_And_Allocate_From_Arena_Top(serializer, arena, u8, game_state->loaded_level->player_spawn_link_count, game_state->loaded_level->link_spawns);
+
+    /*
+      NOTE(jerry):
+      Jerry is thoroughly confused as to why the initialization step has to happen here.
+      No but seriously, I doubt I'm stomping memory on accident from here and there...
+      
+      The only thing I can think of is the memory arena crap went wrong, and I may not be able to notice that.... Oh well... No big loss..
+     */
+    for (unsigned index = 0; index < game_state->loaded_level->entity_count; ++index) {
+        struct entity* ep = game_state->loaded_level->entities + index;
+        initialize_entity(ep);
+
+    }
 }
 
 /*binary format*/
 local void cleanup_current_entities(void) {
     struct entity_iterator entities = game_state_entity_iterator(game_state);
     struct entity* player = &game_state->persistent_entities[0];
+    struct entity* player1 = &game_state->persistent_entities[1];
+    struct entity* player2 = &game_state->persistent_entities[2];
+    struct entity* player3 = &game_state->persistent_entities[3];
 
     for (struct entity* current_entity = entity_iterator_begin(&entities); !entity_iterator_done(&entities); current_entity = entity_iterator_next(&entities)) {
-        if (current_entity != player)
+        if (current_entity != player ||
+            current_entity != player1 ||
+            current_entity != player2 ||
+            current_entity != player3)
             cleanup_for_entity(current_entity);
     }
 }
@@ -472,11 +489,22 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
 
     /*level is loaded, now setup player spawns*/
     if (transition_link_to_spawn_at) {
+        fprintf(stderr, "looking for %s\n", transition_link_to_spawn_at);
         for (unsigned index = 0; index < game_state->loaded_level->player_spawn_link_count; ++index) {
             struct player_spawn_link* spawn = game_state->loaded_level->link_spawns + index;
+            fprintf(stderr,"\"%s\" vs. \"%s\"\n", transition_link_to_spawn_at, spawn->identifier);
             if (strncmp(spawn->identifier, transition_link_to_spawn_at, TRANSITION_ZONE_IDENTIIFER_STRING_LENGTH) == 0) {
                 player->x = spawn->x;
                 player->y = spawn->y;
+
+                player1->x = spawn->x;
+                player1->y = spawn->y;
+
+                player2->x = spawn->x;
+                player2->y = spawn->y;
+
+                player3->x = spawn->x;
+                player3->y = spawn->y;
                 break;
             }
         }
@@ -485,9 +513,15 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
         player->y = game_state->loaded_level->default_spawn.y;
     }
 
-    player3->x = player3->last_x = player2->x = player2->last_x = player1->x = player1->last_x = player->last_x = player->x;
-    player3->y = player3->last_y = player2->y = player2->last_y = player1->y = player1->last_y = player->last_y = player->y;
     sane_init_all_doors(game_state->loaded_level->doors, game_state->loaded_level->door_count);
+    player->last_x = player->x;
+    player->last_y = player->y;
+    player1->last_x = player1->x;
+    player1->last_y = player1->y;
+    player2->last_x = player2->x;
+    player2->last_y = player2->y;
+    player3->last_x = player3->x;
+    player3->last_y = player3->y;
 
     camera_set_position(&game_camera, player->x, player->y);
     camera_force_clamp_to_bounds(&game_camera);

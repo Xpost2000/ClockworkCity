@@ -157,18 +157,20 @@ local void game_update_render_frame(float dt) {
         }
     }
 
-    camera_set_focus_speed_x(&game_camera, 3);
-    camera_set_focus_speed_y(&game_camera, 2);
+    /* camera_set_focus_speed_x(&game_camera, 3); */
+    /* camera_set_focus_speed_y(&game_camera, 2); */
 
 #ifdef FORFRIENDS_DEMO
-    camera_set_focus_speed_x(&game1_camera, 3);
-    camera_set_focus_speed_y(&game1_camera, 2);
+    camera_set_focus_speed_x(&game_camera, 10);
+    camera_set_focus_speed_y(&game_camera, 10);
+    camera_set_focus_speed_x(&game1_camera, 10);
+    camera_set_focus_speed_y(&game1_camera, 10);
 
-    camera_set_focus_speed_x(&game2_camera, 3);
-    camera_set_focus_speed_y(&game2_camera, 2);
+    camera_set_focus_speed_x(&game2_camera, 10);
+    camera_set_focus_speed_y(&game2_camera, 10);
 
-    camera_set_focus_speed_x(&game3_camera, 3);
-    camera_set_focus_speed_y(&game3_camera, 2);
+    camera_set_focus_speed_x(&game3_camera, 10);
+    camera_set_focus_speed_y(&game3_camera, 10);
 #endif
 
     camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
