@@ -299,11 +299,12 @@ struct entity {
 #define LOST_SOUL_RETRACTION_TIMER_MAX  (2.5)
 #define LOST_SOUL_NEXT_SEEK_TIMER_MIN (1.0)
 #define LOST_SOUL_NEXT_SEEK_TIMER_MAX (2.0)
-        bool seeking_towards_target;
+        bool  seeking_towards_target;
         float try_to_seek_timer;
         float direction_to_target_x;
         float direction_to_target_y;
         float retraction_timer;
+        bool  idle_during_retraction;
         float next_seek_timer;
     } lost_soul_info;
 #endif

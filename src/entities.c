@@ -1,5 +1,10 @@
 /* general entity procedures */
 /*
+  NOTE(jerry):
+  Order of updates
+         Physics
+         Updates
+
   Camera influence is determined by distance to the player.
   
   TODO(jerry): Draw
@@ -116,285 +121,6 @@ local void entity_do_ground_impact(struct entity* entity, float camera_influence
     }
 }
 
-void entity_halt_motion(struct entity* entity) {
-    entity->last_vy = entity->vy;
-    entity->ax = entity->ay = entity->vx = entity->vy = 0;
-}
-
-/* end of general entity procedures */
-
-/* type procedures */
-
-/*
-  Honestly... There is no reason this should be special.
-*/
-void entity_trigger_active(struct entity* entity, struct trigger* trigger);
-void do_player_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    if (noclip) {
-        entity->vx      = entity->ax;
-        entity->vy      = entity->ay;
-        entity->last_vy = entity->vy;
-    }
-
-    entity->vx += entity->ax * dt;
-    bool hugging = entity_hugging_wall(tilemap, entity) && !entity->onground;
-    bool will_be_hugging_wall = false;
-    {
-        float old_x = entity->x;
-        entity->x += entity->vx * dt;
-        will_be_hugging_wall = entity_hugging_wall(tilemap, entity) && !entity->onground;
-        entity->x = old_x;
-    }
-    entity->sliding_against_wall = hugging;
-
-    const float WALL_SLIDE_VELOCITY = GRAVITY_CONSTANT/7;
-    if (fabs(entity->ax) > 0 && hugging) {
-        if (entity->vy < 0 && will_be_hugging_wall) {
-            entity->vy = 0;  
-        } 
-
-        entity->vy += (entity->ay + WALL_SLIDE_VELOCITY) * dt;
-        if (entity->vy > 0) {
-            if (entity->vy > WALL_SLIDE_VELOCITY) {
-                entity->vy = WALL_SLIDE_VELOCITY;
-                {
-                    /* TODO(jerry): sliding grinding particles */
-                }
-            }
-        }
-
-        entity->current_jump_count = 0;
-    } else {
-        entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
-    }
-
-    if (!entity->dash) {
-        entity->vx -= (entity->vx * 4 * dt);
-    }
-
-    const int MAX_SPEED = 500;
-    if (fabs(entity->vx) > MAX_SPEED) {
-        float sgn = float_sign(entity->vx);
-        entity->vx = MAX_SPEED * sgn;
-    }
-
-    if (entity->dash) entity->vy = 0;
-
-    do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
-    do_moving_entity_vertical_collision_response(tilemap, entity, dt);
-}
-
-void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    entity->last_x = entity->x;
-    entity->last_y = entity->y;
-
-    struct particle_emitter* emitter1 = entity->lost_soul_info.owned_vomit_emitter;
-    struct particle_emitter* emitter2 = entity->lost_soul_info.owned_flames_emitter;
-
-    if (entity->health == 0) {
-        emitter1->alive = 0;
-        emitter2->alive = 0;
-    } else {
-        emitter1->alive = 1;
-        emitter2->alive = 1;
-        {
-            emitter1->x  = emitter1->x1 = entity->x + 0.20;
-            emitter1->y  = emitter1->y1 = entity->y + 0.36;
-            emitter2->x  = emitter2->x1 = entity->x + 0.20;
-            emitter2->y  = emitter2->y1 = entity->y + 0.16;
-        }
-
-        entity->lost_soul_info.fly_time += dt * 1.5;
-
-        const int MAGNITUDE_OF_LOST_SOUL_SEEK = 3;
-
-        entity->vx = 0;
-        entity->vy = 0;
-
-        struct entity* player = &game_state->persistent_entities[0];
-        {
-            float delta_x   = player->x - entity->x;
-            float delta_y   = player->y - entity->y;
-
-            float magnitude =  sqrtf(delta_x * delta_x + delta_y * delta_y);
-
-            entity->lost_soul_info.direction_to_target_x = delta_x / magnitude;
-            entity->lost_soul_info.direction_to_target_y = delta_y / magnitude;
-        }
-
-        if (entity->lost_soul_info.seeking_towards_target) {
-            if (entity->lost_soul_info.try_to_seek_timer > 0) {
-                entity->vx = entity->lost_soul_info.direction_to_target_x * MAGNITUDE_OF_LOST_SOUL_SEEK;
-                entity->vy = entity->lost_soul_info.direction_to_target_y * MAGNITUDE_OF_LOST_SOUL_SEEK;
-
-                entity->lost_soul_info.try_to_seek_timer -= dt;
-            } else {
-                entity->lost_soul_info.retraction_timer = LOST_SOUL_RETRACTION_TIMER_MAX;
-                entity->lost_soul_info.seeking_towards_target = false;
-            }
-        }
-
-        if (entity->lost_soul_info.retraction_timer > 0) {
-            entity->vx = -entity->lost_soul_info.direction_to_target_x * MAGNITUDE_OF_LOST_SOUL_SEEK;
-            entity->vy = -entity->lost_soul_info.direction_to_target_y * MAGNITUDE_OF_LOST_SOUL_SEEK;
-
-            entity->lost_soul_info.retraction_timer -= dt;
-        }
-
-        entity->x += entity->vx * dt;
-        entity->y += entity->vy * dt;
-        /* entity->y += normalized_sinf((entity->lost_soul_info.fly_time)) * 0.67; */
-    }
-}
-
-void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    /* these guys do respawn. For platforming reasons lol. */
-    const float SECONDS_PER_RESURRECTION = 3;
-
-    /* NOTE(jerry): Broken vomit state for moving lost souls */
-    bool is_mortal = (entity->type == ENTITY_TYPE_VOLATILE_LOST_SOUL);
-    bool is_mobile = (entity->type == ENTITY_TYPE_LOST_SOUL || entity->type == ENTITY_TYPE_VOLATILE_LOST_SOUL);
-
-    if (entity->death_state != DEATH_STATE_ALIVE) {
-        if (entity->death_state == DEATH_STATE_DYING) {
-            entity->death_state = DEATH_STATE_DEAD;
-
-            /* death explosion. woosh */
-            {
-                struct particle_emitter* splatter = particle_emitter_allocate();
-                splatter->x = splatter->x1 = entity->x + 0.25;
-                splatter->y = splatter->y1 = entity->y + entity->h;
-                splatter->emission_rate = 0;
-                splatter->emission_count = 32;
-                splatter->max_emissions = 1;
-                splatter->particle_color = active_colorscheme.primary;
-                splatter->particle_max_lifetime = 2;
-                splatter->collides_with_world = true;
-                camera_traumatize(&game_camera, 0.0152);
-            }
-
-            if (!is_mortal) {
-                entity->lost_soul_info.resurrection_timer = SECONDS_PER_RESURRECTION;
-            }
-        } else if (entity->death_state == DEATH_STATE_DEAD) {
-            if (entity->lost_soul_info.resurrection_timer > 0) {
-                entity->lost_soul_info.resurrection_timer -= dt;
-
-                if (entity->lost_soul_info.resurrection_timer <= 0) {
-                    entity->death_state = DEATH_STATE_ALIVE;
-                    entity->health      = 2;
-
-                    /* resurrection explosion. woosh */
-                    {
-                        struct particle_emitter* splatter = particle_emitter_allocate();
-                        splatter->x = splatter->x1 = entity->x + 0.25;
-                        splatter->y = splatter->y1 = entity->y + entity->h;
-                        splatter->emission_rate = 0;
-                        splatter->emission_count = 64;
-                        splatter->max_emissions = 1;
-                        splatter->particle_color = active_colorscheme.primary;
-                        splatter->particle_max_lifetime = 1;
-                        splatter->collides_with_world = false;
-                        camera_traumatize(&game_camera, 0.0100);
-                    }
-                }
-            }
-        }
-    }
-    
-    bool is_idle = true;
-
-    if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL) {
-        is_idle = true;
-    } else {
-        if (entity->lost_soul_info.seeking_towards_target) {
-            is_idle = false;
-        }
-
-        if (entity->lost_soul_info.retraction_timer > 0) {
-            is_idle == false;
-        }
-    }
-
-    /* only vomit when idle. */
-    if (entity->death_state == DEATH_STATE_ALIVE && is_idle) {
-        if (entity->lost_soul_info.next_vomit_timer > 0) {
-            entity->lost_soul_info.next_vomit_timer -= dt;
-            if (entity->lost_soul_info.next_vomit_timer <= 0 && entity->lost_soul_info.vomit_timer <= 0) {
-                entity->lost_soul_info.vomit_timer = random_float() * 2 + 2;
-                entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0.002;
-                entity->lost_soul_info.owned_vomit_emitter->emission_count = 4;
-            }
-        } else {
-            if (entity->lost_soul_info.vomit_timer > 0) {
-                entity->lost_soul_info.vomit_timer -= dt;
-            } else {
-                entity->lost_soul_info.next_vomit_timer = random_float() * 3 + 3;
-                entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0;
-                entity->lost_soul_info.owned_vomit_emitter->emission_count = 0;
-            }
-        }
-    }
-
-    if (is_mobile) {
-        /* not going to check for line of sight for now... Just seek blindly */ 
-        struct entity* player = &game_state->persistent_entities[0];
-
-        float distance_to_player_sq = distance_sq(player->x, player->y, entity->x, entity->y);
-        float DISTANCE_OF_ATTRACTION = 8; DISTANCE_OF_ATTRACTION *= DISTANCE_OF_ATTRACTION;
-
-        if (entity->lost_soul_info.next_seek_timer <= 0) {
-            if (distance_to_player_sq <= DISTANCE_OF_ATTRACTION) {
-                entity->lost_soul_info.seeking_towards_target = true;
- 
-                entity->lost_soul_info.next_seek_timer = random_ranged_float(LOST_SOUL_NEXT_SEEK_TIMER_MIN, LOST_SOUL_NEXT_SEEK_TIMER_MAX);
-
-                entity->lost_soul_info.try_to_seek_timer = LOST_SOUL_TRY_TO_SEEK_TIMER_MAX;
-            }
-        } else {
-            entity->lost_soul_info.next_seek_timer -= dt;
-        }
-    }
-}
-
-/* 
-   technically physics updates for all entities should nearly be identical...
-   However for now I only have the player so... I can't say.
-*/
-void do_generic_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    entity_handle_forces_and_impulses(entity, dt);
-
-    entity->vx += entity->ax *                      dt;
-    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
-
-    do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
-    do_moving_entity_vertical_collision_response(tilemap, entity, dt);
-}
-
-void do_generic_entity_basic_kinematic_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    entity->vx += entity->ax *                      dt;
-    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
-
-    entity->last_x = entity->x;
-    entity->last_y = entity->y;
-
-    entity->x  += entity->vx *                       dt;
-    entity->y  += entity->vy *                       dt;
-}
-
-void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
-    /* entity->x += dt; */
-    /* entity->y += dt; */
-    /* entity->w += dt; */
-    /* entity->h += dt; */
-}
-
-/*
-  entity_handle_ procedures which wrap up some generic enough behaviors. Plug and play into
-  any entity function, to get the same behavior on the player.
-
-  Quick enough to work when I don't have time for specific code.
-*/
 void entity_handle_forces_and_impulses(struct entity* entity, float dt) {
     if (entity->dash) {
         entity->ax = 0;
@@ -585,6 +311,302 @@ void entity_handle_basic_melee_attack(struct entity* entity, bool input, bool ai
     }
 }
 
+
+void entity_halt_motion(struct entity* entity) {
+    entity->last_vy = entity->vy;
+    entity->ax = entity->ay = entity->vx = entity->vy = 0;
+}
+
+/* end of general entity procedures */
+
+/* type procedures */
+
+/*
+  Honestly... There is no reason this should be special.
+*/
+void entity_trigger_active(struct entity* entity, struct trigger* trigger);
+void do_player_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity_handle_forces_and_impulses(entity, dt);
+
+    if (noclip) {
+        entity->vx      = entity->ax;
+        entity->vy      = entity->ay;
+        entity->last_vy = entity->vy;
+    }
+
+    entity->vx += entity->ax * dt;
+    bool hugging = entity_hugging_wall(tilemap, entity) && !entity->onground;
+    bool will_be_hugging_wall = false;
+    {
+        float old_x = entity->x;
+        entity->x += entity->vx * dt;
+        will_be_hugging_wall = entity_hugging_wall(tilemap, entity) && !entity->onground;
+        entity->x = old_x;
+    }
+    entity->sliding_against_wall = hugging;
+
+    const float WALL_SLIDE_VELOCITY = GRAVITY_CONSTANT/7;
+    if (fabs(entity->ax) > 0 && hugging) {
+        if (entity->vy < 0 && will_be_hugging_wall) {
+            entity->vy = 0;  
+        } 
+
+        entity->vy += (entity->ay + WALL_SLIDE_VELOCITY) * dt;
+        if (entity->vy > 0) {
+            if (entity->vy > WALL_SLIDE_VELOCITY) {
+                entity->vy = WALL_SLIDE_VELOCITY;
+                {
+                    /* TODO(jerry): sliding grinding particles */
+                }
+            }
+        }
+
+        entity->current_jump_count = 0;
+    } else {
+        entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+    }
+
+    if (!entity->dash) {
+        entity->vx -= (entity->vx * 4 * dt);
+    }
+
+    const int MAX_SPEED = 500;
+    if (fabs(entity->vx) > MAX_SPEED) {
+        float sgn = float_sign(entity->vx);
+        entity->vx = MAX_SPEED * sgn;
+    }
+
+    if (entity->dash) entity->vy = 0;
+
+    do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
+    do_moving_entity_vertical_collision_response(tilemap, entity, dt);
+}
+
+void do_lost_soul_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity->last_x = entity->x;
+    entity->last_y = entity->y;
+
+    struct particle_emitter* emitter1 = entity->lost_soul_info.owned_vomit_emitter;
+    struct particle_emitter* emitter2 = entity->lost_soul_info.owned_flames_emitter;
+
+    if (entity->health == 0) {
+        emitter1->alive = 0;
+        emitter2->alive = 0;
+    } else {
+        emitter1->alive = 1;
+        emitter2->alive = 1;
+        {
+            emitter1->x  = emitter1->x1 = entity->x + 0.20;
+            emitter1->y  = emitter1->y1 = entity->y + 0.36;
+            emitter2->x  = emitter2->x1 = entity->x + 0.20;
+            emitter2->y  = emitter2->y1 = entity->y + 0.16;
+        }
+
+        entity->lost_soul_info.fly_time += dt * 3;
+
+        const int MAGNITUDE_OF_LOST_SOUL_SEEK = 3;
+
+        entity->vx = 0;
+        entity->vy = 0;
+
+        struct entity* player = &game_state->persistent_entities[0];
+        {
+            float delta_x   = player->x - entity->x;
+            float delta_y   = player->y - entity->y;
+
+            if (entity->lost_soul_info.retraction_timer > 0) {
+                delta_x = entity->x - player->x;
+                delta_y = entity->y - player->y;
+            }
+
+            float magnitude =  sqrtf(delta_x * delta_x + delta_y * delta_y);
+
+            entity->lost_soul_info.direction_to_target_x = delta_x / magnitude;
+            entity->lost_soul_info.direction_to_target_y = delta_y / magnitude;
+        }
+
+        if (entity->lost_soul_info.seeking_towards_target) {
+            if (entity->lost_soul_info.try_to_seek_timer > 0) {
+                entity->vx = entity->lost_soul_info.direction_to_target_x * MAGNITUDE_OF_LOST_SOUL_SEEK;
+                entity->vy = entity->lost_soul_info.direction_to_target_y * MAGNITUDE_OF_LOST_SOUL_SEEK;
+
+                entity->lost_soul_info.try_to_seek_timer -= dt;
+            } else {
+                entity->lost_soul_info.retraction_timer       = LOST_SOUL_RETRACTION_TIMER_MAX;
+                entity->lost_soul_info.idle_during_retraction = random_ranged_integer(0, 1);
+                entity->lost_soul_info.seeking_towards_target = false;
+            }
+        }
+
+        if (entity->lost_soul_info.retraction_timer > 0) {
+            if (!entity->lost_soul_info.idle_during_retraction) {
+                entity->vx = entity->lost_soul_info.direction_to_target_x * MAGNITUDE_OF_LOST_SOUL_SEEK/2;
+                entity->vy = entity->lost_soul_info.direction_to_target_y * MAGNITUDE_OF_LOST_SOUL_SEEK/2;
+            }
+
+            entity->lost_soul_info.retraction_timer -= dt;
+        }
+
+        entity_handle_forces_and_impulses(entity, dt);
+
+        entity->x += entity->vx * dt;
+        entity->y += entity->vy * dt;
+        /* entity->y += normalized_sinf((entity->lost_soul_info.fly_time)) * 0.67; */
+    }
+
+
+}
+
+void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    /* these guys do respawn. For platforming reasons lol. */
+    const float SECONDS_PER_RESURRECTION = 3;
+
+    /* NOTE(jerry): Broken vomit state for moving lost souls */
+    bool is_mortal = (entity->type == ENTITY_TYPE_VOLATILE_LOST_SOUL);
+    bool is_mobile = (entity->type == ENTITY_TYPE_LOST_SOUL || entity->type == ENTITY_TYPE_VOLATILE_LOST_SOUL);
+
+    if (entity->death_state != DEATH_STATE_ALIVE) {
+        if (entity->death_state == DEATH_STATE_DYING) {
+            entity->death_state = DEATH_STATE_DEAD;
+
+            /* death explosion. woosh */
+            {
+                struct particle_emitter* splatter = particle_emitter_allocate();
+                splatter->x = splatter->x1 = entity->x + 0.25;
+                splatter->y = splatter->y1 = entity->y + entity->h;
+                splatter->emission_rate = 0;
+                splatter->emission_count = 32;
+                splatter->max_emissions = 1;
+                splatter->particle_color = active_colorscheme.primary;
+                splatter->particle_max_lifetime = 2;
+                splatter->collides_with_world = true;
+                camera_traumatize(&game_camera, 0.0152);
+            }
+
+            if (!is_mortal) {
+                entity->lost_soul_info.resurrection_timer = SECONDS_PER_RESURRECTION;
+            }
+        } else if (entity->death_state == DEATH_STATE_DEAD) {
+            if (entity->lost_soul_info.resurrection_timer > 0) {
+                entity->lost_soul_info.resurrection_timer -= dt;
+
+                if (entity->lost_soul_info.resurrection_timer <= 0) {
+                    entity->death_state = DEATH_STATE_ALIVE;
+                    entity->health      = 2;
+
+                    /* resurrection explosion. woosh */
+                    {
+                        struct particle_emitter* splatter = particle_emitter_allocate();
+                        splatter->x = splatter->x1 = entity->x + 0.25;
+                        splatter->y = splatter->y1 = entity->y + entity->h;
+                        splatter->emission_rate = 0;
+                        splatter->emission_count = 64;
+                        splatter->max_emissions = 1;
+                        splatter->particle_color = active_colorscheme.primary;
+                        splatter->particle_max_lifetime = 1;
+                        splatter->collides_with_world = false;
+                        camera_traumatize(&game_camera, 0.0100);
+                    }
+                }
+            }
+        }
+    }
+    
+    bool is_idle = true;
+
+    if (entity->type == ENTITY_TYPE_HOVERING_LOST_SOUL) {
+        is_idle = true;
+    } else {
+        if (entity->lost_soul_info.seeking_towards_target) {
+            is_idle = false;
+        }
+
+        if (entity->lost_soul_info.retraction_timer > 0) {
+            is_idle == false;
+        }
+    }
+
+    /* only vomit when idle. */
+    if (entity->death_state == DEATH_STATE_ALIVE && is_idle) {
+        if (entity->lost_soul_info.next_vomit_timer > 0) {
+            entity->lost_soul_info.next_vomit_timer -= dt;
+            if (entity->lost_soul_info.next_vomit_timer <= 0 && entity->lost_soul_info.vomit_timer <= 0) {
+                entity->lost_soul_info.vomit_timer = random_float() * 2 + 2;
+                entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0.002;
+                entity->lost_soul_info.owned_vomit_emitter->emission_count = 4;
+            }
+        } else {
+            if (entity->lost_soul_info.vomit_timer > 0) {
+                entity->lost_soul_info.vomit_timer -= dt;
+            } else {
+                entity->lost_soul_info.next_vomit_timer = random_float() * 3 + 3;
+                entity->lost_soul_info.owned_vomit_emitter->emission_rate = 0;
+                entity->lost_soul_info.owned_vomit_emitter->emission_count = 0;
+            }
+        }
+    }
+
+    if (is_mobile) {
+        /* not going to check for line of sight for now... Just seek blindly */ 
+        struct entity* player = &game_state->persistent_entities[0];
+
+        float distance_to_player_sq = distance_sq(player->x, player->y, entity->x, entity->y);
+        float DISTANCE_OF_ATTRACTION = 8; DISTANCE_OF_ATTRACTION *= DISTANCE_OF_ATTRACTION;
+
+        if (entity->lost_soul_info.next_seek_timer <= 0) {
+            if (distance_to_player_sq <= DISTANCE_OF_ATTRACTION) {
+                entity->lost_soul_info.seeking_towards_target = true;
+ 
+                entity->lost_soul_info.next_seek_timer = random_ranged_float(LOST_SOUL_NEXT_SEEK_TIMER_MIN, LOST_SOUL_NEXT_SEEK_TIMER_MAX);
+
+                entity->lost_soul_info.try_to_seek_timer = LOST_SOUL_TRY_TO_SEEK_TIMER_MAX;
+            }
+        } else {
+            if (!entity->lost_soul_info.seeking_towards_target) {
+                entity->lost_soul_info.next_seek_timer -= dt;
+            }
+        }
+    }
+}
+
+/* 
+   technically physics updates for all entities should nearly be identical...
+   However for now I only have the player so... I can't say.
+*/
+void do_generic_entity_physics_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity_handle_forces_and_impulses(entity, dt);
+
+    entity->vx += entity->ax *                      dt;
+    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+
+    do_moving_entity_horizontal_collision_response(tilemap, entity, dt);
+    do_moving_entity_vertical_collision_response(tilemap, entity, dt);
+}
+
+void do_generic_entity_basic_kinematic_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    entity->vx += entity->ax *                      dt;
+    entity->vy += (entity->ay + GRAVITY_CONSTANT) * dt;
+
+    entity->last_x = entity->x;
+    entity->last_y = entity->y;
+
+    entity->x  += entity->vx *                       dt;
+    entity->y  += entity->vy *                       dt;
+}
+
+void do_generic_entity_update(struct entity* entity, struct tilemap* tilemap, float dt) {
+    /* entity->x += dt; */
+    /* entity->y += dt; */
+    /* entity->w += dt; */
+    /* entity->h += dt; */
+}
+
+/*
+  entity_handle_ procedures which wrap up some generic enough behaviors. Plug and play into
+  any entity function, to get the same behavior on the player.
+
+  Quick enough to work when I don't have time for specific code.
+*/
 local bool block_player_input = false;
 void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
     struct game_controller* gamepad = get_gamepad(gamepad_id);
@@ -688,10 +710,6 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
         entity->player_variable_jump_time -= dt;
     }
 
-    entity_handle_jump(entity, jump);
-    entity_handle_basic_melee_attack(entity, attack, aiming_up, aiming_down);
-    entity_handle_forces_and_impulses(entity, dt);
-
     if (is_key_down(KEY_SPACE) || gamepad->buttons[BUTTON_A]) {
         if (!entity->onground && entity->player_variable_jump_time > 0) {
             entity->vy -= PLAYER_VARIABLE_JUMP_ACCELERATION * dt;
@@ -704,6 +722,9 @@ void do_player_entity_input(struct entity* entity, int gamepad_id, float dt) {
             game_activate_soul_anchor(game_state->rest_prompt.anchor);
         }
     }
+
+    entity_handle_jump(entity, jump);
+    entity_handle_basic_melee_attack(entity, attack, aiming_up, aiming_down);
 
     entity->attack_cooldown_timer -= dt;
 }
@@ -878,6 +899,7 @@ struct entity entity_create_player(float x, float y) {
         .health = 3,
         .max_health = 3,
         .flags = ENTITY_FLAGS_PERMENANT,
+        /* .movement_flags = MOVEMENT_FLAG_ALLOW_WALL_JUMP, */
         .max_allowed_jump_count = 2,
     };
 
@@ -1068,9 +1090,11 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
             entity_record_locations_for_linger_shadows(current_entity);
         }
 
+        /* all force timers down here */
         current_entity->linger_shadow_sample_record_timer  -= dt;
         current_entity->apply_wall_jump_force_timer        -= dt;
         current_entity->apply_attack_knockback_force_timer -= dt;
+        current_entity->apply_damage_knockback_force_timer -= dt;
 
         {
             float impact_influence = distance_sq(current_entity->x, current_entity->y, player->x, player->y);
@@ -1162,7 +1186,7 @@ local void draw_entity(struct entity* current_entity, float dt, float interpolat
                 
                 draw_texture_aligned(texture,
                                      entity_lerp_x(current_entity, interpolation_value),
-                                     entity_lerp_y(current_entity, interpolation_value),
+                                     entity_lerp_y(current_entity, interpolation_value) + sinf((current_entity->lost_soul_info.fly_time)) * 0.25,
                                      16, 16, 0.75,
                                      3, 4, active_colorscheme.primary, 0, angle);
             }
