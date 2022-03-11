@@ -5,6 +5,14 @@ local void load_gameplay_resources(void) {
 
 local void gameplay_initialize(void) {
     game_state_add_persistent_entity(game_state, construct_entity_of_type(ENTITY_TYPE_PLAYER, 0, 0));
+#ifdef FORFRIENDS_DEMO
+    game_state_add_persistent_entity(game_state, construct_entity_of_type(ENTITY_TYPE_PLAYER, 0, 0));
+    game_state->persistent_entities[1].flags |= ENTITY_FLAGS_DISABLED;
+    game_state_add_persistent_entity(game_state, construct_entity_of_type(ENTITY_TYPE_PLAYER, 0, 0));
+    game_state->persistent_entities[2].flags |= ENTITY_FLAGS_DISABLED;
+    game_state_add_persistent_entity(game_state, construct_entity_of_type(ENTITY_TYPE_PLAYER, 0, 0));
+    game_state->persistent_entities[3].flags |= ENTITY_FLAGS_DISABLED;
+#endif
 }
 
 local void DEBUG_draw_debug_stuff(void) {

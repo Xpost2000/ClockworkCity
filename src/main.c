@@ -212,9 +212,13 @@ local void poll_and_register_controllers(void) {
             if (!SDL_GameControllerGetAttached(controller)) {
                 SDL_GameControllerClose(controller);
                 global_controller_devices[controller_index] = NULL;
+                console_printf("Controller at %d is bad", controller_index);
             }
         } else {
-            global_controller_devices[controller_index] = SDL_GameControllerOpen(controller_index);
+            if (SDL_IsGameController(controller_index)) {
+                global_controller_devices[controller_index] = SDL_GameControllerOpen(controller_index);
+                console_printf("Opened controller index %d (%s)\n", controller_index, SDL_GameControllerNameForIndex(controller_index));
+            }
         }
     }
 }

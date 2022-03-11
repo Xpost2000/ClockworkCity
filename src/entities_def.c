@@ -130,7 +130,7 @@ char* entity_type_strings[] = {
 typedef enum entity_flags {
     ENTITY_FLAGS_NONE = 0,
     ENTITY_FLAGS_PERMENANT = BIT(0),
-    ENTITY_FLAGS_RESERVED_2         = BIT(1),
+    ENTITY_FLAGS_DISABLED         = BIT(1),
     ENTITY_FLAGS_RESERVED_3         = BIT(2),
     ENTITY_FLAGS_RESERVED_4         = BIT(3),
     ENTITY_FLAGS_RESERVED_5         = BIT(4),
@@ -166,7 +166,7 @@ typedef enum entity_flags {
 char* entity_flag_strings[] = {
     "no flags",
     "permenant entity",
-    "reserved 2",
+    "DISABLED",
     "reserved 3",
     "reserved 4",
     "reserved 5",

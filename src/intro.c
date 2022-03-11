@@ -5,6 +5,7 @@ local texture_id tarkus_icon;
 
 enum {
     INTRO_PHASE_PRELUDE,
+    INTRO_PHASE_HIDOODS,
     INTRO_PHASE_BANNER,
     INTRO_PHASE_DISCLAIMER,
     INTRO_PHASE_DISCLAIMER2,
@@ -15,6 +16,7 @@ enum {
 
 local float intro_phase_times[] = {
     [INTRO_PHASE_PRELUDE]     = 2,
+    [INTRO_PHASE_HIDOODS]     = 7,
     [INTRO_PHASE_BANNER]      = 3.5,
     [INTRO_PHASE_DISCLAIMER]  = 5,
     [INTRO_PHASE_DISCLAIMER2] = 5,
@@ -77,6 +79,17 @@ void intro_update_render_frame(float dt) {
             } break;
             case INTRO_PHASE_DISCLAIMER: {
                 const char* text = "THIS IS A JAM GAME\nEXPECT A LITTLE BIT OF BUGGYNESS\nOR UNFINISHEDNESS!\n";
+
+                int text_dimens[2];
+                get_text_dimensions(game_ui_menu_font, text, text_dimens, text_dimens+1);
+
+                float render_x = screen_dimensions[0]/2 - text_dimens[0]/2;
+                float render_y = screen_dimensions[1]/2 - text_dimens[1]/2;
+
+                draw_text(game_ui_menu_font, render_x, render_y, text, COLOR4F_WHITE);
+            } break;
+            case INTRO_PHASE_HIDOODS: {
+                const char* text = "HI GUYS\nJUST FOR THIS VERSION OF THE GAME.\nTHERE IS REALLY HASTY COOP SUPPORT :)\nI HAVE TWO CONTROLLERS\nJUST PRESS ANY BUTTON ON\nTHE SECOND ONE FOR P2 :)\n";
 
                 int text_dimens[2];
                 get_text_dimensions(game_ui_menu_font, text, text_dimens, text_dimens+1);

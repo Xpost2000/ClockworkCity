@@ -14,7 +14,7 @@
   
   NOTE(jerry): nope, the answer is no. Or very likely no.
 */
-
+#define FORFRIENDS_DEMO
 /*
   TODO(jerry):
   
@@ -462,6 +462,9 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
 
     game_serialize_level(arena, serializer);
     struct entity* player = &game_state->persistent_entities[0];
+    struct entity* player1 = &game_state->persistent_entities[1];
+    struct entity* player2 = &game_state->persistent_entities[2];
+    struct entity* player3 = &game_state->persistent_entities[3];
 
     /*level is loaded, now setup player spawns*/
     if (transition_link_to_spawn_at) {
@@ -478,8 +481,8 @@ void game_load_level_from_serializer(struct memory_arena* arena, struct binary_s
         player->y = game_state->loaded_level->default_spawn.y;
     }
 
-    player->last_x = player->x;
-    player->last_y = player->y;
+    player3->x = player3->last_x = player2->x = player2->last_x = player1->x = player1->last_x = player->last_x = player->x;
+    player3->y = player3->last_y = player2->y = player2->last_y = player1->y = player1->last_y = player->last_y = player->y;
     sane_init_all_doors(game_state->loaded_level->doors, game_state->loaded_level->door_count);
 
     camera_set_position(&game_camera, player->x, player->y);

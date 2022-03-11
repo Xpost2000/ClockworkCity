@@ -743,7 +743,17 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
     if (entity->max_allowed_jump_count <= 0) entity->max_allowed_jump_count = 1;
 
     if (animation_id == GAME_ANIMATION_ID_NONE) {
-        do_player_entity_input(entity, 0, dt);
+        int controller_index = 0;
+        controller_index = entity - game_state->persistent_entities;
+        if ((entity->flags & ENTITY_FLAGS_DISABLED)) {
+            struct game_controller* gamepad = get_gamepad(controller_index);
+            if (controller_any_button_down(gamepad)) {
+                entity->flags ^= ENTITY_FLAGS_DISABLED;
+            }
+            return;
+        } else {
+            do_player_entity_input(entity, controller_index, dt);
+        }
     }
     /* game collisions, not physics */
 
@@ -1111,9 +1121,11 @@ void do_entity_physics_updates(struct entity_iterator* entities, struct tilemap*
             case ENTITY_TYPE_HOVERING_LOST_SOUL:
             case ENTITY_TYPE_LOST_SOUL:
             case ENTITY_TYPE_VOLATILE_LOST_SOUL: {
+                if ((current_entity->flags & ENTITY_FLAGS_DISABLED)) continue;
                 do_lost_soul_physics_update(current_entity, tilemap, dt);
             } break;
             default:
+                if ((current_entity->flags & ENTITY_FLAGS_DISABLED)) continue;
                 if (entity_is_physics_active(current_entity->type)) {
                     do_generic_entity_physics_update(current_entity, tilemap, dt);
                 } else {
@@ -1145,7 +1157,6 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
-
         if (current_entity->health <= 0)  {
             if (current_entity->death_state == DEATH_STATE_ALIVE) {
                 current_entity->death_state = DEATH_STATE_DYING;
@@ -1159,13 +1170,16 @@ void do_entity_updates(struct entity_iterator* entities, struct tilemap* tilemap
             case ENTITY_TYPE_HOVERING_LOST_SOUL:
             case ENTITY_TYPE_LOST_SOUL:
             case ENTITY_TYPE_VOLATILE_LOST_SOUL:
+                if ((current_entity->flags & ENTITY_FLAGS_DISABLED)) continue;
                 do_lost_soul_update(current_entity, tilemap, dt);
             break;
             case ENTITY_TYPE_MELEE_IMP:
             case ENTITY_TYPE_CHARGING_IMP: {
+                if ((current_entity->flags & ENTITY_FLAGS_DISABLED)) continue;
                 do_imp_update(current_entity, tilemap, dt);
             } break;
             default:
+                if ((current_entity->flags & ENTITY_FLAGS_DISABLED)) continue;
                 do_generic_entity_update(current_entity, tilemap, dt);
                 break;
         }
@@ -1319,6 +1333,7 @@ void draw_all_entities(struct entity_iterator* entities, float dt, float interpo
     for (struct entity* current_entity = entity_iterator_begin(entities);
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
+        if ((current_entity->flags & ENTITY_FLAGS_DISABLED)) continue;
         draw_entity(current_entity, dt, interpolation_value);
     }
 }
@@ -1358,6 +1373,7 @@ void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iter
          !entity_iterator_done(entities);
          current_entity = entity_iterator_next(entities)) {
 
+        if (!(current_entity->flags & ENTITY_FLAGS_DISABLED))
         if (current_entity->death_state == DEATH_STATE_ALIVE) {
             bool ignore_entity = hitbox_check_is_entity_ignored(hitbox, current_entity);
 

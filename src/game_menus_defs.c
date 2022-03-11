@@ -27,6 +27,7 @@ enum gameplay_ui_transition {
 
 enum {
     MAINMENU_UI_PLAY_GAME,
+    MAINMENU_UI_RETURN_TO_MENU,
     /* MAINMENU_UI_LOAD_GAME, */
     /* MAINMENU_UI_OPTIONS, */
     MAINMENU_UI_QUIT,

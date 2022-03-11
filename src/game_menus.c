@@ -14,10 +14,32 @@ local void do_gameplay_ui(struct game_controller* controller, float dt) {
 
         begin_graphics_frame(0); {
             /* should be active colorshceme later */
-            for (int i = 0; i < player->health; ++i) {
-                draw_texture(ui_health_slice, x_cursor, square_size + ( normalized_sinf(global_elapsed_time * (i+1)) * (square_size/4)), square_size, square_size, active_colorscheme.text);
-                x_cursor += square_size;
+#ifdef FORFRIENDS_DEMO
+            {
+                struct entity* players[4] = {
+                    &game_state->persistent_entities[0],
+                    &game_state->persistent_entities[1],
+                    &game_state->persistent_entities[2],
+                    &game_state->persistent_entities[3],
+                };
+                for (unsigned k = 0; k < array_count(players); ++k) {
+                    if (players[k]->flags & ENTITY_FLAGS_DISABLED) continue;
+
+                    x_cursor = square_size * 1.2;
+                    for (int i = 0; i < players[k]->health; ++i) {
+                        draw_texture(ui_health_slice, x_cursor, square_size * (1+k) + ( normalized_sinf(global_elapsed_time * (i+1)) * (square_size/4)), square_size, square_size, active_colorscheme.text);
+                        x_cursor += square_size;
+                    }
+                }
             }
+#else
+            {
+                for (int i = 0; i < player->health; ++i) {
+                    draw_texture(ui_health_slice, x_cursor, square_size + ( normalized_sinf(global_elapsed_time * (i+1)) * (square_size/4)), square_size, square_size, active_colorscheme.text);
+                    x_cursor += square_size;
+                }
+            }
+#endif
 
             /* TODO(jerry): Signal generic prompt system. */
             {
@@ -84,7 +106,7 @@ local void do_mainmenu_ui(struct game_controller* controller, float dt) {
                 /* case MAINMENU_UI_OPTIONS: { */
                 /*     game_state->menu_mode = GAMEPLAY_UI_OPTIONS; */
                 /* } break; */
-                case MAINMENU_UI_QUIT: {
+                case (MAINMENU_UI_QUIT-1): {
                     game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_QUIT;
                     game_state->quit_transition_timer[0] = QUIT_FADE_TIMER;
                     game_state->quit_transition_timer[1] = QUIT_FADE_TIMER2;
@@ -187,6 +209,11 @@ local void do_pausemenu_ui(struct game_controller* controller, float dt) {
                     game_state->menu_transition_state = GAMEPLAY_UI_TRANSITION_TO_INGAME;
                     game_state->ingame_transition_timer[0] = INGAME_PAN_OUT_TIMER;
                     game_state->ingame_transition_timer[1] = INGAME_PAN_OUT_TIMER;
+                } break;
+                case MAINMENU_UI_RETURN_TO_MENU: {
+                    /* no transition FUCK */
+                    game_state->menu_mode = GAMEPLAY_UI_MAINMENU;
+                    console_execute_cstr("load limbo1");
                 } break;
                 /* case MAINMENU_UI_LOAD_GAME: { */
                 /*     game_state->menu_mode = GAMEPLAY_UI_LOAD_SAVE; */
