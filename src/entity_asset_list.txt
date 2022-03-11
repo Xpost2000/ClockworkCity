@@ -1,10 +1,39 @@
 ;; Auto generated in build process.
 (manifest-data
-
 ('player_idle1                 :texture "assets/player/1.png")
 ('lostsoul_idle1               :texture "assets/lostsoul/1idle.png")
 ('lostsoul_closedidle1         :texture "assets/lostsoul/1idleclosed.png")
 ('lostsoul_idle1_cracked       :texture "assets/lostsoul/1idlea.png")
 ('lostsoul_closedidle1_cracked :texture "assets/lostsoul/1idlecloseda.png")
 
+('boss4_hand_open :texture "assets/boss4/hand.png")
+('boss4_hand_closed :texture "assets/boss4/hand_fist.png")
+('boss4_headtop      :texture "assets/boss4/headtop.png")
+('boss4_headtop1     :texture "assets/boss4/headtop_dmg1.png")
+('boss4_headtop2     :texture "assets/boss4/headtop_dmg2.png")
+
+;; facing right for some reason?
+('imp_idle :texture "assets/enemy1/k1.png")
+('imp_attack1 :texture "assets/enemy1/k1a1.png")
+('imp_walk1 :texture "assets/enemy1/k1w1.png")
+('imp_walk2 :texture "assets/enemy1/k1w2.png")
+
+;; TODO(jerry): use this inplace of the current player.
+('hero_idle1 :texture "assets/player1/player.png")
+('hero_idle2 :texture "assets/player1/player1.png")
+('hero_slash1 :texture "assets/player1/player_a3.png")
+('hero_slash2 :texture "assets/player1/player_a4.png")
+('hero_walk1  :texture "assets/player1/player_w1.png")
+('hero_walk2  :texture "assets/player1/player_w2.png")
+('hero_walk3  :texture "assets/player1/player_w3.png")
+
+('entity_walk1 :sound "assets/sounds/walk1.wav")
+('entity_walk2 :sound "assets/sounds/walk2.wav")
+('entity_walk3 :sound "assets/sounds/walk3.wav")
+('entity_walk4 :sound "assets/sounds/walk4.wav")
+
+('entity_impact1 :sound "assets/sounds/impact1.wav")
+('entity_impact2 :sound "assets/sounds/impact2.wav")
+('entity_spirit_impact1 :sound "assets/sounds/impactb1.wav")
+('entity_spirit_impact2 :sound "assets/sounds/impactb2.wav")
 )
