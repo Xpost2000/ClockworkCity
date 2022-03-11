@@ -24,6 +24,18 @@ enum attack_direction {
     ATTACK_DIRECTION_UP,
 };
 
+int opposite_attack_direction(int original) {
+    switch (original) {
+        case ATTACK_DIRECTION_LEFT:  return ATTACK_DIRECTION_RIGHT;
+        case ATTACK_DIRECTION_RIGHT: return ATTACK_DIRECTION_LEFT;
+        case ATTACK_DIRECTION_UP:    return ATTACK_DIRECTION_DOWN;
+        case ATTACK_DIRECTION_DOWN:  return ATTACK_DIRECTION_UP;
+    }
+
+    assert(!"impossible");
+    return -1;
+}
+
 enum movement_flags { /* eh? */
     MOVEMENT_FLAG_ALLOW_WALL_JUMP = BIT(0), /*wall grinding*/
     MOVEMENT_FLAG_ALLOW_DASH      = BIT(1),
@@ -262,9 +274,12 @@ struct entity {
      */
     bool dash;
     float dash_timer; /* may phase out bool dash, since if this dash_timer > 0, implies dashing */
+    /* NOTE(jerry): ughhhh more copy and paste */
     uint8_t attack_direction;
+    uint8_t damage_direction;
     float apply_wall_jump_force_timer;
     float apply_attack_knockback_force_timer;
+    float apply_damage_knockback_force_timer;
 
     struct trigger* occupied_trigger;
 
@@ -280,8 +295,8 @@ struct entity {
 
         /* lost souls cannot collide with each other. */
         /* always the player. Attack state. */
-#define LOST_SOUL_TRY_TO_SEEK_TIMER_MAX (1)
-#define LOST_SOUL_RETRACTION_TIMER_MAX  (0.76)
+#define LOST_SOUL_TRY_TO_SEEK_TIMER_MAX (4)
+#define LOST_SOUL_RETRACTION_TIMER_MAX  (2.5)
 #define LOST_SOUL_NEXT_SEEK_TIMER_MIN (1.0)
 #define LOST_SOUL_NEXT_SEEK_TIMER_MAX (2.0)
         bool seeking_towards_target;
