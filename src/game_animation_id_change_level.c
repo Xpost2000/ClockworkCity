@@ -28,12 +28,21 @@ local void game_animation_id_change_level(float dt) {
         animation_id = GAME_ANIMATION_ID_NONE;
         block_player_input = false;
         camera_resume_tracking(&game_camera);
+        camera_resume_tracking(&game1_camera);
+        camera_resume_tracking(&game2_camera);
+        camera_resume_tracking(&game3_camera);
     }
 
     if (queued_level_transition.fade_timer >= (0.523 * TOTAL_ANIMATION_TIME)) {
         camera_resume_tracking(&game_camera);
+        camera_resume_tracking(&game1_camera);
+        camera_resume_tracking(&game2_camera);
+        camera_resume_tracking(&game3_camera);
     } else {
         camera_stop_tracking(&game_camera);
+        camera_stop_tracking(&game1_camera);
+        camera_stop_tracking(&game2_camera);
+        camera_stop_tracking(&game3_camera);
     }
 
     begin_graphics_frame(NULL); {

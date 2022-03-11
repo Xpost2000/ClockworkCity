@@ -1,3 +1,12 @@
+#define FORFRIENDS_DEMO
+
+local int __active_players = 1;
+local int p_idx = 0;
+void _p_idx(int n) {p_idx = n;}
+void _report_active_players(int n) {
+    __active_players = n;
+}
+
 local float _camera_render_scale(struct camera* camera) {
     if (camera->render_scale == 0) {
         camera->render_scale = 1;
@@ -7,8 +16,11 @@ local float _camera_render_scale(struct camera* camera) {
         camera->target_zoom_level = camera->last_zoom_level = camera->visual_zoom_level = 1;
     }
 
+#ifdef FORFRIENDS_DEMO
     return camera->render_scale * camera->visual_zoom_level;
+#endif
 }
+
 
 local void _camera_transform_v2(struct camera* camera, float* x, float* y) {
     assert(x && y);
@@ -16,10 +28,28 @@ local void _camera_transform_v2(struct camera* camera, float* x, float* y) {
 
     float render_scale = _camera_render_scale(camera);
 
-    *x -= (camera->visual_position_x) * render_scale;
-    *x += (screen_dimensions[0] / 2.0f);
-    *y -= (camera->visual_position_y) * render_scale;
-    *y += (screen_dimensions[1] / 2.0f);
+#ifdef FORFRIENDS_DEMO
+    int old_screen_dimensions_w = screen_dimensions[0];
+    int old_screen_dimensions_h = screen_dimensions[1];
+
+    int active_players = __active_players;
+    int split_screen_width = screen_dimensions[0] / active_players;
+#endif
+    if (active_players > 1) {
+        *x -= (camera->visual_position_x) * render_scale;
+        *x += (screen_dimensions[0]/2.0);
+        if (p_idx == 0)
+        *x -= (split_screen_width/2.0);
+        else
+        *x += (split_screen_width/2.0);
+        *y -= (camera->visual_position_y) * render_scale;
+        *y += (screen_dimensions[1] / 2.0f);
+    } else {
+        *x -= (camera->visual_position_x) * render_scale;
+        *x += (screen_dimensions[0] / 2.0f);
+        *y -= (camera->visual_position_y) * render_scale;
+        *y += (screen_dimensions[1] / 2.0f);
+    }
 }
 
 void camera_offset_position(struct camera* camera, float x, float y) {

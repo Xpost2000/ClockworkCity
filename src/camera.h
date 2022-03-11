@@ -94,6 +94,8 @@ void camera_reset_transform(struct camera* camera);
 void camera_set_bounds(struct camera* camera, float min_x, float min_y, float max_x, float max_y);
 void camera_clear_bounds(struct camera* camera);
 void camera_set_active_focus_zone(struct camera* camera, struct camera_focus_zone* zone);
+void _report_active_players(int n);
+void _p_idx(int n);
 
 void transform_point_into_camera_space(struct camera* camera, int* x, int* y);
 struct rectangle camera_get_bounds(struct camera* camera);

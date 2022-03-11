@@ -109,6 +109,7 @@ void draw_text_right_justified(font_id font, float x, float y, float w, const ch
 void draw_text_center_justified(font_id font, float x, float y, float w, float h, const char* cstr, union color4f color);
 void draw_text_horizontal_center_justified(font_id font, float x, float y, float w, const char* cstr, union color4f color);
 void draw_text_vertical_center_justified(font_id font, float x, float y, float h, const char* cstr, union color4f color);
+void clip_rect(bool should_clip, int x, int y, int w, int h);
 
 #if 0
 /* I'm not adding an explicit shader api yet... */

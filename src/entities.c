@@ -220,6 +220,9 @@ void entity_handle_dash(struct entity* entity, bool input) {
             }
 
             camera_traumatize(&game_camera, 0.0375);
+            camera_traumatize(&game1_camera, 0.0375);
+            camera_traumatize(&game2_camera, 0.0375);
+            camera_traumatize(&game3_camera, 0.0375);
             entity->dash       = true;
             entity->dash_timer = ENTITY_DASH_TIME_MAX;
         }
@@ -482,6 +485,9 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                 splatter->particle_max_lifetime = 2;
                 splatter->collides_with_world = true;
                 camera_traumatize(&game_camera, 0.0152);
+                camera_traumatize(&game1_camera, 0.0152);
+                camera_traumatize(&game2_camera, 0.0152);
+                camera_traumatize(&game3_camera, 0.0152);
             }
 
             if (!is_mortal) {
@@ -506,7 +512,10 @@ void do_lost_soul_update(struct entity* entity, struct tilemap* tilemap, float d
                         splatter->particle_color = active_colorscheme.primary;
                         splatter->particle_max_lifetime = 1;
                         splatter->collides_with_world = false;
-                        camera_traumatize(&game_camera, 0.0100);
+                        camera_traumatize(&game_camera,  0.0100);
+                        camera_traumatize(&game1_camera, 0.0100);
+                        camera_traumatize(&game2_camera, 0.0100);
+                        camera_traumatize(&game3_camera, 0.0100);
                     }
                 }
             }
@@ -774,10 +783,8 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
                         t->id == TILE_SPIKE_RIGHT ||
                         t->id == TILE_SPIKE_DOWN  ||
                         t->id == TILE_SPIKE_UP) {
-                        /* for now just restore a bad fall */
-                        /* NOTE(jerry): global. Shit! */
                         entity->health -= 1;
-                        restore_player_to_last_good_grounded();
+                        restore_player_to_last_good_grounded(entity);
                     }
                 }
             }
@@ -869,22 +876,32 @@ void do_player_entity_update(struct entity* entity, struct tilemap* tilemap, flo
     }
     /* camera zone collision checks */
     {
-        bool hit_any_focus_zone = false;
-        
-        for (unsigned index = 0; index < tilemap->camera_focus_zone_count && !hit_any_focus_zone; ++index) {
-            struct camera_focus_zone* camera_focus_zone = tilemap->camera_focus_zones + index;
-
-            /* handle that else where. */
-            if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
-                                       camera_focus_zone->x, camera_focus_zone->y,
-                                       camera_focus_zone->w, camera_focus_zone->h)) {
-                hit_any_focus_zone = true;
-                camera_set_active_focus_zone(&game_camera, camera_focus_zone);
-            }
+        int active_players = 0;
+        {
+            if (!(game_state->persistent_entities[0].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+            if (!(game_state->persistent_entities[1].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+            if (!(game_state->persistent_entities[2].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+            if (!(game_state->persistent_entities[3].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
         }
 
-        if (!hit_any_focus_zone) {
-            camera_set_active_focus_zone(&game_camera, NULL);
+        if (active_players == 1) {
+            bool hit_any_focus_zone = false;
+        
+            for (unsigned index = 0; index < tilemap->camera_focus_zone_count && !hit_any_focus_zone; ++index) {
+                struct camera_focus_zone* camera_focus_zone = tilemap->camera_focus_zones + index;
+
+                /* handle that else where. */
+                if (rectangle_intersects_v(entity->x, entity->y, entity->w, entity->h,
+                                           camera_focus_zone->x, camera_focus_zone->y,
+                                           camera_focus_zone->w, camera_focus_zone->h)) {
+                    hit_any_focus_zone = true;
+                    camera_set_active_focus_zone(&game_camera, camera_focus_zone);
+                }
+            }
+
+            if (!hit_any_focus_zone) {
+                camera_set_active_focus_zone(&game_camera, NULL);
+            }
         }
     }
     /* check if I hit transition then change level */
@@ -1384,6 +1401,9 @@ void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iter
                         current_entity->x, current_entity->y, current_entity->w, current_entity->h
                     )) {
                     camera_traumatize(&game_camera, 0.01275);
+                    camera_traumatize(&game1_camera, 0.01275);
+                    camera_traumatize(&game2_camera, 0.01275);
+                    camera_traumatize(&game3_camera, 0.01275);
                     current_entity->health -= hitbox->damage;
                     hitbox_try_and_apply_knockback(hitbox, current_entity, 0.1);
                 }
@@ -1394,6 +1414,9 @@ void hitbox_handle_entity_interactions(struct hitbox* hitbox, struct entity_iter
 
 void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* tilemap) {
     struct entity* player = &game_state->persistent_entities[0];
+    struct entity* player2 = &game_state->persistent_entities[1];
+    struct entity* player3 = &game_state->persistent_entities[2];
+    struct entity* player4 = &game_state->persistent_entities[3];
 
     {
         unsigned total_tile_count = tilemap->width * tilemap->height;
@@ -1413,6 +1436,9 @@ void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* t
                     case TILE_SPIKE_UP: {
                         hitbox_try_and_apply_knockback(hitbox, 0, 0.16);
                         camera_traumatize(&game_camera, 0.01275);
+                        camera_traumatize(&game1_camera, 0.01275);
+                        camera_traumatize(&game2_camera, 0.01275);
+                        camera_traumatize(&game3_camera, 0.01275);
                         return;
                     } break;
                     default: {
@@ -1424,7 +1450,10 @@ void hitbox_handle_tilemap_interactions(struct hitbox* hitbox, struct tilemap* t
         }
     }
 
-    if (hitbox->owner == player) {
+    if (hitbox->owner == player ||
+        hitbox->owner == player2 ||
+        hitbox->owner == player3 ||
+        hitbox->owner == player4) {
         console_printf("Player is owner\n");
         for (unsigned index = 0; index < tilemap->activation_switch_count; ++index) {
             struct activation_switch* acswitch = tilemap->activation_switches + index;

@@ -423,3 +423,15 @@ void unload_texture(texture_id texture) {
     }
     textures[texture.id] = textures[--texture_count];
 }
+
+/* bad api */
+void clip_rect(bool should_clip, int x, int y, int w, int h) {
+    if (should_clip) {
+        SDL_Rect rect = {
+            x, y, w, h
+        };
+        SDL_RenderSetClipRect(global_renderer, &rect);
+    } else {
+        SDL_RenderSetClipRect(global_renderer, 0);
+    }
+}

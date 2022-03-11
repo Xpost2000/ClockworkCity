@@ -14,7 +14,6 @@
   
   NOTE(jerry): nope, the answer is no. Or very likely no.
 */
-#define FORFRIENDS_DEMO
 /*
   TODO(jerry):
   
@@ -46,6 +45,9 @@ local struct {
 };
 
 local struct camera game_camera   = {};
+local struct camera game1_camera   = {};
+local struct camera game2_camera   = {};
+local struct camera game3_camera   = {};
 local struct camera editor_camera = {};
 
 local float game_timescale = 1;
@@ -223,11 +225,10 @@ void game_activate_soul_anchor(struct soul_anchor* anchor) {
 }
 
 void game_load_level(struct memory_arena* arena, char* filename, char* transition_link_to_spawn_at);
-void game_revive_to_last_soul_anchor(void) {
+void game_revive_to_last_soul_anchor(struct entity* player) {
     if (!game_state->last_rest_location.can_revive)
         return;
 
-    struct entity* player = &game_state->persistent_entities[0];
     player->health = player->max_health;
     player->death_state = DEATH_STATE_ALIVE;
     /* play a little wakeup animation... */
@@ -292,8 +293,11 @@ local void load_graphics_resources(void) {
     game_title_font   = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_TITLE_FONT_SIZE);
     game_ui_menu_font = load_font("assets/Exoplanetaria-gxxJ5.ttf", GAME_UI_MENU_FONT_SIZE);
 
-    game_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
-    editor_camera.render_scale = ratio_with_screen_width(TILES_PER_SCREEN);
+    game_camera.render_scale    = ratio_with_screen_width(TILES_PER_SCREEN);
+    game1_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
+    game2_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
+    game3_camera.render_scale   = ratio_with_screen_width(TILES_PER_SCREEN);
+    editor_camera.render_scale  = ratio_with_screen_width(TILES_PER_SCREEN);
 
     initialize_entity_graphics_assets();
     playersizedblock = load_texture("assets/playersizedblock.png");
@@ -516,13 +520,13 @@ void game_load_level(struct memory_arena* arena, char* filename, char* transitio
 }
 
 /* without the animation */
-void game_player_revive_warp(void) {
-    struct entity* player = &game_state->persistent_entities[0];
+void game_player_revive_warp(struct entity* player) {
+    /* if one dies... We all die... Sorry! */
     player->health = player->max_health;
     player->death_state = DEATH_STATE_ALIVE;
 
     if (game_state->last_rest_location.can_revive) {
-        game_revive_to_last_soul_anchor();
+        game_revive_to_last_soul_anchor(player);
     } else {
         game_load_level(&game_memory_arena, game_state->current_level_filename, 0 );
     }
@@ -547,6 +551,9 @@ void update_render_frame(float dt) {
         }
 
         camera_update(&game_camera, focus_zones, focus_zone_count, dt);
+        camera_update(&game1_camera, focus_zones, focus_zone_count, dt);
+        camera_update(&game2_camera, focus_zones, focus_zone_count, dt);
+        camera_update(&game3_camera, focus_zones, focus_zone_count, dt);
     }
     camera_update(&editor_camera, 0, 0, dt);
 }

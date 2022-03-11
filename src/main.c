@@ -1,3 +1,4 @@
+#define FORFRIENDS_DEMO
 /*
  * sdl "platform", not that I'm going to write a win32 one lol
  

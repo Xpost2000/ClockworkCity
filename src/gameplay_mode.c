@@ -91,11 +91,10 @@ local void try_and_record_player_grounded_position(float dt) {
     }
 }
 
-void restore_player_to_last_good_grounded(void) {
+void restore_player_to_last_good_grounded(struct entity* player) {
     if (!game_state->have_a_good_grounded_position)
         return;
 
-    struct entity* player = &game_state->persistent_entities[0];
     player->vx       = 0;
     player->vy       = 0;
     player->onground = true;
@@ -160,34 +159,109 @@ local void game_update_render_frame(float dt) {
 
     camera_set_focus_speed_x(&game_camera, 3);
     camera_set_focus_speed_y(&game_camera, 2);
-    camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y,
-                      game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
-    camera_set_focus_position(&game_camera, player->x - player->w/2, player->y - player->h/2);
+
+#ifdef FORFRIENDS_DEMO
+    camera_set_focus_speed_x(&game1_camera, 3);
+    camera_set_focus_speed_y(&game1_camera, 2);
+
+    camera_set_focus_speed_x(&game2_camera, 3);
+    camera_set_focus_speed_y(&game2_camera, 2);
+
+    camera_set_focus_speed_x(&game3_camera, 3);
+    camera_set_focus_speed_y(&game3_camera, 2);
+#endif
+
+    camera_set_bounds(&game_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
+#ifdef FORFRIENDS_DEMO
+    camera_set_bounds(&game1_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
+    camera_set_bounds(&game2_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
+    camera_set_bounds(&game3_camera, game_state->loaded_level->bounds_min_x, game_state->loaded_level->bounds_min_y, game_state->loaded_level->bounds_max_x, game_state->loaded_level->bounds_max_y);
+#endif
+    {
+        struct entity* player2 = &game_state->persistent_entities[1];
+        struct entity* player3 = &game_state->persistent_entities[2];
+        struct entity* player4 = &game_state->persistent_entities[3];
+        camera_set_focus_position(&game_camera, player->x - player->w/2, player->y - player->h/2);
+        camera_set_focus_position(&game1_camera, player2->x - player2->w/2, player2->y - player2->h/2);
+        camera_set_focus_position(&game2_camera, player3->x - player3->w/2, player3->y - player3->h/2);
+        camera_set_focus_position(&game3_camera, player4->x - player4->w/2, player4->y - player4->h/2);
+    }
 
     /* UI is a substate, we still draw the game under the UI, so it can look nice. */
+    int active_players = 0;
+    int screen_dimens[2];
+    {
+        {
+            if (!(game_state->persistent_entities[0].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+            if (!(game_state->persistent_entities[1].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+            if (!(game_state->persistent_entities[2].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+            if (!(game_state->persistent_entities[3].flags & ENTITY_FLAGS_DISABLED)) {active_players++;}
+        }
+
+        get_screen_dimensions(screen_dimens, screen_dimens+1);
+        _report_active_players(active_players);
+    }
+    int split_screen_width = screen_dimens[0] / active_players;
+    _p_idx(0);
     begin_graphics_frame(NULL); {
         draw_filled_rectangle(0, 0, 9999, 9999, active_colorscheme.secondary);
     } end_graphics_frame();
-    begin_graphics_frame(&game_camera); {
-        draw_all_background_particle_systems(particle_interpolation_value);
+    if (active_players == 1) {
+        clip_rect(0, 0, 0, 0, 0);
+        begin_graphics_frame(&game_camera); {
+            draw_all_background_particle_systems(particle_interpolation_value);
 
-        {
-            draw_tiles(tilemap->background_tiles, tilemap->background_tile_count, active_colorscheme.primary_background);
-        }
+            {
+                draw_tiles(tilemap->background_tiles, tilemap->background_tile_count, active_colorscheme.primary_background);
+            }
 
-        struct entity_iterator entities = game_state_entity_iterator(game_state);
-        draw_soul_anchors(tilemap->soul_anchors, tilemap->soul_anchor_count);
-        draw_all_particle_systems(particle_interpolation_value);
-        {
-            draw_doors(tilemap->doors, tilemap->door_count, false);
-            draw_activation_switches(tilemap->activation_switches, tilemap->activation_switch_count);
-            draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
-            draw_all_entities(&entities, dt, physics_interpolation_value);
-            draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
-            draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
+            struct entity_iterator entities = game_state_entity_iterator(game_state);
+            draw_soul_anchors(tilemap->soul_anchors, tilemap->soul_anchor_count);
+            draw_all_particle_systems(particle_interpolation_value);
+            {
+                draw_doors(tilemap->doors, tilemap->door_count, false);
+                draw_activation_switches(tilemap->activation_switches, tilemap->activation_switch_count);
+                draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
+                draw_all_entities(&entities, dt, physics_interpolation_value);
+                draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
+                draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
+            }
+            DEBUG_draw_debug_stuff();
+        } end_graphics_frame();
+    } else {
+        int split_x = 0;
+        for (int i = 0; i < active_players; ++i) {
+            clip_rect(true, split_x, 0, split_screen_width, screen_dimens[1]);
+            split_x += split_screen_width;
+
+            struct camera* target = &game_camera;
+            if (i == 1) target = &game1_camera;
+            if (i == 2) target = &game2_camera;
+            if (i == 3) target = &game3_camera;
+            _p_idx(i);
+
+            begin_graphics_frame(target); {
+                draw_all_background_particle_systems(particle_interpolation_value);
+
+                {
+                    draw_tiles(tilemap->background_tiles, tilemap->background_tile_count, active_colorscheme.primary_background);
+                }
+
+                struct entity_iterator entities = game_state_entity_iterator(game_state);
+                draw_soul_anchors(tilemap->soul_anchors, tilemap->soul_anchor_count);
+                draw_all_particle_systems(particle_interpolation_value);
+                {
+                    draw_doors(tilemap->doors, tilemap->door_count, false);
+                    draw_activation_switches(tilemap->activation_switches, tilemap->activation_switch_count);
+                    draw_tiles(tilemap->tiles, tilemap->height * tilemap->width, active_colorscheme.primary);
+                    draw_all_entities(&entities, dt, physics_interpolation_value);
+                    draw_grass_tiles(tilemap->grass_tiles, tilemap->grass_tile_count, active_colorscheme.primary);
+                    draw_tiles(tilemap->foreground_tiles, tilemap->foreground_tile_count, active_colorscheme.primary_foreground);
+                }
+                DEBUG_draw_debug_stuff();
+            } end_graphics_frame();
         }
-        DEBUG_draw_debug_stuff();
-    } end_graphics_frame();
+    }
 
     /* draw and update UI */
     {
@@ -195,6 +269,9 @@ local void game_update_render_frame(float dt) {
             do_render_game_global_animations(dt);
         }
 
+        clip_rect(0,0,0,0,0);
+        _p_idx(0);
+        _report_active_players(1);
         switch (game_state->menu_mode) {
             case GAMEPLAY_UI_INGAME: {
                 do_gameplay_ui(gamepad, dt);

@@ -108,7 +108,7 @@ Define_Console_Command(kill) {
 
 Define_Console_Command(badfall) {
     console_printf("bad fall... restoring to last good onground position");
-    restore_player_to_last_good_grounded();
+    /* restore_player_to_last_good_grounded(); */
 }
 
 Define_Console_Command(prompt) {
