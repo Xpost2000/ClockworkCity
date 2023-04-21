@@ -1,5 +1,6 @@
 # TODO(jerry): Consider replacing these libraries with stb equivalents later since
 # it makes distribution easier so I don't have to worry about lots of dlls.
+
 CC=gcc
 SRCFILES=glad/glad.c $(wildcard ./src/*.c) $(wildcard ./src/*.h)
 
