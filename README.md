@@ -12,11 +12,12 @@ A metroidvania platformer with Hollow Knight style gameplay.
 - Platformer collision detection with *slope support*
 - *Backwards compatible* binary level formats
 - Built-in game level editor
-- Nail-bouncing, wall-jumpnig, and dashing as movement mechanics
+- Nail-bouncing, wall-jumping, and dashing as movement mechanics
 - Controller and Keyboard support
 - *Spatial partition* for the broadphase collision system
 - Fixed timestep physics engine for deterministic behavior.
 - Development console, (which is reused from [2D-Game-Framework](https://github.com/Xpost2000/2D-Game-Framework))
+- Split Screen multiplayer support is present and functional although is not enabled!
 
 ## Technical Description
 
