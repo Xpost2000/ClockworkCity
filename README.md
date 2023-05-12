@@ -2,7 +2,7 @@
 
 A metroidvania platformer with Hollow Knight style gameplay.
 
-*This entry was intended for Metroidvania Jam 2021, however I could not finish it!*
+*This entry was intended for Metroidvania Jam 2022, however I could not finish it!*
 *However, there are some nice technical things that I started adopting more in other projects*
 *most of the better ideas end up in [Legends-JRPG](https://github.com/Xpost2000/Legends-JRPG)*
 
